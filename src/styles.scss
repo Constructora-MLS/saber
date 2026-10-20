@@ -1,0 +1,134 @@
+@use '@angular/material' as mat;
+
+html {
+  color-scheme: light;
+
+  @include mat.theme(
+    (
+      color: (
+        primary: mat.$violet-palette,
+        tertiary: mat.$chartreuse-palette,
+        theme-type: light,
+      ),
+      typography: (
+        plain-family: 'Roboto Flex Variable',
+        brand-family: 'Roboto Flex Variable',
+        bold-weight: 760,
+        medium-weight: 600,
+        regular-weight: 400,
+      ),
+      density: 0,
+    )
+  );
+
+  @include mat.theme-overrides(
+    (
+      corner-small: 0.75rem,
+      corner-medium: 1rem,
+      corner-large: 1.5rem,
+      corner-extra-large: 2rem,
+    )
+  );
+
+  @include mat.strong-focus-indicators(
+    (
+      border-color: var(--mat-sys-secondary),
+      border-width: 3px,
+      border-radius: 0.5rem,
+    )
+  );
+}
+
+html[data-theme='dark'] {
+  color-scheme: dark;
+
+  @include mat.theme(
+    (
+      color: (
+        primary: mat.$violet-palette,
+        tertiary: mat.$chartreuse-palette,
+        theme-type: dark,
+      ),
+      typography: (
+        plain-family: 'Roboto Flex Variable',
+        brand-family: 'Roboto Flex Variable',
+        bold-weight: 760,
+        medium-weight: 600,
+        regular-weight: 400,
+      ),
+      density: 0,
+    )
+  );
+}
+
+:root {
+  --app-background: var(--mat-sys-surface-container-low);
+  --app-surface: var(--mat-sys-surface);
+  --app-surface-raised: var(--mat-sys-surface-container);
+  --app-outline: var(--mat-sys-outline-variant);
+  --app-text-muted: var(--mat-sys-on-surface-variant);
+  --app-primary-container: var(--mat-sys-primary-container);
+  --app-on-primary-container: var(--mat-sys-on-primary-container);
+  --app-tertiary-container: var(--mat-sys-tertiary-container);
+  --app-on-tertiary-container: var(--mat-sys-on-tertiary-container);
+  --app-page-gutter: clamp(1.25rem, 4vw, 3.5rem);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background: var(--app-background);
+  color: var(--mat-sys-on-surface);
+  font-family: 'Roboto Flex Variable', sans-serif;
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.material-icons {
+  display: inline-block;
+  font-family: 'Material Icons';
+  font-size: 24px;
+  font-style: normal;
+  font-weight: normal;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  font-feature-settings: 'liga';
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 3px solid var(--mat-sys-secondary);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

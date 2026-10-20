@@ -1,0 +1,194 @@
+<div class="workspace-shell">
+  <aside class="side-rail" aria-label="Saber">
+    <a class="brand" href="#inicio" (click)="markActiveSection('inicio')" aria-label="Saber, ir al inicio">
+      <span class="brand-mark" aria-hidden="true"><mat-icon>gesture</mat-icon></span>
+      <span class="brand-copy">
+        <strong>saber</strong>
+        <span>DESIGN STARTER</span>
+      </span>
+    </a>
+
+    <p class="rail-label">TU ESPACIO</p>
+    <nav class="navigation" aria-label="Secciones de la guía">
+      @for (item of navigation; track item.id) {
+        <a
+          class="nav-item"
+          [class.is-active]="activeSection() === item.id"
+          [attr.aria-current]="activeSection() === item.id ? 'location' : null"
+          [href]="'#' + item.id"
+          (click)="markActiveSection(item.id)"
+        >
+          <mat-icon aria-hidden="true">{{ item.icon }}</mat-icon>
+          <span>{{ item.label }}</span>
+          @if (activeSection() === item.id) {
+            <span class="active-marker" aria-hidden="true"></span>
+          }
+        </a>
+      }
+    </nav>
+
+    <div class="rail-footer">
+      <span class="version-mark"><span></span> ANGULAR 22 · STANDALONE</span>
+      <span class="rail-caption">Una base. Muchas posibilidades.</span>
+    </div>
+  </aside>
+
+  <div class="main-column">
+    <header class="topbar">
+      <div class="breadcrumbs" aria-label="Ubicación actual">
+        <span>Workspace</span>
+        <mat-icon aria-hidden="true">chevron_right</mat-icon>
+        <span class="current-crumb">Material 3</span>
+      </div>
+      <div class="topbar-actions">
+        <span class="ready-status"><span aria-hidden="true"></span> Listo para crear</span>
+        <button
+          mat-icon-button
+          type="button"
+          class="theme-toggle"
+          [attr.aria-label]="isDarkMode() ? 'Activar tema claro' : 'Activar tema oscuro'"
+          [attr.aria-pressed]="isDarkMode()"
+          (click)="toggleTheme()"
+        >
+          <mat-icon aria-hidden="true">{{ isDarkMode() ? 'light_mode' : 'dark_mode' }}</mat-icon>
+        </button>
+      </div>
+    </header>
+
+    <main id="main-content" class="page-content">
+      <section id="inicio" class="intro-section" aria-labelledby="page-title">
+        <div class="page-heading">
+          <div>
+            <p class="eyebrow">UNA BASE PARA HACERLO TUYO</p>
+            <h1 id="page-title">Diseña con intención<span>.</span></h1>
+            <p class="page-summary">
+              Angular, Material 3 y un sistema visual expresivo para empezar con buen pie.
+            </p>
+          </div>
+          <div class="version-stamp" aria-label="Angular versión 22">
+            <span>22</span>
+            <small>ANGULAR</small>
+          </div>
+        </div>
+
+        <section class="expressive-panel" aria-labelledby="expressive-title">
+          <div class="panel-copy">
+            <p class="panel-kicker"><mat-icon aria-hidden="true">auto_awesome</mat-icon> MATERIAL 3 EXPRESSIVE</p>
+            <h2 id="expressive-title">Más expresión.<br /><span>Menos interfaz genérica.</span></h2>
+            <p class="panel-description">
+              Color, forma y movimiento trabajan juntos. Esta muestra te deja ver el sistema antes
+              de empezar a transformarlo.
+            </p>
+            <a class="panel-link" href="#componentes" (click)="markActiveSection('componentes')">
+              Explorar los componentes <mat-icon aria-hidden="true">arrow_downward</mat-icon>
+            </a>
+          </div>
+          <div class="panel-art" aria-hidden="true">
+            <div class="art-ring art-ring-outer"></div>
+            <div class="art-ring art-ring-inner"></div>
+            <div class="art-disc"><span>m3</span></div>
+            <span class="art-spark"></span>
+            <span class="art-orbit-label">FEEL<br />THE FORM</span>
+          </div>
+          <span class="panel-index" aria-hidden="true">S / 01</span>
+        </section>
+      </section>
+
+      <section id="componentes" class="showcase-section" aria-labelledby="components-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">BLOQUES PARA CONSTRUIR</p>
+            <h2 id="components-title">El lenguaje, en piezas.</h2>
+          </div>
+          <span class="section-note">Angular Material · M3</span>
+        </div>
+
+        <div class="component-grid">
+          <mat-card appearance="outlined" class="demo-card">
+            <mat-card-header>
+              <div mat-card-avatar class="card-avatar action-avatar"><mat-icon aria-hidden="true">touch_app</mat-icon></div>
+              <mat-card-title>Acciones claras</mat-card-title>
+              <mat-card-subtitle>Botones para cada nivel de énfasis</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="button-samples">
+                <button matButton="filled" type="button">
+                  <mat-icon aria-hidden="true">add</mat-icon> Nuevo espacio
+                </button>
+                <button matButton="tonal" type="button">Ver detalles</button>
+                <button mat-icon-button type="button" aria-label="Más opciones">
+                  <mat-icon aria-hidden="true">more_horiz</mat-icon>
+                </button>
+              </div>
+            </mat-card-content>
+            <mat-card-footer class="component-caption">BOTÓN LLENO · TONAL · ICONO</mat-card-footer>
+          </mat-card>
+
+          <mat-card appearance="outlined" class="demo-card">
+            <mat-card-header>
+              <div mat-card-avatar class="card-avatar field-avatar"><mat-icon aria-hidden="true">edit_note</mat-icon></div>
+              <mat-card-title>Contenido en contexto</mat-card-title>
+              <mat-card-subtitle>Campos y etiquetas con estados legibles</mat-card-subtitle>
+            </mat-card-header>
+            <mat-card-content>
+              <mat-form-field appearance="outline" class="demo-field">
+                <mat-label>Nombre del espacio</mat-label>
+                <input matInput value="Saber Studio" />
+                <mat-icon matSuffix aria-hidden="true">edit</mat-icon>
+              </mat-form-field>
+              <mat-chip-set aria-label="Etiquetas de ejemplo" class="chip-samples">
+                <mat-chip>En progreso</mat-chip>
+                <mat-chip>Diseño</mat-chip>
+              </mat-chip-set>
+            </mat-card-content>
+            <mat-card-footer class="component-caption">CAMPO DE TEXTO · CHIPS</mat-card-footer>
+          </mat-card>
+        </div>
+      </section>
+
+      <section id="tokens" class="tokens-section" aria-labelledby="tokens-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">UN SISTEMA, NO COLORES SUELTOS</p>
+            <h2 id="tokens-title">Una paleta con voz propia.</h2>
+          </div>
+          <span class="section-note">Tokens de sistema</span>
+        </div>
+
+        <div class="token-layout">
+          <mat-card appearance="outlined" class="palette-card">
+            <mat-card-content>
+              <div class="palette-list">
+                @for (token of paletteTokens; track token.value) {
+                  <div class="palette-row">
+                    <span class="palette-swatch" [class]="'swatch-' + token.className" aria-hidden="true"></span>
+                    <span class="palette-name">{{ token.name }}</span>
+                    <code>{{ token.value }}</code>
+                  </div>
+                }
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <div class="principles-list" aria-label="Principios expresivos">
+            @for (principle of principles; track principle.label) {
+              <article class="principle-row">
+                <span class="principle-icon"><mat-icon aria-hidden="true">{{ principle.icon }}</mat-icon></span>
+                <div>
+                  <h3>{{ principle.label }}</h3>
+                  <p>{{ principle.text }}</p>
+                </div>
+                <mat-icon class="principle-arrow" aria-hidden="true">arrow_outward</mat-icon>
+              </article>
+            }
+          </div>
+        </div>
+      </section>
+
+      <footer class="page-footer">
+        <span>Hecho para empezar, preparado para cambiar.</span>
+        <a href="#inicio" (click)="markActiveSection('inicio')">Volver arriba <mat-icon aria-hidden="true">north</mat-icon></a>
+      </footer>
+    </main>
+  </div>
+</div>
