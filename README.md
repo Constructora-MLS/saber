@@ -23,7 +23,6 @@ Abre <http://localhost:4200/>. El servidor de desarrollo recarga la aplicación 
 ```bash
 bun run start   # servidor de desarrollo
 bun run build   # compilación de producción
-bun run test    # pruebas unitarias con Vitest
 bun run watch   # compilación de desarrollo en modo watch
 ```
 
@@ -33,6 +32,7 @@ bun run watch   # compilación de desarrollo en modo watch
 src/
 ├── app/
 │   ├── features/studio/pages/home-page/  # página de muestra
+│   ├── shared/interfaces/components/icons/mls/ # icono MLS reutilizable
 │   ├── app.config.ts                     # configuración standalone
 │   └── app.routes.ts                     # rutas lazy-loaded
 ├── index.html

@@ -1,7 +1,12 @@
 <div class="workspace-shell">
   <aside class="side-rail" aria-label="Saber">
-    <a class="brand" href="#inicio" (click)="markActiveSection('inicio')" aria-label="Saber, ir al inicio">
-      <span class="brand-mark" aria-hidden="true"><mat-icon>gesture</mat-icon></span>
+    <a
+      class="brand"
+      href="#inicio"
+      (click)="markActiveSection('inicio')"
+      aria-label="Saber, ir al inicio"
+    >
+      <app-mls-icon class="brand-logo" size="2.8rem" />
       <span class="brand-copy">
         <strong>saber</strong>
         <span>DESIGN STARTER</span>
@@ -73,7 +78,9 @@
 
         <section class="expressive-panel" aria-labelledby="expressive-title">
           <div class="panel-copy">
-            <p class="panel-kicker"><mat-icon aria-hidden="true">auto_awesome</mat-icon> MATERIAL 3 EXPRESSIVE</p>
+            <p class="panel-kicker">
+              <mat-icon aria-hidden="true">auto_awesome</mat-icon> MATERIAL 3 EXPRESSIVE
+            </p>
             <h2 id="expressive-title">Más expresión.<br /><span>Menos interfaz genérica.</span></h2>
             <p class="panel-description">
               Color, forma y movimiento trabajan juntos. Esta muestra te deja ver el sistema antes
@@ -106,7 +113,9 @@
         <div class="component-grid">
           <mat-card appearance="outlined" class="demo-card">
             <mat-card-header>
-              <div mat-card-avatar class="card-avatar action-avatar"><mat-icon aria-hidden="true">touch_app</mat-icon></div>
+              <div mat-card-avatar class="card-avatar action-avatar">
+                <mat-icon aria-hidden="true">touch_app</mat-icon>
+              </div>
               <mat-card-title>Acciones claras</mat-card-title>
               <mat-card-subtitle>Botones para cada nivel de énfasis</mat-card-subtitle>
             </mat-card-header>
@@ -126,7 +135,9 @@
 
           <mat-card appearance="outlined" class="demo-card">
             <mat-card-header>
-              <div mat-card-avatar class="card-avatar field-avatar"><mat-icon aria-hidden="true">edit_note</mat-icon></div>
+              <div mat-card-avatar class="card-avatar field-avatar">
+                <mat-icon aria-hidden="true">edit_note</mat-icon>
+              </div>
               <mat-card-title>Contenido en contexto</mat-card-title>
               <mat-card-subtitle>Campos y etiquetas con estados legibles</mat-card-subtitle>
             </mat-card-header>
@@ -161,7 +172,11 @@
               <div class="palette-list">
                 @for (token of paletteTokens; track token.value) {
                   <div class="palette-row">
-                    <span class="palette-swatch" [class]="'swatch-' + token.className" aria-hidden="true"></span>
+                    <span
+                      class="palette-swatch"
+                      [class]="'swatch-' + token.className"
+                      aria-hidden="true"
+                    ></span>
                     <span class="palette-name">{{ token.name }}</span>
                     <code>{{ token.value }}</code>
                   </div>
@@ -173,7 +188,9 @@
           <div class="principles-list" aria-label="Principios expresivos">
             @for (principle of principles; track principle.label) {
               <article class="principle-row">
-                <span class="principle-icon"><mat-icon aria-hidden="true">{{ principle.icon }}</mat-icon></span>
+                <span class="principle-icon"
+                  ><mat-icon aria-hidden="true">{{ principle.icon }}</mat-icon></span
+                >
                 <div>
                   <h3>{{ principle.label }}</h3>
                   <p>{{ principle.text }}</p>
@@ -187,7 +204,9 @@
 
       <footer class="page-footer">
         <span>Hecho para empezar, preparado para cambiar.</span>
-        <a href="#inicio" (click)="markActiveSection('inicio')">Volver arriba <mat-icon aria-hidden="true">north</mat-icon></a>
+        <a href="#inicio" (click)="markActiveSection('inicio')"
+          >Volver arriba <mat-icon aria-hidden="true">north</mat-icon></a
+        >
       </footer>
     </main>
   </div>

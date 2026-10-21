@@ -31,27 +31,14 @@
   text-decoration: none;
 }
 
-.brand-mark {
-  display: grid;
+.brand-logo {
   width: 2.8rem;
   height: 2.8rem;
-  place-items: center;
-  border-radius: 1rem 1rem 1rem 0.4rem;
-  background: var(--mat-sys-primary);
-  color: var(--mat-sys-on-primary);
-  transform: rotate(-4deg);
-  transition:
-    border-radius 180ms ease,
-    transform 180ms ease;
+  transition: transform 180ms ease;
 }
 
-.brand:hover .brand-mark {
-  border-radius: 50%;
+.brand:hover .brand-logo {
   transform: rotate(4deg);
-}
-
-.brand-mark mat-icon {
-  font-size: 1.45rem;
 }
 
 .brand-copy {
@@ -823,7 +810,7 @@ h1 > span {
     margin: 0;
   }
 
-  .brand-mark {
+  .brand-logo {
     width: 2.4rem;
     height: 2.4rem;
   }

@@ -6,9 +6,11 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MlsIcon } from '../../../../shared/interfaces/components/icons/mls/mls-icon';
 
 @Component({
   imports: [
+    MlsIcon,
     MatButtonModule,
     MatCardModule,
     MatChipsModule,
