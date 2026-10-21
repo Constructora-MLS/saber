@@ -1,10 +1,22 @@
 import { Routes } from '@angular/router';
 
 export const routes: Routes = [
+  { path: '', pathMatch: 'full', redirectTo: 'personal' },
   {
-    path: '',
+    path: 'personal',
+    title: 'Personal',
     loadComponent: () =>
-      import('./features/studio/pages/home-page/home-page').then((module) => module.HomePage),
+      import('./personal/interfaces/pages/personal-page/personal-page').then(
+        (module) => module.PersonalPage,
+      ),
   },
-  { path: '**', redirectTo: '' },
+  {
+    path: 'catalog',
+    title: 'Catálogos',
+    loadComponent: () =>
+      import('./catalog/interfaces/pages/catalog-page/catalog-page').then(
+        (module) => module.CatalogPage,
+      ),
+  },
+  { path: '**', redirectTo: 'personal' },
 ];

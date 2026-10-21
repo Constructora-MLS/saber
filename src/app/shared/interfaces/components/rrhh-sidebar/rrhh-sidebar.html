@@ -1,0 +1,81 @@
+<aside class="rrhh-sidebar">
+  <header class="sidebar-header">
+    <app-mls-icon class="brand-logo" size="1.9rem" />
+    <span class="brand-title">Constructora MLS</span>
+    <button
+      type="button"
+      class="header-action"
+      [attr.aria-expanded]="!isCollapsed()"
+      [attr.aria-label]="isCollapsed() ? 'Expandir menú lateral' : 'Minimizar menú lateral'"
+      (click)="toggleCollapsed()"
+    >
+      <mat-icon aria-hidden="true">menu</mat-icon>
+    </button>
+  </header>
+
+  <div class="module-switcher">
+    <button
+      type="button"
+      class="module-selector"
+      aria-haspopup="menu"
+      aria-controls="rrhh-app-switcher"
+      [attr.aria-expanded]="isAppSwitcherOpen()"
+      (click)="toggleAppSwitcher()"
+    >
+      <mat-icon aria-hidden="true">apps</mat-icon>
+      <span class="module-label">{{ moduleLabel() }}</span>
+      <mat-icon class="module-chevron" aria-hidden="true">expand_more</mat-icon>
+    </button>
+
+    @if (isAppSwitcherOpen()) {
+      <button
+        type="button"
+        class="app-switcher-backdrop"
+        aria-label="Cerrar selector de aplicaciones"
+        (click)="closeAppSwitcher()"
+      ></button>
+
+      <app-switcher
+        [applications]="applications"
+        (applicationSelected)="onApplicationSelected($event)"
+      />
+    }
+  </div>
+
+  <nav class="sidebar-nav" [attr.aria-label]="moduleLabel()">
+    @for (item of navigation; track item.label) {
+      @if (item.path; as path) {
+        <a
+          class="nav-item"
+          [routerLink]="path"
+          routerLinkActive="is-active"
+          [routerLinkActiveOptions]="{ exact: true }"
+        >
+          <mat-icon aria-hidden="true">{{ item.icon }}</mat-icon>
+          <span class="nav-label">{{ item.label }}</span>
+        </a>
+      } @else {
+        <span class="nav-item is-disabled" aria-disabled="true">
+          <mat-icon aria-hidden="true">{{ item.icon }}</mat-icon>
+          <span class="nav-label">{{ item.label }}</span>
+        </span>
+      }
+    }
+  </nav>
+
+  <footer class="sidebar-footer">
+    <span class="user-avatar" aria-hidden="true">{{ userInitials() }}</span>
+    <span class="user-copy">
+      <strong class="user-name">{{ userName() }}</strong>
+      <span class="user-role">{{ userRole() }}</span>
+    </span>
+    <div class="footer-actions">
+      <button type="button" class="footer-action" aria-label="Notificaciones">
+        <mat-icon aria-hidden="true">notifications_none</mat-icon>
+      </button>
+      <button type="button" class="footer-action" aria-label="Más opciones">
+        <mat-icon aria-hidden="true">more_horiz</mat-icon>
+      </button>
+    </div>
+  </footer>
+</aside>
