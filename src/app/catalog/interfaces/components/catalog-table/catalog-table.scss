@@ -1,0 +1,92 @@
+:host {
+  display: block;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.catalog-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.catalog-table th {
+  padding: 0.75rem 1rem;
+  background: var(--app-surface-raised);
+  color: var(--app-text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.catalog-table td {
+  padding: 0.9rem 1rem;
+  border-top: 1px solid var(--rrhh-divider);
+  color: var(--mat-sys-on-surface);
+  font-size: 0.92rem;
+  vertical-align: middle;
+}
+
+.table-message td {
+  color: var(--app-text-muted);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.cell-code {
+  font-family: 'Roboto Mono', ui-monospace, monospace;
+  font-size: 0.85rem;
+  color: var(--app-text-muted);
+}
+
+.cell-name {
+  font-weight: 650;
+}
+
+.cell-description {
+  color: var(--app-text-muted);
+}
+
+.cell-reference {
+  color: var(--mat-sys-on-secondary-container);
+  background: var(--mat-sys-secondary-container);
+  border-radius: 0.5rem;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.status-badge.is-active {
+  background: var(--rrhh-active-container);
+  color: var(--rrhh-active-on-container);
+}
+
+.status-badge.is-inactive {
+  background: var(--app-surface-raised);
+  color: var(--app-text-muted);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

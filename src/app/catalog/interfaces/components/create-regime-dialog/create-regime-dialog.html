@@ -1,0 +1,42 @@
+<h2 mat-dialog-title>Registrar Régimen</h2>
+
+<mat-dialog-content>
+  <p class="dialog-description">
+    El régimen laboral define las prestaciones y las aportes que se derivan de una asignación.
+  </p>
+
+  @if (errorMessage(); as message) {
+    <p class="dialog-error" role="alert">{{ message }}</p>
+  }
+
+  <form class="dialog-form" id="catalog-regime-form" [formGroup]="form" (ngSubmit)="submit()">
+    <mat-form-field appearance="outline">
+      <mat-label>Nombre del régimen</mat-label>
+      <input matInput formControlName="name" maxlength="120" required autocomplete="off" />
+      @if (form.controls.name.hasError('required')) {
+        <mat-error>El nombre es obligatorio.</mat-error>
+      }
+      @if (form.controls.name.hasError('minlength')) {
+        <mat-error>El nombre debe tener al menos 2 caracteres.</mat-error>
+      }
+      @if (form.controls.name.hasError('maxlength')) {
+        <mat-error>El nombre no puede superar los 120 caracteres.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Descripción (opcional)</mat-label>
+      <textarea matInput formControlName="description" rows="3" maxlength="500"></textarea>
+      @if (form.controls.description.hasError('maxlength')) {
+        <mat-error>La descripción no puede superar los 500 caracteres.</mat-error>
+      }
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="dialog-actions">
+  <button matButton type="button" (click)="cancel()">Cancelar</button>
+  <button matButton="filled" type="submit" form="catalog-regime-form" [disabled]="submitting()">
+    {{ submitting() ? 'Registrando…' : 'Registrar Régimen' }}
+  </button>
+</mat-dialog-actions>

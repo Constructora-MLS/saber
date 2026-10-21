@@ -1,0 +1,55 @@
+<div class="table-scroll">
+  <table class="catalog-table">
+    <caption class="sr-only">
+      {{
+        caption()
+      }}
+    </caption>
+    <thead>
+      <tr>
+        @for (column of columns(); track column.header) {
+          <th scope="col">{{ column.header }}</th>
+        }
+      </tr>
+    </thead>
+    <tbody>
+      @if (loading()) {
+        <tr class="table-message">
+          <td [attr.colspan]="columns().length">Cargando registros…</td>
+        </tr>
+      } @else if (rows().length === 0) {
+        <tr class="table-message">
+          <td [attr.colspan]="columns().length">{{ emptyMessage() }}</td>
+        </tr>
+      } @else {
+        @for (row of rows(); track row.id) {
+          <tr>
+            @for (column of columns(); track column.header) {
+              <td>
+                @switch (column.kind) {
+                  @case ('code') {
+                    <span class="cell-code">{{ row.code ?? '—' }}</span>
+                  }
+                  @case ('name') {
+                    <span class="cell-name">{{ row.name }}</span>
+                  }
+                  @case ('description') {
+                    <span class="cell-description">{{ row.description ?? '—' }}</span>
+                  }
+                  @case ('reference') {
+                    <span class="cell-reference">{{ row.reference ?? '—' }}</span>
+                  }
+                  @case ('status') {
+                    <span class="status-badge" [class]="statusClass(row.status)">
+                      {{ statusLabel(row.status) }}
+                    </span>
+                  }
+                }
+              </td>
+            }
+          </tr>
+        }
+      }
+    </tbody>
+  </table>
+</div>

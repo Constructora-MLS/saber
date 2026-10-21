@@ -1,3 +1,91 @@
 <section class="page" aria-labelledby="catalog-page-title">
-  <h1 id="catalog-page-title" class="page-title">Catálogos</h1>
+  <header class="page-header">
+    <div class="page-heading">
+      <p class="eyebrow">Recursos Humanos · Datos compartidos</p>
+      <h1 id="catalog-page-title" class="page-title">{{ activeTabDefinition().title }}</h1>
+      <p class="page-subtitle">{{ activeTabDefinition().subtitle }}</p>
+    </div>
+    <button matButton="filled" type="button" class="create-button" (click)="openCreateDialog()">
+      <mat-icon aria-hidden="true">add</mat-icon>
+      {{ activeTabDefinition().createLabel }}
+    </button>
+  </header>
+
+  <nav class="catalog-tabs" aria-label="Vistas de Catálogos">
+    @for (tab of tabs; track tab.id) {
+      <button
+        type="button"
+        class="catalog-tab"
+        [class.is-active]="activeTab() === tab.id"
+        [attr.aria-current]="activeTab() === tab.id ? 'page' : null"
+        (click)="activateTab(tab.id)"
+      >
+        <mat-icon aria-hidden="true">{{ tab.icon }}</mat-icon>
+        <span>{{ tab.label }}</span>
+      </button>
+    }
+  </nav>
+
+  <section class="panel" aria-labelledby="catalog-panel-title">
+    <header class="panel-header">
+      <div>
+        <h2 id="catalog-panel-title">{{ activeTabDefinition().recordsLabel }}</h2>
+        <p class="panel-hint">
+          @if (activeTab() === 'servicios') {
+            Cada servicio agrupa las unidades de trabajo que le pertenecen.
+          } @else if (activeTab() === 'unidades') {
+            El código de unidad es único y no se repite.
+          } @else {
+            Los registros se ordenan por nombre y se filtran por estado.
+          }
+        </p>
+      </div>
+    </header>
+
+    <div class="filters">
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>Buscar</mat-label>
+        <input
+          matInput
+          type="search"
+          autocomplete="off"
+          placeholder="Buscar por nombre…"
+          [ngModel]="searchTerm()"
+          (ngModelChange)="onSearchChanged($event)"
+        />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="status-field">
+        <mat-label>Estado</mat-label>
+        <mat-select [ngModel]="statusFilter()" (ngModelChange)="onStatusChanged($event)">
+          <mat-option value="">Todos los estados</mat-option>
+          <mat-option value="ACTIVE">Activo</mat-option>
+          <mat-option value="INACTIVE">Inactivo</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <button matButton type="button" (click)="clearFilters()">Limpiar filtros</button>
+    </div>
+
+    @if (errorMessage(); as message) {
+      <p class="panel-error" role="alert">{{ message }}</p>
+    }
+
+    @if (loading()) {
+      <mat-progress-bar mode="indeterminate" aria-label="Cargando registros" />
+    }
+
+    <app-catalog-table
+      [caption]="activeTabDefinition().title"
+      [columns]="activeTabDefinition().columns"
+      [rows]="rows()"
+      [loading]="loading()"
+    />
+
+    @if (nextCursor()) {
+      <div class="panel-footer">
+        <button matButton="tonal" type="button" (click)="loadMore()">Cargar más registros</button>
+      </div>
+    }
+  </section>
 </section>
