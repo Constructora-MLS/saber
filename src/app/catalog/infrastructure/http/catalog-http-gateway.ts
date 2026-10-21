@@ -224,7 +224,6 @@ export class CatalogHttpGateway
    */
   async createWorkUnit(workUnit: NewWorkUnit): Promise<WorkUnit> {
     const request: CreateWorkUnitRequest = {
-      code: workUnit.code.value,
       name: workUnit.name.value,
       serviceId: workUnit.serviceId,
       ...(workUnit.description ? { description: workUnit.description.value } : {}),
@@ -236,13 +235,16 @@ export class CatalogHttpGateway
 
   /**
    * update applies the changes to a work unit.
+   *
+   * The service is only sent when it changes, so a work unit whose service
+   * was disabled later can still be modified.
    */
   async updateWorkUnit(changes: WorkUnitChanges): Promise<WorkUnit> {
     const request: UpdateWorkUnitRequest = {
       code: changes.code.value,
       name: changes.name.value,
       description: changes.description ? changes.description.value : '',
-      serviceId: changes.serviceId,
+      ...(changes.serviceId ? { serviceId: changes.serviceId } : {}),
       status: changes.status,
     };
     const updated = await this.patch<WorkUnitResource>(`/work-units/${changes.id}`, request);
@@ -375,6 +377,7 @@ export class CatalogHttpGateway
       CatalogName.restore(resource.name),
       this.description(resource.description),
       resource.serviceId,
+      resource.serviceName,
       resource.status,
     );
   }

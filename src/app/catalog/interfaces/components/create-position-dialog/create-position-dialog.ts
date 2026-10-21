@@ -8,12 +8,14 @@ import { CreatePositionCommandService } from '../../../application/command-servi
 import { CreatePositionCommand } from '../../../application/commands/catalog-commands';
 import { CatalogValidationError } from '../../../domain/model/errors/catalog-errors';
 import { CatalogApiError } from '../../../infrastructure/http/catalog-api.error';
+import { FieldCounter } from '../field-counter/field-counter';
 
 /**
  * CreatePositionDialog registers a position in the catalog.
  */
 @Component({
   imports: [
+    FieldCounter,
     MatButtonModule,
     MatDialogModule,
     MatFormFieldModule,

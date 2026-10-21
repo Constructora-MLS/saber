@@ -1,0 +1,31 @@
+<div
+  class="state"
+  [class.state--error]="kind() === 'error'"
+  [class.state--compact]="compact()"
+  [attr.role]="kind() === 'error' ? 'alert' : 'status'"
+>
+  <span class="state__emblem" aria-hidden="true">
+    <mat-icon>{{ resolvedIcon() }}</mat-icon>
+  </span>
+
+  <div class="state__text">
+    @if (title(); as headline) {
+      <p class="state__title">{{ headline }}</p>
+    }
+    @if (message(); as detail) {
+      <p class="state__message">{{ detail }}</p>
+    }
+  </div>
+
+  @if (actionLabel(); as label) {
+    <button
+      matButton="filled"
+      type="button"
+      class="state__action"
+      (click)="actionRequested.emit()"
+    >
+      <mat-icon aria-hidden="true">{{ resolvedActionIcon() }}</mat-icon>
+      {{ label }}
+    </button>
+  }
+</div>

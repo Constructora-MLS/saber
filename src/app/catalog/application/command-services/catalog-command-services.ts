@@ -20,7 +20,6 @@ import {
   UpdateServiceCommand,
   UpdateWorkUnitCommand,
 } from '../commands/catalog-commands';
-import { CatalogValidationError } from '../../domain/model/errors/catalog-errors';
 import { CatalogName } from '../../domain/model/value-objects/catalog-name';
 import { Description } from '../../domain/model/value-objects/description';
 import { UnitCode } from '../../domain/model/value-objects/unit-code';
@@ -112,7 +111,6 @@ export class CreateWorkUnitCommandService {
   private readonly repository = inject(WORK_UNIT_REPOSITORY);
 
   async execute(command: CreateWorkUnitCommand): Promise<WorkUnit> {
-    const code = UnitCode.create(command.code);
     const name = CatalogName.create(command.name);
     const serviceId = command.serviceId.trim();
     if (serviceId.length === 0) {
@@ -120,7 +118,7 @@ export class CreateWorkUnitCommandService {
     }
     const description = this.description(command.description);
 
-    return this.repository.createWorkUnit({ code, name, description, serviceId });
+    return this.repository.createWorkUnit({ name, description, serviceId });
   }
 
   private description(raw: string | null | undefined): Description | null {
@@ -248,6 +246,10 @@ export class DeleteRegimeCommandService {
 
 /**
  * UpdateWorkUnitCommandService modifies a work unit.
+ *
+ * The service is only sent when it changes, so the platform keeps the
+ * current service and a work unit whose service was disabled later can still
+ * be modified.
  */
 @Injectable({ providedIn: 'root' })
 export class UpdateWorkUnitCommandService {
@@ -257,20 +259,14 @@ export class UpdateWorkUnitCommandService {
     const code = UnitCode.create(command.code);
     const name = CatalogName.create(command.name);
     const description = this.description(command.description);
-    const serviceId = command.serviceId.trim();
-    if (serviceId.length === 0) {
-      throw new CatalogValidationError(
-        'serviceId',
-        'La unidad de trabajo pertenece a un servicio.',
-      );
-    }
+    const serviceId = command.serviceId?.trim();
 
     return this.repository.updateWorkUnit({
       id: command.uuid,
       code,
       name,
       description,
-      serviceId,
+      ...(serviceId ? { serviceId } : {}),
       status: command.status,
     });
   }

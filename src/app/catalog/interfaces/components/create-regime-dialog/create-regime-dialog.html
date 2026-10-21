@@ -22,6 +22,7 @@
       @if (form.controls.name.hasError('maxlength')) {
         <mat-error>El nombre no puede superar los 120 caracteres.</mat-error>
       }
+      <mat-hint align="end" appFieldCounter [control]="form.controls.name" limit="name" />
     </mat-form-field>
 
     <mat-form-field appearance="outline">
@@ -30,6 +31,7 @@
       @if (form.controls.description.hasError('maxlength')) {
         <mat-error>La descripción no puede superar los 500 caracteres.</mat-error>
       }
+      <mat-hint align="end" appFieldCounter [control]="form.controls.description" limit="description" />
     </mat-form-field>
   </form>
 </mat-dialog-content>

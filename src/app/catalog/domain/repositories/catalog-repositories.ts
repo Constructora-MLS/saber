@@ -72,9 +72,11 @@ export interface NewRegime {
 /**
  * NewWorkUnit is the work unit that a worker of the application asks to
  * register.
+ *
+ * The code is not part of it: the platform draws the code and returns it in
+ * the registered work unit.
  */
 export interface NewWorkUnit {
-  readonly code: UnitCode;
   readonly name: CatalogName;
   readonly description: Description | null;
   readonly serviceId: string;
@@ -134,8 +136,13 @@ export interface WorkUnitChanges {
   readonly name: CatalogName;
   /** The new description of the work unit. A null description removes it. */
   readonly description: Description | null;
-  /** The new service of the work unit. */
-  readonly serviceId: string;
+  /**
+   * The new service of the work unit.
+   *
+   * It is omitted when the service does not change, so the platform keeps
+   * the current service.
+   */
+  readonly serviceId?: string;
   /** The new state of the work unit. */
   readonly status: UpdatableCatalogStatus;
 }

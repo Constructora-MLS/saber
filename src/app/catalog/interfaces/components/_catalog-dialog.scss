@@ -40,3 +40,13 @@
   color: var(--app-text-muted);
   font-size: 0.78rem;
 }
+
+/* The description grows with the text, but never more than the dialog can
+   hold: the actions of the dialog are always reachable and the form never
+   pushes the content out of the screen. */
+.dialog-form textarea {
+  resize: vertical;
+  min-height: 4.5rem;
+  max-height: 11rem;
+  overflow-y: auto;
+}

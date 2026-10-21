@@ -8,12 +8,14 @@ import { CreateRegimeCommandService } from '../../../application/command-service
 import { CreateRegimeCommand } from '../../../application/commands/catalog-commands';
 import { CatalogValidationError } from '../../../domain/model/errors/catalog-errors';
 import { CatalogApiError } from '../../../infrastructure/http/catalog-api.error';
+import { FieldCounter } from '../field-counter/field-counter';
 
 /**
  * CreateRegimeDialog registers a regime in the catalog.
  */
 @Component({
   imports: [
+    FieldCounter,
     MatButtonModule,
     MatDialogModule,
     MatFormFieldModule,

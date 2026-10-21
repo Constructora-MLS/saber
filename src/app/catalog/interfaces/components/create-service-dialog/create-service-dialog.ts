@@ -8,12 +8,14 @@ import { CreateServiceCommandService } from '../../../application/command-servic
 import { CreateServiceCommand } from '../../../application/commands/catalog-commands';
 import { CatalogValidationError } from '../../../domain/model/errors/catalog-errors';
 import { CatalogApiError } from '../../../infrastructure/http/catalog-api.error';
+import { FieldCounter } from '../field-counter/field-counter';
 
 /**
  * CreateServiceDialog registers a service in the catalog.
  */
 @Component({
   imports: [
+    FieldCounter,
     MatButtonModule,
     MatDialogModule,
     MatFormFieldModule,

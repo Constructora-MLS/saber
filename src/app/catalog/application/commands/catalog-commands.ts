@@ -41,8 +41,6 @@ export interface CreateRegimeCommand {
  * CreateWorkUnitCommand asks for a new work unit.
  */
 export interface CreateWorkUnitCommand {
-  /** The code of the work unit. */
-  readonly code: string;
   /** The name of the work unit. */
   readonly name: string;
   /** The optional description of the work unit. */
@@ -133,8 +131,13 @@ export interface UpdateWorkUnitCommand {
   readonly name: string;
   /** The new description of the work unit. An empty text removes it. */
   readonly description: string;
-  /** The new service of the work unit. */
-  readonly serviceId: string;
+  /**
+   * The new service of the work unit.
+   *
+   * It is omitted when the service does not change, so a work unit whose
+   * service was disabled later can still be modified.
+   */
+  readonly serviceId?: string;
   /** The new state of the work unit. */
   readonly status: UpdatableCatalogStatus;
 }

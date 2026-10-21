@@ -1,10 +1,15 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  MatAutocompleteModule,
+  MatAutocompleteSelectedEvent,
+} from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import {
   UpdatePositionCommandService,
@@ -12,6 +17,7 @@ import {
   UpdateServiceCommandService,
   UpdateWorkUnitCommandService,
 } from '../../../application/command-services/catalog-command-services';
+import { normalizeCatalogSearch } from '../../../application/queries/catalog-search';
 import { ListServicesQueryService } from '../../../application/query-services/catalog-query-services';
 import { Position } from '../../../domain/model/aggregates/position';
 import { Regime } from '../../../domain/model/aggregates/regime';
@@ -20,6 +26,7 @@ import { WorkUnit } from '../../../domain/model/aggregates/work-unit';
 import { CatalogValidationError } from '../../../domain/model/errors/catalog-errors';
 import { UpdatableCatalogStatus } from '../../../domain/model/value-objects/catalog-status';
 import { CatalogApiError } from '../../../infrastructure/http/catalog-api.error';
+import { FieldCounter } from '../field-counter/field-counter';
 
 /**
  * EditableCatalogRecord is the record that a worker of the application asks
@@ -35,15 +42,34 @@ export type EditableCatalogRecord =
   | { readonly kind: 'work-unit'; readonly record: WorkUnit };
 
 /**
+ * ServiceOption is a service the worker can choose.
+ *
+ * The service of the work unit is always offered, even when it is not
+ * active, so a work unit whose service was disabled later can still be
+ * modified.
+ */
+interface ServiceOption {
+  /** The identifier of the service. */
+  readonly id: string;
+  /** The name of the service. */
+  readonly name: string;
+  /** Whether the option is the service of the record. */
+  readonly current: boolean;
+}
+
+/**
  * EditCatalogRecordDialog modifies a record of the catalog.
  */
 @Component({
   imports: [
+    FieldCounter,
+    MatAutocompleteModule,
     MatButtonModule,
     MatDialogModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
+    MatProgressSpinnerModule,
     MatSelectModule,
     ReactiveFormsModule,
   ],
@@ -60,19 +86,27 @@ export class EditCatalogRecordDialog implements OnInit {
   private readonly listServices = inject(ListServicesQueryService);
   private readonly dialogRef =
     inject<MatDialogRef<EditCatalogRecordDialog, EditableCatalogRecord>>(MatDialogRef);
+  private readonly destroyRef = inject(DestroyRef);
 
   /** The record that is being modified. */
   protected readonly data = inject<EditableCatalogRecord>(MAT_DIALOG_DATA);
+
+  private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
   protected readonly form = this.formBuilder.nonNullable.group({
     code: [''],
     name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(120)]],
     description: ['', [Validators.maxLength(500)]],
+    // The identifier of the chosen service. It is the only mandatory field
+    // of the reference: the text is only the label of the selection.
     serviceId: [''],
+    // The text the worker types to find the service.
+    serviceQuery: [''],
     status: ['ACTIVE' as UpdatableCatalogStatus, [Validators.required]],
   });
 
   protected readonly services = signal<readonly Service[]>([]);
+  protected readonly selectedService = signal<ServiceOption | null>(null);
   protected readonly loadingServices = signal(false);
   protected readonly servicesError = signal<string | null>(null);
   protected readonly submitting = signal(false);
@@ -80,6 +114,28 @@ export class EditCatalogRecordDialog implements OnInit {
 
   /** Whether the record is a work unit, the only one with a code and a service. */
   protected readonly isWorkUnit = this.data.kind === 'work-unit';
+
+  /** The service of the work unit, even when it is not active. */
+  protected readonly currentService = computed<ServiceOption | null>(() => {
+    if (!this.isWorkUnit) {
+      return null;
+    }
+    const record = this.data as Extract<EditableCatalogRecord, { kind: 'work-unit' }>;
+    return {
+      id: record.record.serviceId,
+      name: record.record.serviceName,
+      current: true,
+    };
+  });
+
+  /** The options of the selector: the service of the record and the active ones. */
+  protected readonly serviceOptions = computed<readonly ServiceOption[]>(() => {
+    const current = this.currentService();
+    const active = this.services()
+      .filter((service) => service.id !== current?.id)
+      .map((service) => ({ id: service.id, name: service.name.value, current: false }));
+    return current ? [current, ...active] : active;
+  });
 
   constructor() {
     this.applyKind();
@@ -90,7 +146,8 @@ export class EditCatalogRecordDialog implements OnInit {
     if (!this.isWorkUnit) {
       return;
     }
-    void this.loadServices();
+    this.destroyRef.onDestroy(() => this.clearSearchTimer());
+    void this.searchServices('');
   }
 
   /**
@@ -114,6 +171,44 @@ export class EditCatalogRecordDialog implements OnInit {
    */
   protected cancel(): void {
     this.dialogRef.close();
+  }
+
+  /**
+   * onQueryChanged looks for the active services that match the term.
+   *
+   * The search settles first, so the catalog is not read on every keystroke.
+   */
+  protected onQueryChanged(event: Event): void {
+    const term = (event.target as HTMLInputElement).value;
+
+    const selected = this.selectedService();
+    if (selected && term !== selected.name) {
+      // The text no longer names the chosen service, so the choice is
+      // dropped and the worker has to pick one again.
+      this.selectedService.set(null);
+      this.form.controls.serviceId.setValue('');
+    }
+
+    this.clearSearchTimer();
+    this.searchTimer = setTimeout(() => {
+      this.searchTimer = null;
+      void this.searchServices(term);
+    }, 300);
+  }
+
+  /**
+   * selectService keeps the identifier of the chosen service and shows its
+   * name in the field.
+   */
+  protected selectService(event: MatAutocompleteSelectedEvent): void {
+    const id = event.option.value as string;
+    const option = this.serviceOptions().find((item) => item.id === id);
+    if (!option) {
+      return;
+    }
+    this.selectedService.set(option);
+    this.form.controls.serviceId.setValue(id);
+    this.form.controls.serviceQuery.setValue(option.name);
   }
 
   /**
@@ -151,6 +246,7 @@ export class EditCatalogRecordDialog implements OnInit {
     name: string;
     description: string;
     serviceId: string;
+    serviceQuery: string;
     status: UpdatableCatalogStatus;
   }): Promise<EditableCatalogRecord> {
     const data = this.data;
@@ -185,12 +281,17 @@ export class EditCatalogRecordDialog implements OnInit {
       return { kind: 'regime', record: regime };
     }
 
+    // The service is only sent when it changes, so the platform keeps the
+    // current service and a work unit whose service was disabled later can
+    // still be modified.
+    const serviceId = raw.serviceId === data.record.serviceId ? undefined : raw.serviceId;
+
     const workUnit = await this.updateWorkUnit.execute({
       uuid: data.record.id,
       code: raw.code,
       name: raw.name,
       description: raw.description,
-      serviceId: raw.serviceId,
+      ...(serviceId ? { serviceId } : {}),
       status: raw.status,
     });
     return { kind: 'work-unit', record: workUnit };
@@ -227,7 +328,13 @@ export class EditCatalogRecordDialog implements OnInit {
         name: data.record.name.value,
         description: data.record.description?.value ?? '',
         serviceId: data.record.serviceId,
+        serviceQuery: data.record.serviceName,
         status: data.record.status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE',
+      });
+      this.selectedService.set({
+        id: data.record.serviceId,
+        name: data.record.serviceName,
+        current: true,
       });
       return;
     }
@@ -240,20 +347,36 @@ export class EditCatalogRecordDialog implements OnInit {
   }
 
   /**
-   * loadServices brings the services the work units belong to.
+   * searchServices reads the active services that match the term.
    *
-   * The list carries the inactive services too, because a work unit can
-   * belong to a service that was disabled after its creation.
+   * The platform only returns the active services, and the filter keeps the
+   * rule even if the contract changes. The service of the record is always
+   * offered, so it does not need to be active.
    */
-  private async loadServices(): Promise<void> {
+  private async searchServices(term: string): Promise<void> {
     this.loadingServices.set(true);
+    this.servicesError.set(null);
     try {
-      const page = await this.listServices.execute({ limit: 100 });
-      this.services.set(page.items);
+      const page = await this.listServices.execute({
+        search: normalizeCatalogSearch(term),
+        status: 'ACTIVE',
+        limit: 20,
+      });
+      this.services.set(page.items.filter((service) => service.status === 'ACTIVE'));
     } catch {
       this.servicesError.set('No se pudieron cargar los servicios.');
     } finally {
       this.loadingServices.set(false);
+    }
+  }
+
+  /**
+   * clearSearchTimer cancels the pending search.
+   */
+  private clearSearchTimer(): void {
+    if (this.searchTimer !== null) {
+      clearTimeout(this.searchTimer);
+      this.searchTimer = null;
     }
   }
 

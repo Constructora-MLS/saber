@@ -14,13 +14,40 @@
       </tr>
     </thead>
     <tbody>
-      @if (loading()) {
+      @if (loading() && rows().length === 0) {
         <tr class="table-message">
-          <td [attr.colspan]="columns().length + 1">Cargando registros…</td>
+          <td [attr.colspan]="columns().length + 1">
+            <div class="table-loading" role="status">
+              <mat-spinner diameter="28" aria-hidden="true" />
+              <span>Cargando registros…</span>
+            </div>
+          </td>
+        </tr>
+      } @else if (rows().length === 0 && errorMessage() !== null) {
+        <tr class="table-state">
+          <td [attr.colspan]="columns().length + 1">
+            <app-table-state
+              kind="error"
+              [title]="errorTitle()"
+              [message]="errorMessage()"
+              actionLabel="Reintentar"
+              actionIcon="refresh"
+              (actionRequested)="retryRequested.emit()"
+            />
+          </td>
         </tr>
       } @else if (rows().length === 0) {
-        <tr class="table-message">
-          <td [attr.colspan]="columns().length + 1">{{ emptyMessage() }}</td>
+        <tr class="table-state">
+          <td [attr.colspan]="columns().length + 1">
+            <app-table-state
+              kind="empty"
+              [title]="emptyMessage()"
+              message="Registra el primer registro para verlo en esta tabla."
+              [actionLabel]="emptyActionLabel()"
+              actionIcon="add"
+              (actionRequested)="createRequested.emit()"
+            />
+          </td>
         </tr>
       } @else {
         @for (row of rows(); track row.id) {
@@ -72,6 +99,21 @@
                   <span>Borrar</span>
                 </button>
               </mat-menu>
+            </td>
+          </tr>
+        }
+        @if (errorMessage(); as failure) {
+          <tr class="table-state">
+            <td [attr.colspan]="columns().length + 1">
+              <app-table-state
+                kind="error"
+                [title]="errorTitle()"
+                [message]="failure"
+                actionLabel="Reintentar"
+                actionIcon="refresh"
+                [compact]="true"
+                (actionRequested)="retryRequested.emit()"
+              />
             </td>
           </tr>
         }

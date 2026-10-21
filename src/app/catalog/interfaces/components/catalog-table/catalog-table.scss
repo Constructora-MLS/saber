@@ -46,6 +46,20 @@
   text-align: center;
 }
 
+/* The states own their padding, so the table does not frame them with the
+   cells of the records. */
+.table-state > td {
+  padding: 0;
+  border-top: 0;
+}
+
+.table-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+}
+
 .cell-code {
   font-family: 'Roboto Mono', ui-monospace, monospace;
   font-size: 0.85rem;

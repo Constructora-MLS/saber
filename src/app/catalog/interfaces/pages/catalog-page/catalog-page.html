@@ -1,7 +1,7 @@
 <section class="page" aria-labelledby="catalog-page-title">
   <header class="page-header">
     <div class="page-heading">
-      <p class="eyebrow">Recursos Humanos · Datos compartidos</p>
+      <p class="eyebrow">Recursos Humanos · Catálogo</p>
       <h1 id="catalog-page-title" class="page-title">{{ activeTabDefinition().title }}</h1>
       <p class="page-subtitle">{{ activeTabDefinition().subtitle }}</p>
     </div>
@@ -44,15 +44,26 @@
 
     <div class="filters">
       <mat-form-field appearance="outline" class="search-field">
-        <mat-label>Buscar</mat-label>
+        <mat-label>{{ activeTabDefinition().searchLabel }}</mat-label>
         <input
           matInput
           type="search"
           autocomplete="off"
-          placeholder="Buscar por nombre…"
+          [placeholder]="activeTabDefinition().searchPlaceholder"
           [ngModel]="searchTerm()"
           (ngModelChange)="onSearchChanged($event)"
         />
+        @if (searchTerm()) {
+          <button
+            matIconButton
+            matSuffix
+            type="button"
+            aria-label="Limpiar la búsqueda"
+            (click)="clearSearch()"
+          >
+            <mat-icon aria-hidden="true">close</mat-icon>
+          </button>
+        }
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="status-field">
@@ -67,10 +78,6 @@
       <button matButton type="button" (click)="clearFilters()">Limpiar filtros</button>
     </div>
 
-    @if (errorMessage(); as message) {
-      <p class="panel-error" role="alert">{{ message }}</p>
-    }
-
     @if (loading()) {
       <mat-progress-bar mode="indeterminate" aria-label="Cargando registros" />
     }
@@ -80,8 +87,13 @@
       [columns]="activeTabDefinition().columns"
       [rows]="rows()"
       [loading]="loading()"
+      [emptyActionLabel]="activeTabDefinition().createLabel"
+      [errorTitle]="loadFailure()?.title ?? null"
+      [errorMessage]="loadFailure()?.message ?? null"
       (editRequested)="openEditDialog($event)"
       (deleteRequested)="openDeleteDialog($event)"
+      (retryRequested)="retry()"
+      (createRequested)="openCreateDialog()"
     />
 
     @if (nextCursor()) {

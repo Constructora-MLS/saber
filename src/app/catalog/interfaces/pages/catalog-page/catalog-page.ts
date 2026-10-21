@@ -51,6 +51,10 @@ interface CatalogTabDefinition {
   readonly subtitle: string;
   readonly createLabel: string;
   readonly recordsLabel: string;
+  /** The label of the search field of the listing. */
+  readonly searchLabel: string;
+  /** The placeholder of the search field of the listing. */
+  readonly searchPlaceholder: string;
   readonly columns: readonly CatalogColumn[];
 }
 
@@ -68,6 +72,17 @@ function isCatalogTab(value: string | null): value is CatalogTab {
  */
 function isCatalogStatus(value: string | null): value is CatalogStatus {
   return value === 'ACTIVE' || value === 'INACTIVE';
+}
+
+/**
+ * CatalogLoadFailure is the failure of the consultation of a catalog.
+ *
+ * The headline names what happened and the detail tells the worker what to
+ * do about it, so the interface never shows a bare technical message.
+ */
+interface CatalogLoadFailure {
+  readonly title: string;
+  readonly message: string;
 }
 
 /**
@@ -106,9 +121,9 @@ export class CatalogPage {
   private readonly listRegimes = inject(ListRegimeQueryService);
   private readonly listWorkUnits = inject(ListWorkUnitsQueryService);
 
-  private readonly serviceNames = new Map<string, string>();
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
   private loaded = false;
+  private readonly failedCursor = signal<string | null>(null);
 
   protected readonly tabs: readonly CatalogTabDefinition[] = [
     {
@@ -119,6 +134,8 @@ export class CatalogPage {
       subtitle: 'Obras y expedientes utilizados en las asignaciones.',
       createLabel: 'Registrar Unidad de Trabajo',
       recordsLabel: 'Unidades de trabajo registradas',
+      searchLabel: 'Buscar por código o nombre',
+      searchPlaceholder: 'Código o nombre de la unidad…',
       columns: [
         { header: 'Código', kind: 'code' },
         { header: 'Nombre', kind: 'name' },
@@ -134,6 +151,8 @@ export class CatalogPage {
       subtitle: 'Funciones que ocupan los trabajadores en sus asignaciones.',
       createLabel: 'Registrar Cargo',
       recordsLabel: 'Cargos registrados',
+      searchLabel: 'Buscar por nombre',
+      searchPlaceholder: 'Nombre del cargo…',
       columns: [
         { header: 'Nombre', kind: 'name' },
         { header: 'Descripción', kind: 'description' },
@@ -148,6 +167,8 @@ export class CatalogPage {
       subtitle: 'Regímenes laborales disponibles para las asignaciones.',
       createLabel: 'Registrar Régimen',
       recordsLabel: 'Regímenes registrados',
+      searchLabel: 'Buscar por nombre',
+      searchPlaceholder: 'Nombre del régimen…',
       columns: [
         { header: 'Nombre', kind: 'name' },
         { header: 'Descripción', kind: 'description' },
@@ -159,9 +180,11 @@ export class CatalogPage {
       label: 'Servicios',
       icon: 'domain',
       title: 'Servicios',
-      subtitle: 'Familias de obras y expedientes que comparten el mismo contrato.',
+      subtitle: 'Conjunto de obras y expedientes que comparten un contrato.',
       createLabel: 'Registrar Servicio',
       recordsLabel: 'Servicios registrados',
+      searchLabel: 'Buscar por nombre',
+      searchPlaceholder: 'Nombre del servicio…',
       columns: [
         { header: 'Nombre', kind: 'name' },
         { header: 'Descripción', kind: 'description' },
@@ -177,7 +200,7 @@ export class CatalogPage {
   protected readonly records = signal<ReadonlyMap<string, EditableCatalogRecord>>(new Map());
   protected readonly nextCursor = signal<string | null>(null);
   protected readonly loading = signal(false);
-  protected readonly errorMessage = signal<string | null>(null);
+  protected readonly loadFailure = signal<CatalogLoadFailure | null>(null);
 
   protected readonly activeTabDefinition = computed(
     () => this.tabs.find((tab) => tab.id === this.activeTab()) ?? this.tabs[0],
@@ -209,7 +232,7 @@ export class CatalogPage {
       return;
     }
     this.activeTab.set(tab);
-    this.errorMessage.set(null);
+    this.loadFailure.set(null);
     void this.syncUrl();
     void this.reload();
   }
@@ -244,6 +267,17 @@ export class CatalogPage {
   }
 
   /**
+   * clearSearch empties the search of the listing.
+   */
+  protected clearSearch(): void {
+    if (this.searchTerm().length === 0) {
+      return;
+    }
+    this.searchTerm.set('');
+    void this.reload();
+  }
+
+  /**
    * clearFilters removes the filters of the listing.
    */
   protected clearFilters(): void {
@@ -262,6 +296,22 @@ export class CatalogPage {
       return;
     }
     await this.load(cursor, true);
+  }
+
+  /**
+   * retry consults the catalog again.
+   *
+   * The page that failed is asked again, so a failure that happened while
+   * more records were being loaded does not throw away the records that are
+   * already on the screen.
+   */
+  protected retry(): void {
+    const cursor = this.failedCursor();
+    if (cursor) {
+      void this.load(cursor, true);
+      return;
+    }
+    void this.reload();
   }
 
   /**
@@ -290,7 +340,7 @@ export class CatalogPage {
         .afterClosed()
         .subscribe((created) => {
           if (created) {
-            this.notify('Unidad de trabajo registrada.');
+            this.notify(`Unidad de trabajo registrada con el código ${created.code.value}.`);
             void this.reload();
           }
         });
@@ -378,6 +428,7 @@ export class CatalogPage {
    */
   private async reload(): Promise<void> {
     this.nextCursor.set(null);
+    this.failedCursor.set(null);
     await this.load(null, false);
   }
 
@@ -386,7 +437,7 @@ export class CatalogPage {
    */
   private async load(cursor: string | null, append: boolean): Promise<void> {
     this.loading.set(true);
-    this.errorMessage.set(null);
+    this.loadFailure.set(null);
 
     try {
       const tab = this.activeTab();
@@ -408,7 +459,6 @@ export class CatalogPage {
       }
 
       if (tab === 'unidades') {
-        await this.loadServiceNames();
         const page = await this.listWorkUnits.execute({
           search: search || undefined,
           status: status || undefined,
@@ -447,24 +497,10 @@ export class CatalogPage {
         append,
       );
     } catch (error) {
-      this.errorMessage.set(this.describe(error));
+      this.failedCursor.set(cursor);
+      this.loadFailure.set(this.describe(error));
     } finally {
       this.loading.set(false);
-    }
-  }
-
-  /**
-   * loadServiceNames keeps the names of the services, so the listing of the
-   * work units can show the service of every unit.
-   *
-   * The list carries the inactive services too, because a work unit can
-   * belong to a service that was disabled after its creation.
-   */
-  private async loadServiceNames(): Promise<void> {
-    const page = await this.listServices.execute({ limit: 100 });
-    this.serviceNames.clear();
-    for (const service of page.items) {
-      this.serviceNames.set(service.id, service.name.value);
     }
   }
 
@@ -483,6 +519,7 @@ export class CatalogPage {
     this.records.set(append ? new Map([...this.records(), ...entries]) : entries);
 
     this.nextCursor.set(nextCursor);
+    this.failedCursor.set(null);
   }
 
   /**
@@ -523,7 +560,7 @@ export class CatalogPage {
           code: record.record.code.value,
           name: record.record.name.value,
           description: record.record.description?.value ?? null,
-          reference: this.serviceNames.get(record.record.serviceId) ?? null,
+          reference: record.record.serviceName,
           status: record.record.status,
         };
     }
@@ -546,13 +583,47 @@ export class CatalogPage {
   }
 
   /**
-   * describe turns a failure into the message the interfaces show.
+   * describe turns a failure into the state the interfaces show.
+   *
+   * The state names what happened, so the worker knows whether the service
+   * is down, whether the platform rejected the query or whether the answer
+   * was not understood.
    */
-  private describe(error: unknown): string {
+  private describe(error: unknown): CatalogLoadFailure {
     if (error instanceof CatalogApiError) {
-      return error.detail;
+      if (error.status === 0) {
+        return {
+          title: 'No se pudo conectar con el servidor',
+          message:
+            'El servicio de catálogos no respondió. Verifica que el servidor esté activo e inténtalo nuevamente.',
+        };
+      }
+
+      if (error.status >= 500) {
+        return {
+          title: 'El servicio de catálogos no está disponible',
+          message: 'El servidor falló al responder. Inténtalo nuevamente en unos instantes.',
+        };
+      }
+
+      if (error.code === 'unexpected_error') {
+        return {
+          title: 'No se pudo cargar el catálogo',
+          message:
+            'La plataforma no devolvió una respuesta válida. Inténtalo nuevamente en unos instantes.',
+        };
+      }
+
+      return {
+        title: 'No se pudo cargar el catálogo',
+        message: error.detail,
+      };
     }
-    return 'No se pudo cargar el catálogo.';
+
+    return {
+      title: 'No se pudo cargar el catálogo',
+      message: 'Ocurrió un problema inesperado al consultar los registros. Inténtalo nuevamente.',
+    };
   }
 
   /**

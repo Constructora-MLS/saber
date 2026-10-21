@@ -39,6 +39,8 @@ export interface WorkUnitResource {
   readonly name: string;
   readonly description?: string;
   readonly serviceId: string;
+  /** The name of the service the work unit belongs to. */
+  readonly serviceName: string;
   readonly status: CatalogStatusResource;
 }
 
@@ -86,7 +88,6 @@ export interface CreateRegimeRequest {
 
 /** The body of the creation of a work unit. */
 export interface CreateWorkUnitRequest {
-  readonly code: string;
   readonly name: string;
   readonly description?: string | null;
   readonly serviceId: string;

@@ -16,6 +16,7 @@ export class WorkUnit {
     readonly name: CatalogName,
     readonly description: Description | null,
     readonly serviceId: string,
+    readonly serviceName: string,
     readonly status: CatalogStatus,
   ) {}
 
@@ -28,9 +29,10 @@ export class WorkUnit {
     name: CatalogName,
     description: Description | null,
     serviceId: string,
+    serviceName: string,
     status: CatalogStatus,
   ): WorkUnit {
-    return new WorkUnit(id, code, name, description, serviceId, status);
+    return new WorkUnit(id, code, name, description, serviceId, serviceName, status);
   }
 
   /**
@@ -42,8 +44,9 @@ export class WorkUnit {
     name: CatalogName,
     description: Description | null,
     serviceId: string,
+    serviceName: string,
     status: CatalogStatus,
   ): WorkUnit {
-    return new WorkUnit(id, code, name, description, serviceId, status);
+    return new WorkUnit(id, code, name, description, serviceId, serviceName, status);
   }
 }

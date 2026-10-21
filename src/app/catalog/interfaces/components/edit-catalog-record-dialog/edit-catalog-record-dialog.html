@@ -20,20 +20,10 @@
           maxlength="40"
           required
           autocomplete="off"
+          readonly
           placeholder="OB-014"
         />
-        @if (form.controls.code.hasError('required')) {
-          <mat-error>El código es obligatorio.</mat-error>
-        }
-        @if (form.controls.code.hasError('minlength')) {
-          <mat-error>El código debe tener al menos 2 caracteres.</mat-error>
-        }
-        @if (form.controls.code.hasError('maxlength')) {
-          <mat-error>El código no puede superar los 40 caracteres.</mat-error>
-        }
-        @if (form.controls.code.hasError('pattern')) {
-          <mat-error>El código solo admite letras, números y guiones.</mat-error>
-        }
+        <mat-hint>El código lo asignó la plataforma y no se puede cambiar.</mat-hint>
       </mat-form-field>
     }
 
@@ -49,21 +39,30 @@
       @if (form.controls.name.hasError('maxlength')) {
         <mat-error>El nombre no puede superar los 120 caracteres.</mat-error>
       }
+      <mat-hint align="end" appFieldCounter [control]="form.controls.name" limit="name" />
     </mat-form-field>
 
     @if (isWorkUnit) {
       <mat-form-field appearance="outline">
         <mat-label>Servicio</mat-label>
-        <mat-select formControlName="serviceId" required>
-          @if (loadingServices()) {
-            <mat-option value="" disabled>Cargando servicios…</mat-option>
-          }
-          @for (service of services(); track service.id) {
-            <mat-option [value]="service.id">
-              {{ service.name.value }}{{ service.status === 'ACTIVE' ? '' : ' (inactivo)' }}
+        <input
+          matInput
+          formControlName="serviceQuery"
+          [matAutocomplete]="serviceAuto"
+          (input)="onQueryChanged($event)"
+          placeholder="Escriba el nombre del servicio"
+          autocomplete="off"
+        />
+        <mat-autocomplete #serviceAuto="matAutocomplete" (optionSelected)="selectService($event)">
+          @for (option of serviceOptions(); track option.id) {
+            <mat-option [value]="option.id">
+              {{ option.name }}{{ option.current ? ' (servicio actual)' : '' }}
             </mat-option>
           }
-        </mat-select>
+        </mat-autocomplete>
+        @if (loadingServices()) {
+          <mat-spinner matSuffix diameter="18"></mat-spinner>
+        }
         @if (form.controls.serviceId.hasError('required')) {
           <mat-error>La unidad de trabajo pertenece a un servicio.</mat-error>
         }
@@ -71,6 +70,9 @@
           <mat-error>{{ message }}</mat-error>
         }
       </mat-form-field>
+
+      <!-- The identifier of the chosen service. It is never shown. -->
+      <input type="hidden" formControlName="serviceId" />
     }
 
     <mat-form-field appearance="outline">
@@ -79,6 +81,7 @@
       @if (form.controls.description.hasError('maxlength')) {
         <mat-error>La descripción no puede superar los 500 caracteres.</mat-error>
       }
+      <mat-hint align="end" appFieldCounter [control]="form.controls.description" limit="description" />
     </mat-form-field>
 
     <mat-form-field appearance="outline">
