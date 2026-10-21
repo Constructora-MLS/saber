@@ -10,43 +10,69 @@
         @for (column of columns(); track column.header) {
           <th scope="col">{{ column.header }}</th>
         }
+        <th scope="col" class="cell-actions">Acción</th>
       </tr>
     </thead>
     <tbody>
       @if (loading()) {
         <tr class="table-message">
-          <td [attr.colspan]="columns().length">Cargando registros…</td>
+          <td [attr.colspan]="columns().length + 1">Cargando registros…</td>
         </tr>
       } @else if (rows().length === 0) {
         <tr class="table-message">
-          <td [attr.colspan]="columns().length">{{ emptyMessage() }}</td>
+          <td [attr.colspan]="columns().length + 1">{{ emptyMessage() }}</td>
         </tr>
       } @else {
         @for (row of rows(); track row.id) {
           <tr>
             @for (column of columns(); track column.header) {
-              <td>
-                @switch (column.kind) {
-                  @case ('code') {
-                    <span class="cell-code">{{ row.code ?? '—' }}</span>
+              @if (column.kind === 'name') {
+                <th scope="row" class="cell-name">{{ row.name }}</th>
+              } @else {
+                <td>
+                  @switch (column.kind) {
+                    @case ('code') {
+                      <span class="cell-code">{{ row.code ?? '—' }}</span>
+                    }
+                    @case ('description') {
+                      <span class="cell-description">{{ row.description ?? '—' }}</span>
+                    }
+                    @case ('reference') {
+                      <span class="cell-reference">{{ row.reference ?? '—' }}</span>
+                    }
+                    @case ('status') {
+                      <span
+                        class="status-badge"
+                        [class.is-active]="row.status === 'ACTIVE'"
+                        [class.is-inactive]="row.status !== 'ACTIVE'"
+                      >
+                        {{ statusLabel(row.status) }}
+                      </span>
+                    }
                   }
-                  @case ('name') {
-                    <span class="cell-name">{{ row.name }}</span>
-                  }
-                  @case ('description') {
-                    <span class="cell-description">{{ row.description ?? '—' }}</span>
-                  }
-                  @case ('reference') {
-                    <span class="cell-reference">{{ row.reference ?? '—' }}</span>
-                  }
-                  @case ('status') {
-                    <span class="status-badge" [class]="statusClass(row.status)">
-                      {{ statusLabel(row.status) }}
-                    </span>
-                  }
-                }
-              </td>
+                </td>
+              }
             }
+            <td class="cell-actions">
+              <button
+                matIconButton
+                type="button"
+                [matMenuTriggerFor]="rowMenu"
+                [attr.aria-label]="'Acciones de ' + row.name"
+              >
+                <mat-icon aria-hidden="true">more_vert</mat-icon>
+              </button>
+              <mat-menu #rowMenu="matMenu" xPosition="before">
+                <button mat-menu-item type="button" (click)="editRequested.emit(row)">
+                  <mat-icon aria-hidden="true">edit</mat-icon>
+                  <span>Editar</span>
+                </button>
+                <button mat-menu-item type="button" (click)="deleteRequested.emit(row)">
+                  <mat-icon aria-hidden="true">delete</mat-icon>
+                  <span>Borrar</span>
+                </button>
+              </mat-menu>
+            </td>
           </tr>
         }
       }

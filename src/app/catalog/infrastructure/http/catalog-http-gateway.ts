@@ -20,6 +20,10 @@ import {
   RegimeResource,
   ServicePageResource,
   ServiceResource,
+  UpdatePositionRequest,
+  UpdateRegimeRequest,
+  UpdateServiceRequest,
+  UpdateWorkUnitRequest,
   WorkUnitPageResource,
   WorkUnitResource,
 } from './catalog-api.contract';
@@ -38,9 +42,13 @@ import {
   NewRegime,
   NewService,
   NewWorkUnit,
+  PositionChanges,
   PositionRepository,
+  RegimeChanges,
   RegimeRepository,
+  ServiceChanges,
   ServiceRepository,
+  WorkUnitChanges,
   WorkUnitCriteria,
   WorkUnitRepository,
 } from '../../domain/repositories/catalog-repositories';
@@ -82,6 +90,27 @@ export class CatalogHttpGateway
   }
 
   /**
+   * update applies the changes to a service.
+   */
+  async updateService(changes: ServiceChanges): Promise<Service> {
+    const request: UpdateServiceRequest = {
+      name: changes.name.value,
+      description: changes.description ? changes.description.value : '',
+      status: changes.status,
+    };
+    const updated = await this.patch<ServiceResource>(`/services/${changes.id}`, request);
+
+    return this.toService(updated);
+  }
+
+  /**
+   * delete logically deletes a service.
+   */
+  async deleteService(id: string): Promise<void> {
+    await this.delete(`/services/${id}`);
+  }
+
+  /**
    * list returns the page of the positions that matches the criteria.
    */
   async listPositions(criteria: CatalogCriteria): Promise<CatalogPage<Position>> {
@@ -107,6 +136,27 @@ export class CatalogHttpGateway
   }
 
   /**
+   * update applies the changes to a position.
+   */
+  async updatePosition(changes: PositionChanges): Promise<Position> {
+    const request: UpdatePositionRequest = {
+      name: changes.name.value,
+      description: changes.description ? changes.description.value : '',
+      status: changes.status,
+    };
+    const updated = await this.patch<PositionResource>(`/positions/${changes.id}`, request);
+
+    return this.toPosition(updated);
+  }
+
+  /**
+   * delete logically deletes a position.
+   */
+  async deletePosition(id: string): Promise<void> {
+    await this.delete(`/positions/${id}`);
+  }
+
+  /**
    * list returns the page of the regimes that matches the criteria.
    */
   async listRegimes(criteria: CatalogCriteria): Promise<CatalogPage<Regime>> {
@@ -129,6 +179,27 @@ export class CatalogHttpGateway
     const created = await this.post<RegimeResource>('/regimes', request);
 
     return this.toRegime(created);
+  }
+
+  /**
+   * update applies the changes to a regime.
+   */
+  async updateRegime(changes: RegimeChanges): Promise<Regime> {
+    const request: UpdateRegimeRequest = {
+      name: changes.name.value,
+      description: changes.description ? changes.description.value : '',
+      status: changes.status,
+    };
+    const updated = await this.patch<RegimeResource>(`/regimes/${changes.id}`, request);
+
+    return this.toRegime(updated);
+  }
+
+  /**
+   * delete logically deletes a regime.
+   */
+  async deleteRegime(id: string): Promise<void> {
+    await this.delete(`/regimes/${id}`);
   }
 
   /**
@@ -161,6 +232,29 @@ export class CatalogHttpGateway
     const created = await this.post<WorkUnitResource>('/work-units', request);
 
     return this.toWorkUnit(created);
+  }
+
+  /**
+   * update applies the changes to a work unit.
+   */
+  async updateWorkUnit(changes: WorkUnitChanges): Promise<WorkUnit> {
+    const request: UpdateWorkUnitRequest = {
+      code: changes.code.value,
+      name: changes.name.value,
+      description: changes.description ? changes.description.value : '',
+      serviceId: changes.serviceId,
+      status: changes.status,
+    };
+    const updated = await this.patch<WorkUnitResource>(`/work-units/${changes.id}`, request);
+
+    return this.toWorkUnit(updated);
+  }
+
+  /**
+   * delete logically deletes a work unit.
+   */
+  async deleteWorkUnit(id: string): Promise<void> {
+    await this.delete(`/work-units/${id}`);
   }
 
   /**
@@ -201,6 +295,29 @@ export class CatalogHttpGateway
     return firstValueFrom(
       this.http
         .post<T>(`${this.baseUrl}${path}`, body)
+        .pipe(catchError((error: HttpErrorResponse) => this.toFailure(error))),
+    );
+  }
+
+  /**
+   * patch applies the changes to a resource of the API.
+   */
+  private async patch<T>(path: string, body: unknown): Promise<T> {
+    return firstValueFrom(
+      this.http
+        .patch<T>(`${this.baseUrl}${path}`, body)
+        .pipe(catchError((error: HttpErrorResponse) => this.toFailure(error))),
+    );
+  }
+
+  /**
+   * delete removes a resource of the API. The answer of a deletion carries
+   * no body.
+   */
+  private async delete(path: string): Promise<void> {
+    await firstValueFrom(
+      this.http
+        .delete<void>(`${this.baseUrl}${path}`)
         .pipe(catchError((error: HttpErrorResponse) => this.toFailure(error))),
     );
   }

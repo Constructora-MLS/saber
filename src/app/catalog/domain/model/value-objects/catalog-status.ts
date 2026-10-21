@@ -18,6 +18,19 @@ export type CatalogStatus = 'ACTIVE' | 'INACTIVE' | 'DELETED';
 export const FILTERABLE_CATALOG_STATUSES: readonly CatalogStatus[] = ['ACTIVE', 'INACTIVE'];
 
 /**
+ * UpdatableCatalogStatus is the state a record can be moved to.
+ *
+ * The logical deletion is the only operation that sets the deleted state,
+ * so the deleted state is never the target of a modification.
+ */
+export type UpdatableCatalogStatus = 'ACTIVE' | 'INACTIVE';
+
+/**
+ * UPDATABLE_CATALOG_STATUSES are the states a record can be moved to.
+ */
+export const UPDATABLE_CATALOG_STATUSES: readonly UpdatableCatalogStatus[] = ['ACTIVE', 'INACTIVE'];
+
+/**
  * catalogStatusLabel returns the label of a state in the language of the
  * interfaces.
  */

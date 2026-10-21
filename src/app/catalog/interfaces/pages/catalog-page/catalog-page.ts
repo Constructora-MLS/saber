@@ -8,13 +8,13 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { ActivatedRoute, Router } from '@angular/router';
 import {
   ListPositionsQueryService,
   ListRegimeQueryService,
   ListServicesQueryService,
   ListWorkUnitsQueryService,
 } from '../../../application/query-services/catalog-query-services';
-import { Service } from '../../../domain/model/aggregates/service';
 import { CatalogStatus } from '../../../domain/model/value-objects/catalog-status';
 import { CatalogApiError } from '../../../infrastructure/http/catalog-api.error';
 import {
@@ -26,6 +26,14 @@ import { CreatePositionDialog } from '../../components/create-position-dialog/cr
 import { CreateRegimeDialog } from '../../components/create-regime-dialog/create-regime-dialog';
 import { CreateServiceDialog } from '../../components/create-service-dialog/create-service-dialog';
 import { CreateWorkUnitDialog } from '../../components/create-work-unit-dialog/create-work-unit-dialog';
+import {
+  DeletableCatalogRecord,
+  DeleteCatalogRecordDialog,
+} from '../../components/delete-catalog-record-dialog/delete-catalog-record-dialog';
+import {
+  EditableCatalogRecord,
+  EditCatalogRecordDialog,
+} from '../../components/edit-catalog-record-dialog/edit-catalog-record-dialog';
 
 /**
  * CatalogTab is the view of the catalog that is shown.
@@ -47,11 +55,27 @@ interface CatalogTabDefinition {
 }
 
 /**
+ * isCatalogTab reports whether a value is the identifier of a view.
+ */
+function isCatalogTab(value: string | null): value is CatalogTab {
+  return (
+    value === 'servicios' || value === 'unidades' || value === 'cargos' || value === 'regimenes'
+  );
+}
+
+/**
+ * isCatalogStatus reports whether a value is a state of a record.
+ */
+function isCatalogStatus(value: string | null): value is CatalogStatus {
+  return value === 'ACTIVE' || value === 'INACTIVE';
+}
+
+/**
  * CatalogPage orchestrates the catalogs of the platform.
  *
  * The page is the frontend controller of the bounded context: it reads the
- * listings through the use cases and it opens the dialogs that register the
- * records. It never talks to the API directly.
+ * listings through the use cases and it opens the dialogs that register,
+ * modify and delete the records. It never talks to the API directly.
  */
 @Component({
   imports: [
@@ -74,6 +98,8 @@ export class CatalogPage {
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   private readonly listServices = inject(ListServicesQueryService);
   private readonly listPositions = inject(ListPositionsQueryService);
@@ -82,6 +108,7 @@ export class CatalogPage {
 
   private readonly serviceNames = new Map<string, string>();
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
+  private loaded = false;
 
   protected readonly tabs: readonly CatalogTabDefinition[] = [
     {
@@ -94,7 +121,7 @@ export class CatalogPage {
       recordsLabel: 'Unidades de trabajo registradas',
       columns: [
         { header: 'Código', kind: 'code' },
-        { header: 'Denominación', kind: 'name' },
+        { header: 'Nombre', kind: 'name' },
         { header: 'Servicio', kind: 'reference' },
         { header: 'Estado', kind: 'status' },
       ],
@@ -108,7 +135,7 @@ export class CatalogPage {
       createLabel: 'Registrar Cargo',
       recordsLabel: 'Cargos registrados',
       columns: [
-        { header: 'Denominación', kind: 'name' },
+        { header: 'Nombre', kind: 'name' },
         { header: 'Descripción', kind: 'description' },
         { header: 'Estado', kind: 'status' },
       ],
@@ -122,7 +149,7 @@ export class CatalogPage {
       createLabel: 'Registrar Régimen',
       recordsLabel: 'Regímenes registrados',
       columns: [
-        { header: 'Denominación', kind: 'name' },
+        { header: 'Nombre', kind: 'name' },
         { header: 'Descripción', kind: 'description' },
         { header: 'Estado', kind: 'status' },
       ],
@@ -147,6 +174,7 @@ export class CatalogPage {
   protected readonly searchTerm = signal('');
   protected readonly statusFilter = signal<CatalogStatus | ''>('');
   protected readonly rows = signal<readonly CatalogRow[]>([]);
+  protected readonly records = signal<ReadonlyMap<string, EditableCatalogRecord>>(new Map());
   protected readonly nextCursor = signal<string | null>(null);
   protected readonly loading = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
@@ -156,18 +184,33 @@ export class CatalogPage {
   );
 
   constructor() {
-    void this.reload();
+    this.route.queryParamMap.subscribe((params) => {
+      const requestedTab = params.get('vista');
+      const requestedStatus = params.get('estado');
+      const tab: CatalogTab = isCatalogTab(requestedTab) ? requestedTab : 'unidades';
+      const status: CatalogStatus | '' = isCatalogStatus(requestedStatus) ? requestedStatus : '';
+      const changed = tab !== this.activeTab() || status !== this.statusFilter();
+
+      this.activeTab.set(tab);
+      this.statusFilter.set(status);
+
+      if (changed || !this.loaded) {
+        this.loaded = true;
+        void this.reload();
+      }
+    });
   }
 
   /**
    * activateTab shows one of the views of the catalog and reloads it.
    */
   protected activateTab(tab: CatalogTab): void {
-    if (this.activeTab() === tab) {
+    if (tab === this.activeTab()) {
       return;
     }
     this.activeTab.set(tab);
     this.errorMessage.set(null);
+    void this.syncUrl();
     void this.reload();
   }
 
@@ -196,6 +239,7 @@ export class CatalogPage {
    */
   protected onStatusChanged(value: CatalogStatus | ''): void {
     this.statusFilter.set(value);
+    void this.syncUrl();
     void this.reload();
   }
 
@@ -205,6 +249,7 @@ export class CatalogPage {
   protected clearFilters(): void {
     this.searchTerm.set('');
     this.statusFilter.set('');
+    void this.syncUrl();
     void this.reload();
   }
 
@@ -230,7 +275,7 @@ export class CatalogPage {
       this.dialog
         .open(CreateServiceDialog, { width: '34rem', maxWidth: '92vw' })
         .afterClosed()
-        .subscribe((created?: Service) => {
+        .subscribe((created) => {
           if (created) {
             this.notify('Servicio registrado.');
             void this.reload();
@@ -277,6 +322,58 @@ export class CatalogPage {
   }
 
   /**
+   * openEditDialog opens the dialog that modifies a record of the active
+   * catalog.
+   */
+  protected openEditDialog(row: CatalogRow): void {
+    const record = this.records().get(row.id);
+    if (!record) {
+      this.notify('El registro ya no está en el catálogo.');
+      void this.reload();
+      return;
+    }
+
+    this.dialog
+      .open(EditCatalogRecordDialog, { data: record, width: '34rem', maxWidth: '92vw' })
+      .afterClosed()
+      .subscribe((updated) => {
+        if (updated) {
+          this.notify('Registro actualizado.');
+          void this.reload();
+        }
+      });
+  }
+
+  /**
+   * openDeleteDialog opens the dialog that deletes a record of the active
+   * catalog.
+   */
+  protected openDeleteDialog(row: CatalogRow): void {
+    const record = this.records().get(row.id);
+    if (!record) {
+      this.notify('El registro ya no está en el catálogo.');
+      void this.reload();
+      return;
+    }
+
+    const data: DeletableCatalogRecord = {
+      kind: record.kind,
+      id: record.record.id,
+      name: record.record.name.value,
+    };
+
+    this.dialog
+      .open(DeleteCatalogRecordDialog, { data, width: '30rem', maxWidth: '92vw' })
+      .afterClosed()
+      .subscribe((deleted) => {
+        if (deleted) {
+          this.notify('Registro borrado.');
+          void this.reload();
+        }
+      });
+  }
+
+  /**
    * reload brings the first page of the active catalog.
    */
   private async reload(): Promise<void> {
@@ -302,12 +399,8 @@ export class CatalogPage {
           status: status || undefined,
           cursor: cursor ?? undefined,
         });
-        this.serviceNames.clear();
-        for (const service of page.items) {
-          this.serviceNames.set(service.id, service.name.value);
-        }
         this.publish(
-          page.items.map((service) => this.toServiceRow(service)),
+          page.items.map((service) => ({ kind: 'service', record: service }) as const),
           page.nextCursor,
           append,
         );
@@ -322,7 +415,7 @@ export class CatalogPage {
           cursor: cursor ?? undefined,
         });
         this.publish(
-          page.items.map((unit) => this.toWorkUnitRow(unit)),
+          page.items.map((unit) => ({ kind: 'work-unit', record: unit }) as const),
           page.nextCursor,
           append,
         );
@@ -336,7 +429,7 @@ export class CatalogPage {
           cursor: cursor ?? undefined,
         });
         this.publish(
-          page.items.map((position) => this.toPositionRow(position)),
+          page.items.map((position) => ({ kind: 'position', record: position }) as const),
           page.nextCursor,
           append,
         );
@@ -349,7 +442,7 @@ export class CatalogPage {
         cursor: cursor ?? undefined,
       });
       this.publish(
-        page.items.map((regime) => this.toRegimeRow(regime)),
+        page.items.map((regime) => ({ kind: 'regime', record: regime }) as const),
         page.nextCursor,
         append,
       );
@@ -363,9 +456,12 @@ export class CatalogPage {
   /**
    * loadServiceNames keeps the names of the services, so the listing of the
    * work units can show the service of every unit.
+   *
+   * The list carries the inactive services too, because a work unit can
+   * belong to a service that was disabled after its creation.
    */
   private async loadServiceNames(): Promise<void> {
-    const page = await this.listServices.execute({ status: 'ACTIVE', limit: 100 });
+    const page = await this.listServices.execute({ limit: 100 });
     this.serviceNames.clear();
     for (const service of page.items) {
       this.serviceNames.set(service.id, service.name.value);
@@ -375,72 +471,83 @@ export class CatalogPage {
   /**
    * publish stores the page that was read.
    */
-  private publish(rows: readonly CatalogRow[], nextCursor: string | null, append: boolean): void {
+  private publish(
+    records: readonly EditableCatalogRecord[],
+    nextCursor: string | null,
+    append: boolean,
+  ): void {
+    const rows = records.map((record) => this.toRow(record));
     this.rows.set(append ? [...this.rows(), ...rows] : rows);
+
+    const entries = new Map(records.map((record) => [record.record.id, record]));
+    this.records.set(append ? new Map([...this.records(), ...entries]) : entries);
+
     this.nextCursor.set(nextCursor);
   }
 
-  private toServiceRow(service: Service): CatalogRow {
-    return {
-      id: service.id,
-      code: null,
-      name: service.name.value,
-      description: service.description?.value ?? null,
-      reference: null,
-      status: service.status,
-    };
+  /**
+   * toRow presents a record of the catalog in the table.
+   */
+  private toRow(record: EditableCatalogRecord): CatalogRow {
+    switch (record.kind) {
+      case 'service':
+        return {
+          id: record.record.id,
+          code: null,
+          name: record.record.name.value,
+          description: record.record.description?.value ?? null,
+          reference: null,
+          status: record.record.status,
+        };
+      case 'position':
+        return {
+          id: record.record.id,
+          code: null,
+          name: record.record.name.value,
+          description: record.record.description?.value ?? null,
+          reference: null,
+          status: record.record.status,
+        };
+      case 'regime':
+        return {
+          id: record.record.id,
+          code: null,
+          name: record.record.name.value,
+          description: record.record.description?.value ?? null,
+          reference: null,
+          status: record.record.status,
+        };
+      case 'work-unit':
+        return {
+          id: record.record.id,
+          code: record.record.code.value,
+          name: record.record.name.value,
+          description: record.record.description?.value ?? null,
+          reference: this.serviceNames.get(record.record.serviceId) ?? null,
+          status: record.record.status,
+        };
+    }
   }
 
-  private toWorkUnitRow(unit: {
-    id: string;
-    code: { value: string };
-    name: { value: string };
-    description: { value: string } | null;
-    serviceId: string;
-    status: CatalogStatus;
-  }): CatalogRow {
-    return {
-      id: unit.id,
-      code: unit.code.value,
-      name: unit.name.value,
-      description: unit.description?.value ?? null,
-      reference: this.serviceNames.get(unit.serviceId) ?? null,
-      status: unit.status,
-    };
+  /**
+   * syncUrl writes the view and the filter of the listing in the address of
+   * the browser, so the worker finds the same listing after a reload.
+   */
+  private syncUrl(): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        vista: this.activeTab(),
+        estado: this.statusFilter() || null,
+      },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   }
 
-  private toPositionRow(position: {
-    id: string;
-    name: { value: string };
-    description: { value: string } | null;
-    status: CatalogStatus;
-  }): CatalogRow {
-    return {
-      id: position.id,
-      code: null,
-      name: position.name.value,
-      description: position.description?.value ?? null,
-      reference: null,
-      status: position.status,
-    };
-  }
-
-  private toRegimeRow(regime: {
-    id: string;
-    name: { value: string };
-    description: { value: string } | null;
-    status: CatalogStatus;
-  }): CatalogRow {
-    return {
-      id: regime.id,
-      code: null,
-      name: regime.name.value,
-      description: regime.description?.value ?? null,
-      reference: null,
-      status: regime.status,
-    };
-  }
-
+  /**
+   * describe turns a failure into the message the interfaces show.
+   */
   private describe(error: unknown): string {
     if (error instanceof CatalogApiError) {
       return error.detail;
@@ -448,6 +555,9 @@ export class CatalogPage {
     return 'No se pudo cargar el catálogo.';
   }
 
+  /**
+   * notify shows the outcome of an action.
+   */
   private notify(message: string): void {
     this.snackBar.open(message, 'Cerrar', { duration: 4000 });
   }

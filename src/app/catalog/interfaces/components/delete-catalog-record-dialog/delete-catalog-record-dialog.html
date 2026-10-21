@@ -1,0 +1,27 @@
+<h2 mat-dialog-title>Borrar {{ label() }}</h2>
+
+<mat-dialog-content>
+  <p class="dialog-description">
+    Vas a borrar <strong>{{ data.name }}</strong
+    >. El registro sale del catálogo y no se puede recuperar. Si solo necesitas desactivarlo, edita
+    el registro y cambia su estado a inactivo.
+  </p>
+
+  @if (errorMessage(); as message) {
+    <p class="dialog-error" role="alert">{{ message }}</p>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="dialog-actions">
+  <button matButton type="button" (click)="cancel()">Cancelar</button>
+  <button
+    matButton="filled"
+    type="button"
+    class="danger-action"
+    [disabled]="deleting()"
+    (click)="confirm()"
+  >
+    <mat-icon aria-hidden="true">delete</mat-icon>
+    {{ deleting() ? 'Borrando…' : 'Borrar' }}
+  </button>
+</mat-dialog-actions>

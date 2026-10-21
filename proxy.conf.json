@@ -3,10 +3,5 @@
     "target": "http://localhost:8081",
     "secure": false,
     "changeOrigin": true
-  },
-  "/health": {
-    "target": "http://localhost:8081",
-    "secure": false,
-    "changeOrigin": true
   }
 }

@@ -1,0 +1,107 @@
+<h2 mat-dialog-title>Editar {{ label() }}</h2>
+
+<mat-dialog-content>
+  <p class="dialog-description">
+    Los cambios se guardan en el catálogo. El estado del registro se puede mover entre activo e
+    inactivo.
+  </p>
+
+  @if (errorMessage(); as message) {
+    <p class="dialog-error" role="alert">{{ message }}</p>
+  }
+
+  <form class="dialog-form" id="catalog-edit-form" [formGroup]="form" (ngSubmit)="submit()">
+    @if (isWorkUnit) {
+      <mat-form-field appearance="outline">
+        <mat-label>Código de unidad</mat-label>
+        <input
+          matInput
+          formControlName="code"
+          maxlength="40"
+          required
+          autocomplete="off"
+          placeholder="OB-014"
+        />
+        @if (form.controls.code.hasError('required')) {
+          <mat-error>El código es obligatorio.</mat-error>
+        }
+        @if (form.controls.code.hasError('minlength')) {
+          <mat-error>El código debe tener al menos 2 caracteres.</mat-error>
+        }
+        @if (form.controls.code.hasError('maxlength')) {
+          <mat-error>El código no puede superar los 40 caracteres.</mat-error>
+        }
+        @if (form.controls.code.hasError('pattern')) {
+          <mat-error>El código solo admite letras, números y guiones.</mat-error>
+        }
+      </mat-form-field>
+    }
+
+    <mat-form-field appearance="outline">
+      <mat-label>Nombre</mat-label>
+      <input matInput formControlName="name" maxlength="120" required autocomplete="off" />
+      @if (form.controls.name.hasError('required')) {
+        <mat-error>El nombre es obligatorio.</mat-error>
+      }
+      @if (form.controls.name.hasError('minlength')) {
+        <mat-error>El nombre debe tener al menos 2 caracteres.</mat-error>
+      }
+      @if (form.controls.name.hasError('maxlength')) {
+        <mat-error>El nombre no puede superar los 120 caracteres.</mat-error>
+      }
+    </mat-form-field>
+
+    @if (isWorkUnit) {
+      <mat-form-field appearance="outline">
+        <mat-label>Servicio</mat-label>
+        <mat-select formControlName="serviceId" required>
+          @if (loadingServices()) {
+            <mat-option value="" disabled>Cargando servicios…</mat-option>
+          }
+          @for (service of services(); track service.id) {
+            <mat-option [value]="service.id">
+              {{ service.name.value }}{{ service.status === 'ACTIVE' ? '' : ' (inactivo)' }}
+            </mat-option>
+          }
+        </mat-select>
+        @if (form.controls.serviceId.hasError('required')) {
+          <mat-error>La unidad de trabajo pertenece a un servicio.</mat-error>
+        }
+        @if (servicesError(); as message) {
+          <mat-error>{{ message }}</mat-error>
+        }
+      </mat-form-field>
+    }
+
+    <mat-form-field appearance="outline">
+      <mat-label>Descripción (opcional)</mat-label>
+      <textarea matInput formControlName="description" rows="3" maxlength="500"></textarea>
+      @if (form.controls.description.hasError('maxlength')) {
+        <mat-error>La descripción no puede superar los 500 caracteres.</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Estado</mat-label>
+      <mat-select formControlName="status" required>
+        <mat-option value="ACTIVE">Activo</mat-option>
+        <mat-option value="INACTIVE">Inactivo</mat-option>
+      </mat-select>
+      @if (form.controls.status.hasError('required')) {
+        <mat-error>El registro necesita un estado.</mat-error>
+      }
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="dialog-actions">
+  <button matButton type="button" (click)="cancel()">Cancelar</button>
+  <button
+    matButton="filled"
+    type="submit"
+    form="catalog-edit-form"
+    [disabled]="submitting() || form.invalid"
+  >
+    {{ submitting() ? 'Guardando…' : 'Guardar cambios' }}
+  </button>
+</mat-dialog-actions>

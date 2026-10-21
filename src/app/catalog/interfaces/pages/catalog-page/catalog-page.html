@@ -58,9 +58,9 @@
       <mat-form-field appearance="outline" class="status-field">
         <mat-label>Estado</mat-label>
         <mat-select [ngModel]="statusFilter()" (ngModelChange)="onStatusChanged($event)">
-          <mat-option value="">Todos los estados</mat-option>
-          <mat-option value="ACTIVE">Activo</mat-option>
-          <mat-option value="INACTIVE">Inactivo</mat-option>
+          <mat-option value="">Todos</mat-option>
+          <mat-option value="ACTIVE">Activos</mat-option>
+          <mat-option value="INACTIVE">Inactivos</mat-option>
         </mat-select>
       </mat-form-field>
 
@@ -80,6 +80,8 @@
       [columns]="activeTabDefinition().columns"
       [rows]="rows()"
       [loading]="loading()"
+      (editRequested)="openEditDialog($event)"
+      (deleteRequested)="openDeleteDialog($event)"
     />
 
     @if (nextCursor()) {

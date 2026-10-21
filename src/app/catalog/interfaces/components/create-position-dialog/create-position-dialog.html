@@ -37,7 +37,12 @@
 
 <mat-dialog-actions align="end" class="dialog-actions">
   <button matButton type="button" (click)="cancel()">Cancelar</button>
-  <button matButton="filled" type="submit" form="catalog-position-form" [disabled]="submitting()">
+  <button
+    matButton="filled"
+    type="submit"
+    form="catalog-position-form"
+    [disabled]="submitting() || form.invalid"
+  >
     {{ submitting() ? 'Registrando…' : 'Registrar Cargo' }}
   </button>
 </mat-dialog-actions>

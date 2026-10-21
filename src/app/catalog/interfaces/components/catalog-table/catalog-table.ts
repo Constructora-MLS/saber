@@ -1,4 +1,7 @@
-import { Component, input } from '@angular/core';
+import { Component, input, output } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
 import {
   CatalogStatus,
   catalogStatusLabel,
@@ -42,8 +45,12 @@ export interface CatalogRow {
 
 /**
  * CatalogTable shows the records of a catalog.
+ *
+ * The table is presentational: it renders the records and it announces the
+ * intentions of the worker through its outputs. It never talks to the API.
  */
 @Component({
+  imports: [MatButtonModule, MatIconModule, MatMenuModule],
   selector: 'app-catalog-table',
   styleUrl: './catalog-table.scss',
   templateUrl: './catalog-table.html',
@@ -60,11 +67,12 @@ export class CatalogTable {
   /** The message shown when the catalog has no records. */
   readonly emptyMessage = input('Todavía no hay registros en este catálogo.');
 
+  /** The record whose edition was requested. */
+  readonly editRequested = output<CatalogRow>();
+  /** The record whose deletion was requested. */
+  readonly deleteRequested = output<CatalogRow>();
+
   protected statusLabel(status: CatalogStatus): string {
     return catalogStatusLabel(status);
-  }
-
-  protected statusClass(status: CatalogStatus): string {
-    return status === 'ACTIVE' ? 'is-active' : 'is-inactive';
   }
 }

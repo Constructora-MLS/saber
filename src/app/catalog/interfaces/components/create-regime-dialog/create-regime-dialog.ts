@@ -5,6 +5,7 @@ import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { CreateRegimeCommandService } from '../../../application/command-services/catalog-command-services';
+import { CreateRegimeCommand } from '../../../application/commands/catalog-commands';
 import { CatalogValidationError } from '../../../domain/model/errors/catalog-errors';
 import { CatalogApiError } from '../../../infrastructure/http/catalog-api.error';
 
@@ -52,19 +53,28 @@ export class CreateRegimeDialog {
     this.submitting.set(true);
     this.errorMessage.set(null);
 
-    const { name, description } = this.form.getRawValue();
+    const command = this.toCommand(this.form.getRawValue());
 
     try {
-      const regime = await this.createRegime.execute({
-        name,
-        description: description.trim().length > 0 ? description : null,
-      });
+      const regime = await this.createRegime.execute(command);
       this.dialogRef.close(regime);
     } catch (error) {
       this.errorMessage.set(this.describe(error));
     } finally {
       this.submitting.set(false);
     }
+  }
+
+  /**
+   * toCommand transforms the values of the form into the command of the
+   * use case.
+   */
+  private toCommand(raw: { name: string; description: string }): CreateRegimeCommand {
+    const description = raw.description.trim();
+    return {
+      name: raw.name.trim(),
+      description: description.length > 0 ? description : null,
+    };
   }
 
   private describe(error: unknown): string {

@@ -157,6 +157,13 @@ html[data-theme='dark'] {
   --app-on-tertiary-container: var(--mat-sys-on-tertiary-container);
   --app-page-gutter: clamp(1.25rem, 4vw, 3.5rem);
 
+  /* Material Design 3 Expressive: the emphasized easing and the durations
+     of the design system drive the transitions of the surfaces. */
+  --app-motion-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
+  --app-motion-easing-emphasized-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --app-motion-duration-short: 200ms;
+  --app-motion-duration-medium: 300ms;
+
   --rrhh-surface: var(--mat-sys-surface);
   --rrhh-outline: var(--mat-sys-outline-variant);
   --rrhh-divider: color-mix(in srgb, var(--mat-sys-on-surface) 8%, transparent);

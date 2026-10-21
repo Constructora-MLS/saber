@@ -10,6 +10,10 @@
     <p class="dialog-error" role="alert">{{ message }}</p>
   }
 
+  @if (servicesError(); as message) {
+    <p class="dialog-error" role="alert">{{ message }}</p>
+  }
+
   <form class="dialog-form" id="catalog-work-unit-form" [formGroup]="form" (ngSubmit)="submit()">
     <mat-form-field appearance="outline">
       <mat-label>Código de unidad</mat-label>
@@ -36,16 +40,16 @@
     </mat-form-field>
 
     <mat-form-field appearance="outline">
-      <mat-label>Denominación</mat-label>
+      <mat-label>Nombre</mat-label>
       <input matInput formControlName="name" maxlength="120" required autocomplete="off" />
       @if (form.controls.name.hasError('required')) {
-        <mat-error>La denominación es obligatoria.</mat-error>
+        <mat-error>El nombre es obligatorio.</mat-error>
       }
       @if (form.controls.name.hasError('minlength')) {
-        <mat-error>La denominación debe tener al menos 2 caracteres.</mat-error>
+        <mat-error>El nombre debe tener al menos 2 caracteres.</mat-error>
       }
       @if (form.controls.name.hasError('maxlength')) {
-        <mat-error>La denominación no puede superar los 120 caracteres.</mat-error>
+        <mat-error>El nombre no puede superar los 120 caracteres.</mat-error>
       }
     </mat-form-field>
 
@@ -56,11 +60,16 @@
           <mat-option value="" disabled>Cargando servicios…</mat-option>
         }
         @for (service of services(); track service.id) {
-          <mat-option [value]="service.id">{{ service.name.value }}</mat-option>
+          <mat-option [value]="service.id">
+            {{ service.name.value }}{{ service.status === 'ACTIVE' ? '' : ' (inactivo)' }}
+          </mat-option>
         }
       </mat-select>
       @if (form.controls.serviceId.hasError('required')) {
         <mat-error>La unidad de trabajo pertenece a un servicio.</mat-error>
+      }
+      @if (!loadingServices() && services().length === 0) {
+        <mat-hint>Todavía no hay servicios registrados.</mat-hint>
       }
     </mat-form-field>
 
@@ -83,7 +92,12 @@
 
 <mat-dialog-actions align="end" class="dialog-actions">
   <button matButton type="button" (click)="cancel()">Cancelar</button>
-  <button matButton="filled" type="submit" form="catalog-work-unit-form" [disabled]="submitting()">
+  <button
+    matButton="filled"
+    type="submit"
+    form="catalog-work-unit-form"
+    [disabled]="submitting() || form.invalid"
+  >
     {{ submitting() ? 'Registrando…' : 'Registrar Unidad de Trabajo' }}
   </button>
 </mat-dialog-actions>

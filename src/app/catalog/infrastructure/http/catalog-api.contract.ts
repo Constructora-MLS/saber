@@ -92,6 +92,47 @@ export interface CreateWorkUnitRequest {
   readonly serviceId: string;
 }
 
+/**
+ * The body of the modification of a service.
+ *
+ * An absent field keeps the current value. An empty description removes
+ * the description of the record.
+ */
+export interface UpdateServiceRequest {
+  readonly name?: string;
+  readonly description?: string;
+  readonly status?: CatalogStatusResource;
+}
+
+/**
+ * The body of the modification of a position.
+ */
+export interface UpdatePositionRequest {
+  readonly name?: string;
+  readonly description?: string;
+  readonly status?: CatalogStatusResource;
+}
+
+/**
+ * The body of the modification of a regime.
+ */
+export interface UpdateRegimeRequest {
+  readonly name?: string;
+  readonly description?: string;
+  readonly status?: CatalogStatusResource;
+}
+
+/**
+ * The body of the modification of a work unit.
+ */
+export interface UpdateWorkUnitRequest {
+  readonly code?: string;
+  readonly name?: string;
+  readonly description?: string;
+  readonly serviceId?: string;
+  readonly status?: CatalogStatusResource;
+}
+
 /** The invalid field of a failed request. */
 export interface FieldErrorResource {
   readonly field?: string;
