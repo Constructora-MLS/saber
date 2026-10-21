@@ -11,6 +11,14 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'certified',
+    title: 'Certificados',
+    loadComponent: () =>
+      import('./certified/interfaces/pages/certified-page/certified-page').then(
+        (module) => module.CertifiedPage,
+      ),
+  },
+  {
     path: 'catalog',
     title: 'Catálogos',
     loadComponent: () =>

@@ -17,6 +17,7 @@ interface RrhhNavigationItem {
   templateUrl: './rrhh-sidebar.html',
   host: {
     '[class.is-collapsed]': 'isCollapsed()',
+    '[class.is-drawer-open]': 'isDrawerOpen()',
     '(document:keydown.escape)': 'onEscape($event)',
   },
 })
@@ -29,6 +30,8 @@ export class RrhhSidebar {
 
   protected readonly isCollapsed = signal(false);
   protected readonly isAppSwitcherOpen = signal(false);
+  protected readonly isCompact = signal(false);
+  protected readonly isDrawerOpen = signal(false);
 
   protected readonly applications: readonly AppSwitcherOption[] = [
     { label: 'Recursos Humanos', icon: 'groups', status: 'active', dividerAfter: true },
@@ -39,13 +42,49 @@ export class RrhhSidebar {
 
   protected readonly navigation: readonly RrhhNavigationItem[] = [
     { label: 'Personal', icon: 'badge', path: '/personal' },
-    { label: 'Certificados', icon: 'description', path: null },
+    { label: 'Certificados', icon: 'description', path: '/certified' },
     { label: 'Catálogos', icon: 'list_alt', path: '/catalog' },
   ];
+
+  constructor() {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const compactQuery = window.matchMedia('(max-width: 60rem)');
+    this.isCompact.set(compactQuery.matches);
+    compactQuery.addEventListener('change', (event) => {
+      this.isCompact.set(event.matches);
+      if (!event.matches) {
+        this.closeDrawer();
+      }
+    });
+  }
+
+  protected menuLabel(): string {
+    if (this.isCompact()) {
+      return this.isDrawerOpen() ? 'Cerrar menú' : 'Abrir menú';
+    }
+
+    return this.isCollapsed() ? 'Expandir menú lateral' : 'Minimizar menú lateral';
+  }
+
+  protected toggleMenu(): void {
+    if (this.isCompact()) {
+      this.isDrawerOpen.update((isOpen) => !isOpen);
+      return;
+    }
+
+    this.toggleCollapsed();
+  }
 
   protected toggleCollapsed(): void {
     this.isCollapsed.update((isCollapsed) => !isCollapsed);
     this.collapsedChange.emit(this.isCollapsed());
+  }
+
+  protected closeDrawer(): void {
+    this.isDrawerOpen.set(false);
   }
 
   protected toggleAppSwitcher(): void {
@@ -65,6 +104,7 @@ export class RrhhSidebar {
   protected onEscape(event: Event): void {
     if (event instanceof KeyboardEvent && event.key === 'Escape') {
       this.closeAppSwitcher();
+      this.closeDrawer();
     }
   }
 }

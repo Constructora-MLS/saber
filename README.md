@@ -25,20 +25,3 @@ bun run start   # servidor de desarrollo
 bun run build   # compilación de producción
 bun run watch   # compilación de desarrollo en modo watch
 ```
-
-## Estructura inicial
-
-```text
-src/
-├── app/
-│   ├── personal/interfaces/pages/personal-page/  # página de Personal
-│   ├── catalog/interfaces/pages/catalog-page/    # página de Catálogos
-│   ├── shared/interfaces/components/
-│   │   ├── app-switcher/                # selector de aplicaciones
-│   │   ├── icons/mls/                   # icono MLS reutilizable
-│   │   └── rrhh-sidebar/                # menú lateral de Recursos Humanos
-│   ├── app.config.ts                     # configuración standalone
-│   └── app.routes.ts                     # rutas lazy-loaded
-├── index.html
-└── styles.scss                           # tema M3, tokens y estilos globales
-```
