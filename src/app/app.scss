@@ -7,6 +7,7 @@
   display: grid;
   grid-template-columns: 16rem minmax(0, 1fr);
   min-height: 100vh;
+  transition: grid-template-columns 220ms cubic-bezier(0.2, 0, 0, 1);
 }
 
 .app-shell.is-collapsed {
@@ -15,10 +16,4 @@
 
 .app-content {
   min-width: 0;
-}
-
-@media (max-width: 60rem) {
-  .app-shell {
-    grid-template-columns: 4.25rem minmax(0, 1fr);
-  }
 }

@@ -14,7 +14,6 @@
         "@angular/platform-browser": "^22.2.0",
         "@angular/router": "^22.2.0",
         "@fontsource-variable/roboto-flex": "^5.3.0",
-        "@fontsource/material-icons": "^5.3.0",
         "@fontsource/material-symbols-rounded": "^5.3.9",
         "rxjs": "~7.8.0",
         "tslib": "^2.3.0",
@@ -162,8 +161,6 @@
     "@exodus/bytes": ["@exodus/bytes@1.16.0", "", { "peerDependencies": { "@noble/hashes": "^1.8.0 || ^2.0.0" }, "optionalPeers": ["@noble/hashes"] }, "sha512-IcpW84uEn3N7ETtNZMlxKhfl6Pec8rUNGOTBtWbK1FKhJxIFAptZyVrvVRVBimAJxJCgc3PxepxkdWWG4DVzfA=="],
 
     "@fontsource-variable/roboto-flex": ["@fontsource-variable/roboto-flex@5.3.0", "", {}, "sha512-bOxckUy0qXNRjhV6e4pcHGSvptix4ZRD1uaj5Za8h+p3qrb2GL4U4TQdpVmPSy0SmqwldfD+JJqEKdF68EyiAw=="],
-
-    "@fontsource/material-icons": ["@fontsource/material-icons@5.3.0", "", {}, "sha512-nCpzNTsS5KpIqWijK259rPOTaZXNJlRfTiVRDNguKwfSdoZL/O9zIvPs+3K2eeRrNW+fVJWMO+n3JQoi9DN9Tw=="],
 
     "@fontsource/material-symbols-rounded": ["@fontsource/material-symbols-rounded@5.3.9", "", {}, "sha512-YjTHbXXblQwjtL7qZ4F+7//oirb+mM26FCUkifP5NCpJRIybdobaPn4jhKFjTrPrqNrEeM3c4EhhN5tiaj38uw=="],
 

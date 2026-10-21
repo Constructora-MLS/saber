@@ -1,10 +1,7 @@
 import { Component, input, output, signal } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import {
-  AppSwitcher,
-  AppSwitcherOption,
-} from '../app-switcher/app-switcher';
+import { AppSwitcher, AppSwitcherOption } from '../app-switcher/app-switcher';
 import { MlsIcon } from '../icons/mls-icon/mls-icon';
 
 interface RrhhNavigationItem {
@@ -41,7 +38,7 @@ export class RrhhSidebar {
   ];
 
   protected readonly navigation: readonly RrhhNavigationItem[] = [
-    { label: 'Personal', icon: 'groups', path: '/personal' },
+    { label: 'Personal', icon: 'badge', path: '/personal' },
     { label: 'Certificados', icon: 'description', path: null },
     { label: 'Catálogos', icon: 'list_alt', path: '/catalog' },
   ];
