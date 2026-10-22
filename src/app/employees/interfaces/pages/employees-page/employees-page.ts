@@ -103,6 +103,16 @@ export class EmployeesPage {
       : 'Registra al primer trabajador para verlo en esta lista.',
   );
 
+  /**
+   * The emblem of the state shown when the listing has no workers.
+   *
+   * The emblem is the one of the worker, never the one of the catalog: the
+   * state belongs to the personal of the platform.
+   */
+  protected readonly emptyIcon = computed(() =>
+    this.searchTerm().trim().length > 0 ? 'person_search' : 'group_off',
+  );
+
   constructor() {
     this.route.queryParamMap.subscribe((params) => {
       const requestedSearch = params.get('buscar') ?? '';

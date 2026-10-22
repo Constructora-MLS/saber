@@ -60,6 +60,8 @@ export class EmployeeTable {
   readonly emptyTitle = input('Todavía no hay trabajadores registrados');
   /** The supporting text shown when the listing has no workers. */
   readonly emptyMessage = input('Registra al primer trabajador para verlo en esta lista.');
+  /** The emblem shown when the listing has no workers. */
+  readonly emptyIcon = input('group_off');
   /** The label of the action that offers to register a worker. */
   readonly emptyActionLabel = input<string | null>(null);
 

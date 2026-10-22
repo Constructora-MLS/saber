@@ -59,6 +59,7 @@
       [errorMessage]="loadFailure()?.message ?? null"
       [emptyTitle]="emptyTitle()"
       [emptyMessage]="emptyMessage()"
+      [emptyIcon]="emptyIcon()"
       [emptyActionLabel]="searchTerm().trim() ? null : 'Registrar trabajador'"
       (retryRequested)="retry()"
       (createRequested)="openCreateDialog()"
