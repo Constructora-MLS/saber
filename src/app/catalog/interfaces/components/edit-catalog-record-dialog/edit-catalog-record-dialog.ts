@@ -94,7 +94,6 @@ export class EditCatalogRecordDialog implements OnInit {
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
   protected readonly form = this.formBuilder.nonNullable.group({
-    code: [''],
     name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(120)]],
     description: ['', [Validators.maxLength(500)]],
     // The identifier of the chosen service. It is the only mandatory field
@@ -112,7 +111,7 @@ export class EditCatalogRecordDialog implements OnInit {
   protected readonly submitting = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
 
-  /** Whether the record is a work unit, the only one with a code and a service. */
+  /** Whether the record is a work unit, the only one that belongs to a service. */
   protected readonly isWorkUnit = this.data.kind === 'work-unit';
 
   /** The service of the work unit, even when it is not active. */
@@ -242,7 +241,6 @@ export class EditCatalogRecordDialog implements OnInit {
    * apply sends the changes of the form to the use case of the record.
    */
   private async apply(raw: {
-    code: string;
     name: string;
     description: string;
     serviceId: string;
@@ -288,7 +286,6 @@ export class EditCatalogRecordDialog implements OnInit {
 
     const workUnit = await this.updateWorkUnit.execute({
       uuid: data.record.id,
-      code: raw.code,
       name: raw.name,
       description: raw.description,
       ...(serviceId ? { serviceId } : {}),
@@ -305,14 +302,7 @@ export class EditCatalogRecordDialog implements OnInit {
     if (!this.isWorkUnit) {
       return;
     }
-    this.form.controls.code.setValidators([
-      Validators.required,
-      Validators.minLength(2),
-      Validators.maxLength(40),
-      Validators.pattern(/^[A-Za-z0-9-]+$/),
-    ]);
     this.form.controls.serviceId.setValidators([Validators.required]);
-    this.form.controls.code.updateValueAndValidity();
     this.form.controls.serviceId.updateValueAndValidity();
   }
 
@@ -324,7 +314,6 @@ export class EditCatalogRecordDialog implements OnInit {
 
     if (data.kind === 'work-unit') {
       this.form.patchValue({
-        code: data.record.code.value,
         name: data.record.name.value,
         description: data.record.description?.value ?? '',
         serviceId: data.record.serviceId,

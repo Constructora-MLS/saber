@@ -22,7 +22,6 @@ import {
 } from '../commands/catalog-commands';
 import { CatalogName } from '../../domain/model/value-objects/catalog-name';
 import { Description } from '../../domain/model/value-objects/description';
-import { UnitCode } from '../../domain/model/value-objects/unit-code';
 import {
   POSITION_REPOSITORY,
   REGIME_REPOSITORY,
@@ -256,14 +255,12 @@ export class UpdateWorkUnitCommandService {
   private readonly repository = inject(WORK_UNIT_REPOSITORY);
 
   async execute(command: UpdateWorkUnitCommand): Promise<WorkUnit> {
-    const code = UnitCode.create(command.code);
     const name = CatalogName.create(command.name);
     const description = this.description(command.description);
     const serviceId = command.serviceId?.trim();
 
     return this.repository.updateWorkUnit({
       id: command.uuid,
-      code,
       name,
       description,
       ...(serviceId ? { serviceId } : {}),

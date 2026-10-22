@@ -6,7 +6,6 @@ import { WorkUnit } from '../model/aggregates/work-unit';
 import { CatalogName } from '../model/value-objects/catalog-name';
 import { CatalogStatus, UpdatableCatalogStatus } from '../model/value-objects/catalog-status';
 import { Description } from '../model/value-objects/description';
-import { UnitCode } from '../model/value-objects/unit-code';
 
 /**
  * CatalogPage is a page of a listing.
@@ -130,8 +129,6 @@ export interface RegimeChanges {
 export interface WorkUnitChanges {
   /** The identifier of the work unit. */
   readonly id: string;
-  /** The new code of the work unit. */
-  readonly code: UnitCode;
   /** The new name of the work unit. */
   readonly name: CatalogName;
   /** The new description of the work unit. A null description removes it. */

@@ -241,7 +241,6 @@ export class CatalogHttpGateway
    */
   async updateWorkUnit(changes: WorkUnitChanges): Promise<WorkUnit> {
     const request: UpdateWorkUnitRequest = {
-      code: changes.code.value,
       name: changes.name.value,
       description: changes.description ? changes.description.value : '',
       ...(changes.serviceId ? { serviceId: changes.serviceId } : {}),

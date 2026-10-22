@@ -125,8 +125,6 @@ export interface DeleteRegimeCommand {
 export interface UpdateWorkUnitCommand {
   /** The identifier of the work unit. */
   readonly uuid: string;
-  /** The new code of the work unit. */
-  readonly code: string;
   /** The new name of the work unit. */
   readonly name: string;
   /** The new description of the work unit. An empty text removes it. */
