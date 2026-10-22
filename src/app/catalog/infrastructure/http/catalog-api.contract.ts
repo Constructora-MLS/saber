@@ -14,6 +14,10 @@ export interface ServiceResource {
   readonly name: string;
   readonly description?: string;
   readonly status: CatalogStatusResource;
+  /** The moment the record was registered, in the RFC 3339 format. */
+  readonly createdAt?: string;
+  /** The moment the record was changed for the last time, in the RFC 3339 format. */
+  readonly updatedAt?: string;
 }
 
 /** The representation of a position. */
@@ -22,6 +26,10 @@ export interface PositionResource {
   readonly name: string;
   readonly description?: string;
   readonly status: CatalogStatusResource;
+  /** The moment the record was registered, in the RFC 3339 format. */
+  readonly createdAt?: string;
+  /** The moment the record was changed for the last time, in the RFC 3339 format. */
+  readonly updatedAt?: string;
 }
 
 /** The representation of a regime. */
@@ -30,6 +38,10 @@ export interface RegimeResource {
   readonly name: string;
   readonly description?: string;
   readonly status: CatalogStatusResource;
+  /** The moment the record was registered, in the RFC 3339 format. */
+  readonly createdAt?: string;
+  /** The moment the record was changed for the last time, in the RFC 3339 format. */
+  readonly updatedAt?: string;
 }
 
 /** The representation of a work unit. */
@@ -42,6 +54,10 @@ export interface WorkUnitResource {
   /** The name of the service the work unit belongs to. */
   readonly serviceName: string;
   readonly status: CatalogStatusResource;
+  /** The moment the record was registered, in the RFC 3339 format. */
+  readonly createdAt?: string;
+  /** The moment the record was changed for the last time, in the RFC 3339 format. */
+  readonly updatedAt?: string;
 }
 
 /** A page of services. */

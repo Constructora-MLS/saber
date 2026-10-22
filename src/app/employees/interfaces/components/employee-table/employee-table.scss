@@ -1,0 +1,177 @@
+:host {
+  display: block;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.employee-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.employee-table thead th {
+  padding: 0.75rem 1rem;
+  background: var(--app-surface-raised);
+  color: var(--app-text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.employee-table td,
+.employee-table tbody th {
+  padding: 0.9rem 1rem;
+  border-top: 1px solid var(--rrhh-divider);
+  color: var(--mat-sys-on-surface);
+  font-size: 0.92rem;
+  vertical-align: middle;
+}
+
+.employee-table tbody tr {
+  transition: background-color var(--app-motion-duration-short) var(--app-motion-easing-emphasized);
+}
+
+.employee-table tbody tr:hover {
+  background: var(--mat-sys-surface-container-low);
+}
+
+.table-message td {
+  color: var(--app-text-muted);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+/* The states own their padding, so the table does not frame them with the
+   cells of the records. */
+.table-state > td {
+  padding: 0;
+  border-top: 0;
+}
+
+.table-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+}
+
+.cell-name {
+  font-weight: 650;
+  text-align: left;
+}
+
+.cell-dni {
+  font-family: 'Roboto Mono', ui-monospace, monospace;
+  font-size: 0.85rem;
+  color: var(--app-text-muted);
+}
+
+.cell-regime {
+  color: var(--mat-sys-on-surface);
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.status-badge.is-active {
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+}
+
+.status-badge:not(.is-active) {
+  background: var(--app-surface-raised);
+  color: var(--app-text-muted);
+}
+
+.cell-actions {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+}
+
+/* The label of a column is only shown when the table becomes a list of
+   cards, so the screen readers never read it twice. */
+.cell-label {
+  display: none;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* On a narrow screen the table becomes a list of cards: every record shows
+   its fields with the name of the column. */
+@media (max-width: 40rem) {
+  .employee-table thead {
+    display: none;
+  }
+
+  .employee-table,
+  .employee-table tbody,
+  .employee-table tr,
+  .employee-table td,
+  .employee-table tbody th {
+    display: block;
+  }
+
+  .employee-table tbody tr {
+    padding: 0.75rem 1rem 0.9rem;
+    border-top: 1px solid var(--rrhh-divider);
+  }
+
+  .employee-table td,
+  .employee-table tbody th {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.35rem 0;
+    border-top: 0;
+  }
+
+  .employee-table tbody th.cell-name {
+    display: block;
+    padding-bottom: 0.5rem;
+    font-size: 1rem;
+  }
+
+  /* The name is the title of the card, so it does not repeat the name of
+     the column. */
+  .employee-table tbody th.cell-name .cell-label {
+    display: none;
+  }
+
+  .cell-label {
+    display: inline-block;
+    color: var(--app-text-muted);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .employee-table td.cell-actions {
+    justify-content: flex-end;
+    width: auto;
+    padding-top: 0.25rem;
+  }
+}

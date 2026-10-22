@@ -1,13 +1,13 @@
 import { Routes } from '@angular/router';
 
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'personal' },
+  { path: '', pathMatch: 'full', redirectTo: 'employees' },
   {
-    path: 'personal',
+    path: 'employees',
     title: 'Personal',
     loadComponent: () =>
-      import('./personal/interfaces/pages/personal-page/personal-page').then(
-        (module) => module.PersonalPage,
+      import('./employees/interfaces/pages/employees-page/employees-page').then(
+        (module) => module.EmployeesPage,
       ),
   },
   {
@@ -26,5 +26,5 @@ export const routes: Routes = [
         (module) => module.CatalogPage,
       ),
   },
-  { path: '**', redirectTo: 'personal' },
+  { path: '**', redirectTo: 'employees' },
 ];

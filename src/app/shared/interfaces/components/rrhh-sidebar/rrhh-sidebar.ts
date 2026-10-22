@@ -41,7 +41,7 @@ export class RrhhSidebar {
   ];
 
   protected readonly navigation: readonly RrhhNavigationItem[] = [
-    { label: 'Personal', icon: 'badge', path: '/personal' },
+    { label: 'Personal', icon: 'badge', path: '/employees' },
     { label: 'Certificados', icon: 'description', path: '/certified' },
     { label: 'Catálogo', icon: 'list_alt', path: '/catalog' },
   ];

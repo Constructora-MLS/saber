@@ -1,0 +1,77 @@
+// Package commandservices holds the use cases that change the state of the
+// Employees bounded context.
+//
+// Every use case validates the intent of the command against the invariants
+// of the domain before it reaches the registry.
+// package commandservices
+
+import { inject, Injectable } from '@angular/core';
+import {
+  CreateEmployeeCommand,
+  DeleteEmployeeCommand,
+  UpdateEmployeeCommand,
+} from '../commands/employee-commands';
+import { Employee } from '../../domain/model/aggregates/employee';
+import { BirthDate } from '../../domain/model/value-objects/birth-date';
+import { DNI } from '../../domain/model/value-objects/dni';
+import { EmployeeId } from '../../domain/model/value-objects/employee-id';
+import { PersonName } from '../../domain/model/value-objects/person-name';
+import { RegimeId } from '../../domain/model/value-objects/regime-id';
+import {
+  EMPLOYEE_REPOSITORY,
+  EmployeeChanges,
+  NewEmployee,
+} from '../../domain/repositories/employee-repositories';
+
+/**
+ * CreateEmployeeCommandService registers a worker of the platform.
+ */
+@Injectable({ providedIn: 'root' })
+export class CreateEmployeeCommandService {
+  private readonly repository = inject(EMPLOYEE_REPOSITORY);
+
+  async execute(command: CreateEmployeeCommand): Promise<Employee> {
+    const worker: NewEmployee = {
+      firstName: PersonName.create(command.firstName),
+      lastName: PersonName.create(command.lastName),
+      dni: DNI.create(command.dni),
+      regimeId: RegimeId.create(command.regimeId),
+      birthDate: BirthDate.create(command.birthDate),
+    };
+
+    return this.repository.createEmployee(worker);
+  }
+}
+
+/**
+ * UpdateEmployeeCommandService modifies the data of a worker.
+ */
+@Injectable({ providedIn: 'root' })
+export class UpdateEmployeeCommandService {
+  private readonly repository = inject(EMPLOYEE_REPOSITORY);
+
+  async execute(command: UpdateEmployeeCommand): Promise<Employee> {
+    const changes: EmployeeChanges = {
+      id: EmployeeId.create(command.uuid),
+      firstName: PersonName.create(command.firstName),
+      lastName: PersonName.create(command.lastName),
+      dni: DNI.create(command.dni),
+      regimeId: RegimeId.create(command.regimeId),
+      birthDate: BirthDate.create(command.birthDate),
+    };
+
+    return this.repository.updateEmployee(changes);
+  }
+}
+
+/**
+ * DeleteEmployeeCommandService logically deletes a worker.
+ */
+@Injectable({ providedIn: 'root' })
+export class DeleteEmployeeCommandService {
+  private readonly repository = inject(EMPLOYEE_REPOSITORY);
+
+  async execute(command: DeleteEmployeeCommand): Promise<void> {
+    await this.repository.deleteEmployee(EmployeeId.create(command.uuid));
+  }
+}

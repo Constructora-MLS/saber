@@ -1,0 +1,120 @@
+<h2 mat-dialog-title>Registrar Trabajador</h2>
+
+<mat-dialog-content>
+  <p class="dialog-description">
+    Completa los datos requeridos para registrar al trabajador en Personal.
+  </p>
+
+  @if (errorMessage(); as message) {
+    <p class="dialog-error" role="alert">{{ message }}</p>
+  }
+
+  <form class="dialog-form" id="register-employee-form" [formGroup]="form" (ngSubmit)="submit()">
+    <div class="dialog-fields">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>DNI</mat-label>
+        <input
+          matInput
+          formControlName="dni"
+          inputmode="numeric"
+          maxlength="8"
+          autocomplete="off"
+          required
+        />
+        @if (form.controls.dni.hasError('required')) {
+          <mat-error>El DNI es obligatorio.</mat-error>
+        }
+        @if (form.controls.dni.hasError('pattern')) {
+          <mat-error>El DNI debe tener 8 dígitos.</mat-error>
+        }
+        <mat-hint>8 dígitos, único.</mat-hint>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Nombres</mat-label>
+        <input matInput formControlName="firstName" maxlength="100" autocomplete="given-name" required />
+        @if (form.controls.firstName.hasError('required')) {
+          <mat-error>Los nombres son obligatorios.</mat-error>
+        }
+        @if (form.controls.firstName.hasError('minlength')) {
+          <mat-error>Los nombres deben tener al menos 2 caracteres.</mat-error>
+        }
+        <mat-hint>Solo letras y espacios.</mat-hint>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Apellidos</mat-label>
+        <input
+          matInput
+          formControlName="lastName"
+          maxlength="100"
+          autocomplete="family-name"
+          required
+        />
+        @if (form.controls.lastName.hasError('required')) {
+          <mat-error>Los apellidos son obligatorios.</mat-error>
+        }
+        @if (form.controls.lastName.hasError('minlength')) {
+          <mat-error>Los apellidos deben tener al menos 2 caracteres.</mat-error>
+        }
+        <mat-hint>Letras, espacios y apóstrofos.</mat-hint>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Fecha de nacimiento</mat-label>
+        <input
+          matInput
+          formControlName="birthDate"
+          inputmode="numeric"
+          maxlength="10"
+          placeholder="DD/MM/AAAA"
+          autocomplete="off"
+          required
+        />
+        @if (form.controls.birthDate.hasError('required')) {
+          <mat-error>La fecha de nacimiento es obligatoria.</mat-error>
+        }
+        @if (form.controls.birthDate.hasError('birthDate')) {
+          <mat-error>
+            {{
+              form.controls.birthDate.getError('birthDate') === 'future'
+                ? 'La fecha de nacimiento no puede ser posterior a hoy.'
+                : 'La fecha de nacimiento no es válida. Usa el formato DD/MM/AAAA.'
+            }}
+          </mat-error>
+        }
+        <mat-hint>No puede ser posterior a hoy.</mat-hint>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="field-wide" subscriptSizing="dynamic">
+        <mat-label>Régimen</mat-label>
+        <mat-select formControlName="regimeId" required>
+          @if (loadingRegimes()) {
+            <mat-option value="" disabled>Cargando regímenes…</mat-option>
+          } @else {
+            <mat-option value="" disabled>Selecciona un régimen</mat-option>
+            @for (regime of regimes(); track regime.id) {
+              <mat-option [value]="regime.id">{{ regime.name }}</mat-option>
+            }
+          }
+        </mat-select>
+        @if (form.controls.regimeId.hasError('required')) {
+          <mat-error>El régimen es obligatorio.</mat-error>
+        }
+        <mat-hint>El régimen laboral del trabajador.</mat-hint>
+      </mat-form-field>
+    </div>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="dialog-actions">
+  <button matButton type="button" (click)="cancel()">Cancelar</button>
+  <button
+    matButton="filled"
+    type="submit"
+    form="register-employee-form"
+    [disabled]="submitting() || form.invalid"
+  >
+    {{ submitting() ? 'Registrando…' : 'Registrar Trabajador' }}
+  </button>
+</mat-dialog-actions>
