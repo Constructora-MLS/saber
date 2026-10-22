@@ -154,7 +154,7 @@
   width: 100%;
   min-height: 2.5625rem;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.4rem;
   padding: 0 1rem;
   border: 0;
   border-radius: 999px;
@@ -172,10 +172,20 @@
   background: color-mix(in srgb, var(--rrhh-module-container) 86%, var(--rrhh-module-on-container));
 }
 
+.module-selector mat-icon,
+.nav-item mat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.2em;
+  height: 1.2em;
+  flex: 0 0 1.2em;
+  line-height: 1;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
 .module-selector mat-icon {
-  width: 1.25rem;
-  height: 1.25rem;
-  flex: 0 0 auto;
   font-size: 1.25rem;
 }
 
@@ -222,9 +232,9 @@ app-switcher {
   display: flex;
   min-height: 3.0625rem;
   align-items: center;
-  gap: 1rem;
+  gap: 0.4rem;
   margin: 0 1rem;
-  padding: 0 0.75rem;
+  padding: 0 1rem;
   border-radius: 999px;
   color: var(--rrhh-text-muted);
   font-size: 0.875rem;
@@ -236,9 +246,6 @@ app-switcher {
 }
 
 .nav-item mat-icon {
-  width: 1.5rem;
-  height: 1.5rem;
-  flex: 0 0 auto;
   color: var(--rrhh-icon);
   font-size: 1.25rem;
 }
@@ -422,7 +429,7 @@ app-switcher {
   .nav-item {
     min-height: 3.0625rem;
     margin: 0 1rem;
-    padding: 0 0.75rem;
+    padding: 0 1rem;
   }
 
   .sidebar-footer {

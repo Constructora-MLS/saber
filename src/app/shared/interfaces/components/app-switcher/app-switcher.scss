@@ -10,7 +10,7 @@
 
 .app-switcher-title {
   margin: 0 0 0.75rem;
-  padding-inline: 0.5rem;
+  padding-inline: 0.75rem;
   color: var(--rrhh-text-soft);
   font-size: 0.68rem;
   font-weight: 700;
@@ -22,9 +22,9 @@
   width: 100%;
   min-height: 2.75rem;
   align-items: center;
-  gap: 1rem;
+  gap: 0.4rem;
   white-space: nowrap;
-  padding: 0 0.5rem;
+  padding: 0 0.75rem;
   border: 0;
   border-radius: 0.875rem;
   background: transparent;
@@ -38,11 +38,17 @@
 }
 
 .app-option mat-icon {
-  width: 1.5rem;
-  height: 1.5rem;
-  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.2em;
+  height: 1.2em;
+  flex: 0 0 1.2em;
   color: var(--rrhh-icon);
-  font-size: 1.25rem;
+  font-size: 1.1875rem;
+  line-height: 1;
+  vertical-align: middle;
+  white-space: nowrap;
 }
 
 .app-option-label {
