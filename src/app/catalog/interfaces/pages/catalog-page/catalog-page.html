@@ -53,11 +53,6 @@
           [ngModel]="searchTerm()"
           (ngModelChange)="onSearchChanged($event)"
         />
-        @if (activeTab() === 'unidades') {
-          <mat-hint>
-            Coincide en cualquier parte del código o nombre (mínimo 2 caracteres).
-          </mat-hint>
-        }
         @if (searchTerm()) {
           <button
             matIconButton
