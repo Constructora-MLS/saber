@@ -28,9 +28,8 @@ export interface CatalogPage<T> {
  */
 export interface CatalogCriteria {
   /**
-   * The prefix searched in the name.
-   *
-   * The work units also accept the prefix of their code.
+   * Services, positions and regimes match name prefixes. Work units match a
+   * case-insensitive substring of their code or name.
    */
   readonly search?: string;
   /** The state the records are filtered by. */

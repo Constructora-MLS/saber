@@ -9,11 +9,7 @@ import { FilterableCatalogStatus } from '../../domain/model/value-objects/catalo
  * ListServicesQuery asks for a page of the services.
  */
 export interface ListServicesQuery {
-  /**
-   * The prefix searched in the name.
-   *
-   * The work units also accept the prefix of their code.
-   */
+  /** The prefix searched in service names. */
   readonly search?: string;
   /** The state the services are filtered by. */
   readonly status?: FilterableCatalogStatus;
@@ -47,6 +43,7 @@ export interface ListRegimesQuery {
  * ListWorkUnitsQuery asks for a page of the work units.
  */
 export interface ListWorkUnitsQuery {
+  /** Case-insensitive substring matched in the code or name. */
   readonly search?: string;
   readonly status?: FilterableCatalogStatus;
   readonly serviceId?: string;

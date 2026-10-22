@@ -135,7 +135,7 @@ export class CatalogPage {
       createLabel: 'Registrar Unidad de Trabajo',
       recordsLabel: 'Unidades de trabajo registradas',
       searchLabel: 'Buscar por código o nombre',
-      searchPlaceholder: 'Código o nombre de la unidad…',
+      searchPlaceholder: 'Parte del código o nombre…',
       columns: [
         { header: 'Código', kind: 'code' },
         { header: 'Nombre', kind: 'name' },
