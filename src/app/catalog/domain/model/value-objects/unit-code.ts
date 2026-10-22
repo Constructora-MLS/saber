@@ -2,9 +2,13 @@
 
 import { CatalogValidationError } from '../errors/catalog-errors';
 
-/** The boundaries of the code of a work unit. */
-export const UNIT_CODE_MIN_LENGTH = 2;
-export const UNIT_CODE_MAX_LENGTH = 40;
+/**
+ * The shape of the code of a work unit.
+ *
+ * The platform draws the codes: three symbols of the alphabet, a dash and
+ * three more.
+ */
+export const UNIT_CODE_PATTERN = /^[0-9A-HJKMNP-TV-Z]{3}-[0-9A-HJKMNP-TV-Z]{3}$/;
 
 /**
  * UnitCode is the code of a work unit.
@@ -17,26 +21,22 @@ export class UnitCode {
 
   /**
    * create validates and builds a work unit code.
+   *
+   * The code is drawn by the platform, so it always has the shape of a
+   * drawn code: three symbols of the alphabet, a dash and three more. The
+   * value is not uppercased, because the platform never draws a lowercase
+   * code and the database keeps the shape as an invariant.
    */
   static create(raw: string): UnitCode {
-    const trimmed = raw.trim().toUpperCase();
+    const trimmed = raw.trim();
     if (trimmed.length === 0) {
       throw new CatalogValidationError('code', 'El código es obligatorio.');
     }
-    if (trimmed.length < UNIT_CODE_MIN_LENGTH) {
+    if (!UNIT_CODE_PATTERN.test(trimmed)) {
       throw new CatalogValidationError(
         'code',
-        `El código debe tener al menos ${UNIT_CODE_MIN_LENGTH} caracteres.`,
+        'El código debe tener tres símbolos, un guion y tres símbolos más.',
       );
-    }
-    if (trimmed.length > UNIT_CODE_MAX_LENGTH) {
-      throw new CatalogValidationError(
-        'code',
-        `El código no puede superar los ${UNIT_CODE_MAX_LENGTH} caracteres.`,
-      );
-    }
-    if (!/^[A-Z0-9-]+$/.test(trimmed)) {
-      throw new CatalogValidationError('code', 'El código solo admite letras, números y guiones.');
     }
     return new UnitCode(trimmed);
   }

@@ -3,16 +3,20 @@
 // A query requests information without changing the state of the context.
 // package queries
 
-import { CatalogStatus } from '../../domain/model/value-objects/catalog-status';
+import { FilterableCatalogStatus } from '../../domain/model/value-objects/catalog-status';
 
 /**
  * ListServicesQuery asks for a page of the services.
  */
 export interface ListServicesQuery {
-  /** The prefix searched in the name. */
+  /**
+   * The prefix searched in the name.
+   *
+   * The work units also accept the prefix of their code.
+   */
   readonly search?: string;
   /** The state the services are filtered by. */
-  readonly status?: CatalogStatus;
+  readonly status?: FilterableCatalogStatus;
   /** The size of the page. */
   readonly limit?: number;
   /** The opaque cursor of the previous page. */
@@ -24,7 +28,7 @@ export interface ListServicesQuery {
  */
 export interface ListPositionsQuery {
   readonly search?: string;
-  readonly status?: CatalogStatus;
+  readonly status?: FilterableCatalogStatus;
   readonly limit?: number;
   readonly cursor?: string;
 }
@@ -34,7 +38,7 @@ export interface ListPositionsQuery {
  */
 export interface ListRegimesQuery {
   readonly search?: string;
-  readonly status?: CatalogStatus;
+  readonly status?: FilterableCatalogStatus;
   readonly limit?: number;
   readonly cursor?: string;
 }
@@ -44,7 +48,7 @@ export interface ListRegimesQuery {
  */
 export interface ListWorkUnitsQuery {
   readonly search?: string;
-  readonly status?: CatalogStatus;
+  readonly status?: FilterableCatalogStatus;
   readonly serviceId?: string;
   readonly limit?: number;
   readonly cursor?: string;

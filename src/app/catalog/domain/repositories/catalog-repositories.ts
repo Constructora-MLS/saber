@@ -4,7 +4,10 @@ import { Regime } from '../model/aggregates/regime';
 import { Service } from '../model/aggregates/service';
 import { WorkUnit } from '../model/aggregates/work-unit';
 import { CatalogName } from '../model/value-objects/catalog-name';
-import { CatalogStatus, UpdatableCatalogStatus } from '../model/value-objects/catalog-status';
+import {
+  FilterableCatalogStatus,
+  UpdatableCatalogStatus,
+} from '../model/value-objects/catalog-status';
 import { Description } from '../model/value-objects/description';
 
 /**
@@ -24,10 +27,14 @@ export interface CatalogPage<T> {
  * CatalogCriteria are the filters shared by every listing of the context.
  */
 export interface CatalogCriteria {
-  /** The prefix searched in the name. */
+  /**
+   * The prefix searched in the name.
+   *
+   * The work units also accept the prefix of their code.
+   */
   readonly search?: string;
   /** The state the records are filtered by. */
-  readonly status?: CatalogStatus;
+  readonly status?: FilterableCatalogStatus;
   /** The size of the page. */
   readonly limit?: number;
   /** The opaque cursor of the previous page. */

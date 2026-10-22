@@ -11,11 +11,22 @@
 export type CatalogStatus = 'ACTIVE' | 'INACTIVE' | 'DELETED';
 
 /**
+ * FilterableCatalogStatus is the state a record can be filtered by.
+ *
+ * The logically deleted records are never listed, so they are not a filter
+ * the platform accepts.
+ */
+export type FilterableCatalogStatus = 'ACTIVE' | 'INACTIVE';
+
+/**
  * The states a record can be filtered by.
  *
  * The logically deleted records are never listed.
  */
-export const FILTERABLE_CATALOG_STATUSES: readonly CatalogStatus[] = ['ACTIVE', 'INACTIVE'];
+export const FILTERABLE_CATALOG_STATUSES: readonly FilterableCatalogStatus[] = [
+  'ACTIVE',
+  'INACTIVE',
+];
 
 /**
  * UpdatableCatalogStatus is the state a record can be moved to.

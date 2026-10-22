@@ -86,20 +86,33 @@
 
       <mat-form-field appearance="outline" class="field-wide" subscriptSizing="dynamic">
         <mat-label>Régimen</mat-label>
-        <mat-select formControlName="regimeId" required>
-          @if (loadingRegimes()) {
-            <mat-option value="" disabled>Cargando regímenes…</mat-option>
-          } @else {
-            <mat-option value="" disabled>Selecciona un régimen</mat-option>
-            @for (regime of regimes(); track regime.id) {
-              <mat-option [value]="regime.id">{{ regime.name }}</mat-option>
-            }
+        <input
+          matInput
+          type="text"
+          [value]="regimeQuery()"
+          [matAutocomplete]="regimeAuto"
+          (input)="onRegimeQueryChanged($event)"
+          placeholder="Buscar régimen…"
+          autocomplete="off"
+        />
+        <mat-autocomplete #regimeAuto="matAutocomplete" (optionSelected)="selectRegime($event)">
+          @for (regime of filteredRegimes(); track regime.id) {
+            <mat-option [value]="regime.id" [disabled]="regime.availability !== 'ACTIVE'">
+              {{ regime.name }}{{ regime.availability !== 'ACTIVE' ? ' (inactivo)' : '' }}
+            </mat-option>
           }
-        </mat-select>
+        </mat-autocomplete>
+        @if (loadingRegimes()) {
+          <mat-spinner matSuffix diameter="18" aria-label="Cargando regímenes" />
+        }
         @if (form.controls.regimeId.hasError('required')) {
-          <mat-error>El régimen es obligatorio.</mat-error>
+          <mat-error>Selecciona un régimen activo de la lista.</mat-error>
+        }
+        @if (!loadingRegimes() && filteredRegimes().length === 0) {
+          <mat-hint>No hay regímenes que coincidan con la búsqueda.</mat-hint>
         }
       </mat-form-field>
+      <input type="hidden" formControlName="regimeId" />
     </div>
   </form>
 </mat-dialog-content>

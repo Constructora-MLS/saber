@@ -7,8 +7,11 @@
 
 /**
  * The state of a worker as it is published by the API.
+ *
+ * The logically deleted workers are never published: the platform excludes
+ * them from the listings and answers that they do not exist.
  */
-export type EmployeeStatusResource = 'VIGENTE' | 'RETIRADO' | 'DELETED';
+export type EmployeeStatusResource = 'VIGENTE' | 'RETIRADO';
 
 /**
  * The representation of a worker.
@@ -49,13 +52,16 @@ export interface CreateEmployeeRequest {
 
 /**
  * The body of the modification of a worker.
+ *
+ * An absent field keeps the current value.
  */
 export interface UpdateEmployeeRequest {
-  readonly firstName: string;
-  readonly lastName: string;
-  readonly dni: string;
-  readonly regimeId: string;
-  readonly birthDate: string;
+  readonly firstName?: string;
+  readonly lastName?: string;
+  readonly dni?: string;
+  readonly regimeId?: string;
+  readonly birthDate?: string;
+  readonly status?: EmployeeStatusResource;
 }
 
 /**

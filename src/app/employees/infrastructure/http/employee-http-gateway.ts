@@ -79,14 +79,17 @@ export class EmployeeHttpGateway implements EmployeeRepository {
 
   /**
    * updateEmployee applies the changes to a worker.
+   *
+   * Only the fields that changed are sent: the platform keeps the fields
+   * that the request does not carry.
    */
   async updateEmployee(changes: EmployeeChanges): Promise<Employee> {
     const request: UpdateEmployeeRequest = {
-      firstName: changes.firstName.value,
-      lastName: changes.lastName.value,
-      dni: changes.dni.value,
-      regimeId: changes.regimeId.value,
-      birthDate: changes.birthDate.value,
+      ...(changes.firstName ? { firstName: changes.firstName.value } : {}),
+      ...(changes.lastName ? { lastName: changes.lastName.value } : {}),
+      ...(changes.dni ? { dni: changes.dni.value } : {}),
+      ...(changes.regimeId ? { regimeId: changes.regimeId.value } : {}),
+      ...(changes.birthDate ? { birthDate: changes.birthDate.value } : {}),
     };
 
     const updated = await firstValueFrom(

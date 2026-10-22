@@ -15,7 +15,7 @@ import {
   ListServicesQueryService,
   ListWorkUnitsQueryService,
 } from '../../../application/query-services/catalog-query-services';
-import { CatalogStatus } from '../../../domain/model/value-objects/catalog-status';
+import { FilterableCatalogStatus } from '../../../domain/model/value-objects/catalog-status';
 import { CatalogApiError } from '../../../infrastructure/http/catalog-api.error';
 import {
   CatalogColumn,
@@ -70,7 +70,7 @@ function isCatalogTab(value: string | null): value is CatalogTab {
 /**
  * isCatalogStatus reports whether a value is a state of a record.
  */
-function isCatalogStatus(value: string | null): value is CatalogStatus {
+function isCatalogStatus(value: string | null): value is FilterableCatalogStatus {
   return value === 'ACTIVE' || value === 'INACTIVE';
 }
 
@@ -195,7 +195,7 @@ export class CatalogPage {
 
   protected readonly activeTab = signal<CatalogTab>('unidades');
   protected readonly searchTerm = signal('');
-  protected readonly statusFilter = signal<CatalogStatus | ''>('');
+  protected readonly statusFilter = signal<FilterableCatalogStatus | ''>('');
   protected readonly rows = signal<readonly CatalogRow[]>([]);
   protected readonly records = signal<ReadonlyMap<string, EditableCatalogRecord>>(new Map());
   protected readonly nextCursor = signal<string | null>(null);
@@ -211,7 +211,9 @@ export class CatalogPage {
       const requestedTab = params.get('vista');
       const requestedStatus = params.get('estado');
       const tab: CatalogTab = isCatalogTab(requestedTab) ? requestedTab : 'unidades';
-      const status: CatalogStatus | '' = isCatalogStatus(requestedStatus) ? requestedStatus : '';
+      const status: FilterableCatalogStatus | '' = isCatalogStatus(requestedStatus)
+        ? requestedStatus
+        : '';
       const changed = tab !== this.activeTab() || status !== this.statusFilter();
 
       this.activeTab.set(tab);
@@ -260,7 +262,7 @@ export class CatalogPage {
   /**
    * onStatusChanged reloads the listing with the new filter.
    */
-  protected onStatusChanged(value: CatalogStatus | ''): void {
+  protected onStatusChanged(value: FilterableCatalogStatus | ''): void {
     this.statusFilter.set(value);
     void this.syncUrl();
     void this.reload();

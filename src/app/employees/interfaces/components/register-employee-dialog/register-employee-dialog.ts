@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import {
   AbstractControl,
   FormBuilder,
@@ -6,15 +6,19 @@ import {
   ValidationErrors,
   Validators,
 } from '@angular/forms';
+import {
+  MatAutocompleteModule,
+  MatAutocompleteSelectedEvent,
+} from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { CreateEmployeeCommandService } from '../../../application/command-services/employee-command-services';
 import { EmployeeValidationError } from '../../../domain/model/errors/employee-errors';
 import { EmployeeApiError } from '../../../infrastructure/http/employee-api.error';
-import { REGIME_NAME_RESOLVER } from '../../../domain/services/regime-name-resolver';
+import { REGIME_NAME_RESOLVER, RegimeOption } from '../../../domain/services/regime-name-resolver';
 import { birthDateFormatError, fromBirthDateInput } from '../../date-format';
 
 /**
@@ -38,11 +42,12 @@ function birthDateValidator(control: AbstractControl): ValidationErrors | null {
  */
 @Component({
   imports: [
+    MatAutocompleteModule,
     MatButtonModule,
     MatDialogModule,
     MatFormFieldModule,
     MatInputModule,
-    MatSelectModule,
+    MatProgressSpinnerModule,
     ReactiveFormsModule,
   ],
   selector: 'app-register-employee-dialog',
@@ -65,8 +70,24 @@ export class RegisterEmployeeDialog {
 
   protected readonly submitting = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
-  protected readonly regimes = signal<readonly { id: string; name: string }[]>([]);
+  /**
+   * The regimes that the worker can choose.
+   *
+   * Only the available regimes are offered: the resolver never returns an
+   * unavailable one.
+   */
+  protected readonly regimes = signal<readonly RegimeOption[]>([]);
   protected readonly loadingRegimes = signal(true);
+  protected readonly regimeQuery = signal('');
+  protected readonly filteredRegimes = computed(() => {
+    const query = this.regimeQuery().trim().toLocaleLowerCase();
+    return this.regimes()
+      .filter(
+        (regime) =>
+          regime.availability === 'ACTIVE' && regime.name.toLocaleLowerCase().includes(query),
+      )
+      .slice(0, 20);
+  });
 
   constructor() {
     void this.loadRegimes();
@@ -77,6 +98,35 @@ export class RegisterEmployeeDialog {
    */
   protected cancel(): void {
     this.dialogRef.close();
+  }
+
+  /**
+   * onRegimeQueryChanged filters the regimes as the worker types.
+   */
+  protected onRegimeQueryChanged(event: Event): void {
+    const query = (event.target as HTMLInputElement).value;
+    this.regimeQuery.set(query);
+
+    const selected = this.regimes().find(
+      (regime) => regime.id === this.form.controls.regimeId.value,
+    );
+    if (selected && query !== selected.name) {
+      this.form.controls.regimeId.setValue('');
+    }
+  }
+
+  /**
+   * selectRegime stores the identifier of the chosen regime.
+   */
+  protected selectRegime(event: MatAutocompleteSelectedEvent): void {
+    const id = event.option.value as string;
+    const regime = this.regimes().find((item) => item.id === id && item.availability === 'ACTIVE');
+    if (!regime) {
+      return;
+    }
+
+    this.form.controls.regimeId.setValue(id);
+    this.regimeQuery.set(regime.name);
   }
 
   /**

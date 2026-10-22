@@ -8,11 +8,22 @@
 export type EmployeeStatus = 'VIGENTE' | 'RETIRADO' | 'DELETED';
 
 /**
+ * FilterableEmployeeStatus is the state an employee can be filtered by.
+ *
+ * The logically deleted employees are never listed, so they are not a filter
+ * the platform accepts.
+ */
+export type FilterableEmployeeStatus = 'VIGENTE' | 'RETIRADO';
+
+/**
  * The states an employee can be filtered by.
  *
  * The logically deleted employees are never listed.
  */
-export const FILTERABLE_EMPLOYEE_STATUSES: readonly EmployeeStatus[] = ['VIGENTE', 'RETIRADO'];
+export const FILTERABLE_EMPLOYEE_STATUSES: readonly FilterableEmployeeStatus[] = [
+  'VIGENTE',
+  'RETIRADO',
+];
 
 /**
  * employeeStatusLabel returns the label of a state in the language of the

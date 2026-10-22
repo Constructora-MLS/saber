@@ -1,6 +1,7 @@
 // package valueobjects
 
 import { CatalogValidationError } from '../errors/catalog-errors';
+import { hasControlCharacters, textLength } from './text';
 
 /** The boundaries of the name of a catalog record. */
 export const CATALOG_NAME_MIN_LENGTH = 2;
@@ -20,13 +21,13 @@ export class CatalogName {
     if (trimmed.length === 0) {
       throw new CatalogValidationError('name', 'El nombre es obligatorio.');
     }
-    if (trimmed.length < CATALOG_NAME_MIN_LENGTH) {
+    if (textLength(trimmed) < CATALOG_NAME_MIN_LENGTH) {
       throw new CatalogValidationError(
         'name',
         `El nombre debe tener al menos ${CATALOG_NAME_MIN_LENGTH} caracteres.`,
       );
     }
-    if (trimmed.length > CATALOG_NAME_MAX_LENGTH) {
+    if (textLength(trimmed) > CATALOG_NAME_MAX_LENGTH) {
       throw new CatalogValidationError(
         'name',
         `El nombre no puede superar los ${CATALOG_NAME_MAX_LENGTH} caracteres.`,
@@ -53,17 +54,4 @@ export class CatalogName {
   get value(): string {
     return this.text;
   }
-}
-
-/**
- * hasControlCharacters reports whether the text carries a control character.
- */
-function hasControlCharacters(text: string): boolean {
-  for (const character of text) {
-    const code = character.codePointAt(0) ?? 0;
-    if (code < 0x20 || code === 0x7f) {
-      return true;
-    }
-  }
-  return false;
 }

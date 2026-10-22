@@ -24,22 +24,22 @@ export interface CreateEmployeeCommand {
 /**
  * UpdateEmployeeCommand asks for the modification of a worker.
  *
- * The command carries the whole set of the editable fields: the identifier
- * is immutable, so it is not part of it.
+ * An absent field keeps the current value of the record. The identifier is
+ * immutable, so it is not part of the changes.
  */
 export interface UpdateEmployeeCommand {
   /** The identifier of the worker. */
   readonly uuid: string;
-  /** The new first name of the worker. */
-  readonly firstName: string;
-  /** The new last name of the worker. */
-  readonly lastName: string;
-  /** The new identity document of the worker. */
-  readonly dni: string;
-  /** The new labor regime of the worker. */
-  readonly regimeId: string;
-  /** The new date of birth of the worker, in the YYYY-MM-DD format. */
-  readonly birthDate: string;
+  /** The new first name of the worker. Absent when it does not change. */
+  readonly firstName?: string;
+  /** The new last name of the worker. Absent when it does not change. */
+  readonly lastName?: string;
+  /** The new identity document of the worker. Absent when it does not change. */
+  readonly dni?: string;
+  /** The new labor regime of the worker. Absent when it does not change. */
+  readonly regimeId?: string;
+  /** The new date of birth of the worker, in the YYYY-MM-DD format. Absent when it does not change. */
+  readonly birthDate?: string;
 }
 
 /**

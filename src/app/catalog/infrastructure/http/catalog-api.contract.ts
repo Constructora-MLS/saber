@@ -141,9 +141,13 @@ export interface UpdateRegimeRequest {
 
 /**
  * The body of the modification of a work unit.
+ *
+ * An absent field keeps the current value.
+ *
+ * The code is not part of the request: the platform drew it when the work
+ * unit was registered and it never changes.
  */
 export interface UpdateWorkUnitRequest {
-  readonly code?: string;
   readonly name?: string;
   readonly description?: string;
   readonly serviceId?: string;

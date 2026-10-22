@@ -6,7 +6,7 @@ import { Employee } from '../model/aggregates/employee';
 import { BirthDate } from '../model/value-objects/birth-date';
 import { DNI } from '../model/value-objects/dni';
 import { EmployeeId } from '../model/value-objects/employee-id';
-import { EmployeeStatus } from '../model/value-objects/employee-status';
+import { FilterableEmployeeStatus } from '../model/value-objects/employee-status';
 import { PersonName } from '../model/value-objects/person-name';
 import { RegimeId } from '../model/value-objects/regime-id';
 
@@ -30,7 +30,7 @@ export interface EmployeeCriteria {
   /** The prefix searched in the names and the exact value searched in the DNI. */
   readonly search?: string;
   /** The state the employees are filtered by. */
-  readonly status?: EmployeeStatus;
+  readonly status?: FilterableEmployeeStatus;
   /** The size of the page. */
   readonly limit?: number;
   /** The opaque cursor of the previous page. */
@@ -55,16 +55,16 @@ export interface NewEmployee {
 export interface EmployeeChanges {
   /** The identifier of the worker. */
   readonly id: EmployeeId;
-  /** The new first name of the worker. */
-  readonly firstName: PersonName;
-  /** The new last name of the worker. */
-  readonly lastName: PersonName;
-  /** The new identity document of the worker. */
-  readonly dni: DNI;
-  /** The new labor regime of the worker. */
-  readonly regimeId: RegimeId;
-  /** The new date of birth of the worker. */
-  readonly birthDate: BirthDate;
+  /** The new first name of the worker. Absent when it does not change. */
+  readonly firstName?: PersonName;
+  /** The new last name of the worker. Absent when it does not change. */
+  readonly lastName?: PersonName;
+  /** The new identity document of the worker. Absent when it does not change. */
+  readonly dni?: DNI;
+  /** The new labor regime of the worker. Absent when it does not change. */
+  readonly regimeId?: RegimeId;
+  /** The new date of birth of the worker. Absent when it does not change. */
+  readonly birthDate?: BirthDate;
 }
 
 /**

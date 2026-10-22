@@ -50,14 +50,24 @@ export class CreateEmployeeCommandService {
 export class UpdateEmployeeCommandService {
   private readonly repository = inject(EMPLOYEE_REPOSITORY);
 
+  /**
+   * execute applies the changes to a worker.
+   *
+   * Only the fields that the command carries are validated and sent: the
+   * fields that are absent keep the value that the record already has.
+   */
   async execute(command: UpdateEmployeeCommand): Promise<Employee> {
     const changes: EmployeeChanges = {
       id: EmployeeId.create(command.uuid),
-      firstName: PersonName.create(command.firstName),
-      lastName: PersonName.create(command.lastName),
-      dni: DNI.create(command.dni),
-      regimeId: RegimeId.create(command.regimeId),
-      birthDate: BirthDate.create(command.birthDate),
+      ...(command.firstName !== undefined
+        ? { firstName: PersonName.create(command.firstName) }
+        : {}),
+      ...(command.lastName !== undefined ? { lastName: PersonName.create(command.lastName) } : {}),
+      ...(command.dni !== undefined ? { dni: DNI.create(command.dni) } : {}),
+      ...(command.regimeId !== undefined ? { regimeId: RegimeId.create(command.regimeId) } : {}),
+      ...(command.birthDate !== undefined
+        ? { birthDate: BirthDate.create(command.birthDate) }
+        : {}),
     };
 
     return this.repository.updateEmployee(changes);
