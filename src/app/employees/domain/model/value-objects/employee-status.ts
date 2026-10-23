@@ -3,9 +3,17 @@
 // package valueobjects
 
 /**
- * EmployeeStatus is the lifecycle state of an employee.
+ * EmployeeStatus is the labour status of a worker.
+ *
+ * The labour status is derived from the assignments of the worker: it is
+ * never edited by hand and it never travels in a request. A worker that
+ * holds no assignment is vigente by default, because it was just
+ * registered.
+ *
+ * The logical deletion of a record is not a labour status: a deleted worker
+ * is never published, so the state never reaches the interfaces.
  */
-export type EmployeeStatus = 'VIGENTE' | 'RETIRADO' | 'DELETED';
+export type EmployeeStatus = 'VIGENTE' | 'RETIRADO';
 
 /**
  * FilterableEmployeeStatus is the state an employee can be filtered by.
@@ -35,7 +43,5 @@ export function employeeStatusLabel(status: EmployeeStatus): string {
       return 'Vigente';
     case 'RETIRADO':
       return 'Retirado';
-    case 'DELETED':
-      return 'Eliminado';
   }
 }

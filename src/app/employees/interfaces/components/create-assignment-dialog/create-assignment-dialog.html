@@ -1,0 +1,71 @@
+<h2 mat-dialog-title>Nueva Asignación</h2>
+
+<mat-dialog-content>
+  <p class="dialog-description">
+    {{ data.worker.name }} ya está seleccionado. Completa la Unidad de Trabajo, el Cargo y la fecha.
+  </p>
+
+  <form class="dialog-form" id="create-assignment-form" [formGroup]="form" (ngSubmit)="submit()">
+    <div class="dialog-fields">
+      <div class="dialog-context">
+        <div>
+          <p class="dialog-context-label">Trabajador</p>
+          <p class="dialog-context-detail">
+            {{ data.worker.name }} · {{ data.worker.documentLabel }} {{ data.worker.documentValue }}
+          </p>
+        </div>
+        <span class="dialog-context-state">{{ data.worker.statusLabel }}</span>
+      </div>
+
+      <mat-form-field appearance="outline" class="field-wide" subscriptSizing="dynamic">
+        <mat-label>Unidad de Trabajo</mat-label>
+        <mat-select formControlName="workUnitId">
+          @for (unit of data.workUnits; track unit.id) {
+            <mat-option [value]="unit.id">
+              {{ unit.code }} · {{ unit.name }} · {{ unit.serviceName }}
+            </mat-option>
+          }
+        </mat-select>
+        @if (form.controls.workUnitId.hasError('required')) {
+          <mat-error>Selecciona una unidad de trabajo.</mat-error>
+        }
+        <mat-hint>El tipo de la unidad se toma del catálogo.</mat-hint>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="field-wide" subscriptSizing="dynamic">
+        <mat-label>Cargo</mat-label>
+        <mat-select formControlName="positionId">
+          @for (position of data.positions; track position.id) {
+            <mat-option [value]="position.id">{{ position.name }}</mat-option>
+          }
+        </mat-select>
+        @if (form.controls.positionId.hasError('required')) {
+          <mat-error>Selecciona un cargo.</mat-error>
+        }
+        <mat-hint>El cargo que el trabajador ejecuta en la unidad de trabajo.</mat-hint>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="field-wide" subscriptSizing="dynamic">
+        <mat-label>Fecha de Ingreso</mat-label>
+        <input matInput type="date" formControlName="startDate" [max]="today" required />
+        @if (form.controls.startDate.hasError('required')) {
+          <mat-error>La fecha de ingreso es obligatoria.</mat-error>
+        }
+        <mat-hint>No puede ser posterior a hoy.</mat-hint>
+      </mat-form-field>
+    </div>
+
+    <p class="dialog-callout">
+      La asignación inicia vigente y su periodo de trabajo permanece abierto hasta que se registre el
+      cese.
+    </p>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="dialog-actions">
+  <button matButton type="button" (click)="cancel()">Cancelar</button>
+  <button matButton="filled" type="submit" form="create-assignment-form" [disabled]="form.invalid">
+    <mat-icon aria-hidden="true">add</mat-icon>
+    Crear Asignación
+  </button>
+</mat-dialog-actions>

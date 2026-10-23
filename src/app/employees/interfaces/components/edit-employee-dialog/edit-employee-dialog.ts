@@ -17,7 +17,10 @@ import {
   PERSON_NAME_MAX_LENGTH,
   PERSON_NAME_MIN_LENGTH,
 } from '../../../domain/model/value-objects/person-name';
-import { REGIME_NAME_RESOLVER, RegimeOption } from '../../../domain/services/regime-name-resolver';
+import {
+  CATALOG_REFERENCE_RESOLVER,
+  RegimeReference,
+} from '../../../domain/services/catalog-reference-resolver';
 import { EmployeeApiError } from '../../../infrastructure/http/employee-api.error';
 import { FieldCounter } from '../../../../shared/interfaces/components/field-counter/field-counter';
 
@@ -65,7 +68,7 @@ export interface EditableEmployee {
 export class EditEmployeeDialog {
   private readonly formBuilder = inject(FormBuilder);
   private readonly updateEmployee = inject(UpdateEmployeeCommandService);
-  private readonly regimeNames = inject(REGIME_NAME_RESOLVER);
+  private readonly catalog = inject(CATALOG_REFERENCE_RESOLVER);
   private readonly dialogRef = inject<MatDialogRef<EditEmployeeDialog>>(MatDialogRef);
 
   /** The worker that is being modified. */
@@ -108,7 +111,7 @@ export class EditEmployeeDialog {
    * it is no longer available, so the form never loses the value of the
    * record that it modifies.
    */
-  protected readonly regimes = signal<readonly RegimeOption[]>([]);
+  protected readonly regimes = signal<readonly RegimeReference[]>([]);
   protected readonly loadingRegimes = signal(true);
   protected readonly regimeQuery = signal('');
   protected readonly filteredRegimes = computed(() => {
@@ -220,11 +223,11 @@ export class EditEmployeeDialog {
    */
   private async loadRegimes(): Promise<void> {
     try {
-      const available = await this.regimeNames.listRegimes();
+      const available = await this.catalog.listRegimes();
       const current = this.data.regimeId;
       const currentRegime =
         available.find((regime) => regime.id === current) ??
-        (await this.regimeNames.findRegime(current));
+        (await this.catalog.findRegime(current));
 
       this.regimes.set(
         currentRegime && !available.some((regime) => regime.id === currentRegime.id)

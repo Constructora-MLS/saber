@@ -1,0 +1,52 @@
+<h2 mat-dialog-title>Registrar Cese</h2>
+
+<mat-dialog-content>
+  <p class="dialog-description">Fecha de cierre de esta asignación.</p>
+
+  <div class="dialog-person">
+    <p class="dialog-person-name">{{ data.worker.name }}</p>
+    <p class="dialog-person-detail">
+      {{ data.worker.documentLabel }} · {{ data.worker.documentValue }}
+    </p>
+  </div>
+
+  <div class="dialog-record">
+    <p class="dialog-record-title">{{ data.assignment.workUnitName }}</p>
+    <p class="dialog-record-detail">
+      @if (data.assignment.workUnitCode) {
+        {{ data.assignment.workUnitCode }} ·
+      }
+      {{ data.assignment.positionName }} · Ingreso {{ startDateLabel }}
+    </p>
+  </div>
+
+  <form class="dialog-form" id="cease-assignment-form" [formGroup]="form" (ngSubmit)="submit()">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Fecha de Cese</mat-label>
+      <input
+        matInput
+        type="date"
+        formControlName="date"
+        [min]="data.assignment.startDate"
+        [max]="today"
+        required
+      />
+      @if (form.controls.date.hasError('required')) {
+        <mat-error>La fecha de cese es obligatoria.</mat-error>
+      }
+      <mat-hint>Debe ser igual o posterior al ingreso.</mat-hint>
+    </mat-form-field>
+  </form>
+
+  <p class="dialog-callout">
+    Al guardar, la asignación pasará a Retirado y su periodo de trabajo quedará cerrado.
+  </p>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="dialog-actions">
+  <button matButton type="button" (click)="cancel()">Cancelar</button>
+  <button matButton="filled" type="submit" form="cease-assignment-form" [disabled]="form.invalid">
+    <mat-icon aria-hidden="true">event_busy</mat-icon>
+    Registrar Cese
+  </button>
+</mat-dialog-actions>

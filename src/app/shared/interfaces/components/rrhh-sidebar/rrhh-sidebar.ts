@@ -36,11 +36,14 @@ export class RrhhSidebar {
   /**
    * activeLinkOptions decides when a navigation item is the current one.
    *
-   * The item is decided by the path alone, so the menu keeps the page
-   * selected no matter what the pages write in the address of the browser.
+   * The item is decided by the path alone, so the menu keeps the item of the
+   * page selected no matter what the pages write in the address of the
+   * browser. The paths are matched as a subset, so a section keeps its item
+   * selected while a page of the section is open: the record of a worker
+   * lives inside Personal, so Personal stays selected on it.
    */
   protected readonly activeLinkOptions: IsActiveMatchOptions = {
-    paths: 'exact',
+    paths: 'subset',
     queryParams: 'ignored',
     fragment: 'ignored',
     matrixParams: 'ignored',

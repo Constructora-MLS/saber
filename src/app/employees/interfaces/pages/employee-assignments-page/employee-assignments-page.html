@@ -1,0 +1,84 @@
+<section class="page" aria-labelledby="assignments-page-title">
+  <a matButton="tonal" class="back-link" routerLink="/employees">
+    <mat-icon aria-hidden="true">arrow_back</mat-icon>
+    Volver
+  </a>
+
+  @if (workerMissing()) {
+    <section class="panel">
+      <app-table-state
+        kind="empty"
+        icon="person_off"
+        title="No encontramos la ficha del trabajador"
+        message="El trabajador no está registrado en la plataforma."
+        actionLabel="Volver al personal"
+        actionIcon="arrow_back"
+        (actionRequested)="goBack()"
+      />
+    </section>
+  } @else {
+    @if (worker(); as person) {
+      <app-person-summary
+        headingId="assignments-page-title"
+        eyebrow="Ficha del Trabajador"
+        [name]="person.name"
+        documentLabel="DNI"
+        [documentValue]="person.documentValue"
+        [facts]="facts()"
+      >
+        <a
+          matButton="outlined"
+          class="action-button action-button--secondary"
+          routerLink="/employees"
+          title="Los datos del trabajador se editan en Personal"
+        >
+          <mat-icon aria-hidden="true">edit</mat-icon>
+          Editar datos
+        </a>
+        <button
+          matButton="filled"
+          class="action-button action-button--primary"
+          type="button"
+          (click)="openCreateDialog()"
+        >
+          <mat-icon aria-hidden="true">add</mat-icon>
+          Nueva Asignación
+        </button>
+      </app-person-summary>
+    }
+
+    <section class="panel" aria-labelledby="assignments-panel-title">
+      <header class="panel-header">
+        <div>
+          <h2 id="assignments-panel-title">Asignaciones</h2>
+          <p class="panel-hint">{{ panelHint() }}</p>
+        </div>
+      </header>
+
+      @if (loading() && rows().length === 0) {
+        <mat-progress-bar mode="indeterminate" aria-label="Cargando asignaciones" />
+      }
+
+      <app-assignment-table
+        caption="Asignaciones"
+        [rows]="rows()"
+        [loading]="loading()"
+        [errorTitle]="loadFailure()?.title ?? null"
+        [errorMessage]="loadFailure()?.message ?? null"
+        emptyActionLabel="Registrar asignación"
+        (ceaseRequested)="openCeaseDialog($event)"
+        (deleteRequested)="openDeleteDialog($event)"
+        (createRequested)="openCreateDialog()"
+        (retryRequested)="retry()"
+      />
+
+      @if (nextCursor()) {
+        <div class="panel-footer">
+          <button matButton="tonal" type="button" (click)="loadMore()">
+            Cargar más asignaciones
+          </button>
+        </div>
+      }
+    </section>
+  }
+</section>

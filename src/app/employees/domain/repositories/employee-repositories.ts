@@ -68,6 +68,7 @@ export interface EmployeeChanges {
  */
 export interface EmployeeRepository {
   listEmployees(criteria: EmployeeCriteria): Promise<EmployeePage<Employee>>;
+  findEmployee(id: EmployeeId): Promise<Employee | null>;
   createEmployee(employee: NewEmployee): Promise<Employee>;
   updateEmployee(changes: EmployeeChanges): Promise<Employee>;
   deleteEmployee(id: EmployeeId): Promise<void>;

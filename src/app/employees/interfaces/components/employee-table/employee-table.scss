@@ -65,6 +65,22 @@
   text-align: left;
 }
 
+/* The name of the worker opens its record. It reads as the name of a record
+   until it is pointed at, so the color of the identity only arrives with the
+   hover. */
+.cell-link {
+  color: inherit;
+  font-weight: 650;
+  text-decoration: none;
+  transition: color var(--app-motion-duration-short) var(--app-motion-easing-emphasized);
+}
+
+.cell-link:hover {
+  color: var(--rrhh-active-on-container);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
 .cell-dni {
   font-family: 'Roboto Mono', ui-monospace, monospace;
   font-size: 0.85rem;

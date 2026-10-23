@@ -8,8 +8,10 @@
 /**
  * The state of a worker as it is published by the API.
  *
- * The logically deleted workers are never published: the platform excludes
- * them from the listings and answers that they do not exist.
+ * The state is the labour status of the worker: it is derived from its
+ * assignments and it is never edited by hand. The logically deleted workers
+ * are never published: the platform excludes them from the listings and
+ * answers that they do not exist.
  */
 export type EmployeeStatusResource = 'VIGENTE' | 'RETIRADO';
 
@@ -51,13 +53,15 @@ export interface CreateEmployeeRequest {
  * The body of the modification of a worker.
  *
  * An absent field keeps the current value.
+ *
+ * The labour status is not part of the body: it is derived from the
+ * assignments of the worker and it is never edited by hand.
  */
 export interface UpdateEmployeeRequest {
   readonly firstName?: string;
   readonly lastName?: string;
   readonly dni?: string;
   readonly regimeId?: string;
-  readonly status?: EmployeeStatusResource;
 }
 
 /**

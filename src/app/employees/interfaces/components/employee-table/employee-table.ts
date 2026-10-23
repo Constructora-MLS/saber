@@ -3,6 +3,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { RouterLink } from '@angular/router';
 import { TableState } from '../../../../shared/interfaces/components/table-state/table-state';
 import {
   EmployeeStatus,
@@ -38,7 +39,14 @@ export interface EmployeeRow {
  * intention of the worker through its outputs. It never talks to the API.
  */
 @Component({
-  imports: [MatButtonModule, MatIconModule, MatMenuModule, MatProgressSpinnerModule, TableState],
+  imports: [
+    MatButtonModule,
+    MatIconModule,
+    MatMenuModule,
+    MatProgressSpinnerModule,
+    RouterLink,
+    TableState,
+  ],
   selector: 'app-employee-table',
   styleUrl: './employee-table.scss',
   templateUrl: './employee-table.html',

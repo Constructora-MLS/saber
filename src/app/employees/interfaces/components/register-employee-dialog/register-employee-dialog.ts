@@ -17,7 +17,10 @@ import {
   PERSON_NAME_MIN_LENGTH,
 } from '../../../domain/model/value-objects/person-name';
 import { EmployeeApiError } from '../../../infrastructure/http/employee-api.error';
-import { REGIME_NAME_RESOLVER, RegimeOption } from '../../../domain/services/regime-name-resolver';
+import {
+  CATALOG_REFERENCE_RESOLVER,
+  RegimeReference,
+} from '../../../domain/services/catalog-reference-resolver';
 import { FieldCounter } from '../../../../shared/interfaces/components/field-counter/field-counter';
 
 /**
@@ -47,7 +50,7 @@ const DNI_PATTERN = new RegExp(`^\\d{${DNI_LENGTH}}$`);
 export class RegisterEmployeeDialog {
   private readonly formBuilder = inject(FormBuilder);
   private readonly createEmployee = inject(CreateEmployeeCommandService);
-  private readonly regimeNames = inject(REGIME_NAME_RESOLVER);
+  private readonly catalog = inject(CATALOG_REFERENCE_RESOLVER);
   private readonly dialogRef = inject<MatDialogRef<RegisterEmployeeDialog>>(MatDialogRef);
 
   /** The limit of the DNI. */
@@ -86,7 +89,7 @@ export class RegisterEmployeeDialog {
    * Only the available regimes are offered: the resolver never returns an
    * unavailable one.
    */
-  protected readonly regimes = signal<readonly RegimeOption[]>([]);
+  protected readonly regimes = signal<readonly RegimeReference[]>([]);
   protected readonly loadingRegimes = signal(true);
   protected readonly regimeQuery = signal('');
   protected readonly filteredRegimes = computed(() => {
@@ -177,7 +180,7 @@ export class RegisterEmployeeDialog {
    */
   private async loadRegimes(): Promise<void> {
     try {
-      this.regimes.set(await this.regimeNames.listRegimes());
+      this.regimes.set(await this.catalog.listRegimes());
     } catch {
       this.regimes.set([]);
     } finally {

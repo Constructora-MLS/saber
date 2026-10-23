@@ -1,0 +1,16 @@
+<h2 mat-dialog-title>Eliminar asignación</h2>
+
+<mat-dialog-content>
+  <p class="dialog-description">
+    Vas a eliminar la asignación de <strong>{{ data.workUnitName }}</strong
+    >. La asignación sale de la ficha del trabajador y deja de estar disponible.
+  </p>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="dialog-actions">
+  <button matButton type="button" (click)="cancel()">Cancelar</button>
+  <button matButton="filled" type="button" class="danger-action" (click)="confirm()">
+    <mat-icon aria-hidden="true">delete</mat-icon>
+    Borrar
+  </button>
+</mat-dialog-actions>

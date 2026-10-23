@@ -9,7 +9,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ListEmployeesQueryService } from '../../../application/query-services/employee-query-services';
 import { Employee } from '../../../domain/model/aggregates/employee';
-import { REGIME_NAME_RESOLVER } from '../../../domain/services/regime-name-resolver';
+import { CATALOG_REFERENCE_RESOLVER } from '../../../domain/services/catalog-reference-resolver';
 import { EmployeeApiError } from '../../../infrastructure/http/employee-api.error';
 import {
   DeleteEmployeeDialog,
@@ -66,7 +66,7 @@ export class EmployeesPage implements OnInit {
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly listEmployees = inject(ListEmployeesQueryService);
-  private readonly regimeNames = inject(REGIME_NAME_RESOLVER);
+  private readonly catalog = inject(CATALOG_REFERENCE_RESOLVER);
   private readonly destroyRef = inject(DestroyRef);
 
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
@@ -296,7 +296,9 @@ export class EmployeesPage implements OnInit {
     const regimeIds = [...new Set(employees.map((employee) => employee.regimeId.value))];
 
     try {
-      return await this.regimeNames.resolveNames(regimeIds);
+      const regimes = await this.catalog.resolveRegimes(regimeIds);
+
+      return new Map([...regimes].map(([id, regime]) => [id, regime.name]));
     } catch {
       return new Map();
     }
@@ -358,7 +360,8 @@ export class EmployeesPage implements OnInit {
 
     return {
       title: 'No se pudo cargar el personal',
-      message: 'Ocurrió un problema inesperado al consultar los trabajadores. Inténtalo nuevamente.',
+      message:
+        'Ocurrió un problema inesperado al consultar los trabajadores. Inténtalo nuevamente.',
     };
   }
 

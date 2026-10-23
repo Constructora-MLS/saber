@@ -56,6 +56,25 @@ export class EmployeeHttpGateway implements EmployeeRepository {
   }
 
   /**
+   * findEmployee returns the worker of the given identifier.
+   *
+   * A worker that the platform does not know is answered as an absent one:
+   * the record of the assignment is still shown, with the references it
+   * knows.
+   */
+  async findEmployee(id: EmployeeId): Promise<Employee | null> {
+    try {
+      const resource = await firstValueFrom(
+        this.http.get<EmployeeResource>(`${this.baseUrl}/employees/${id.value}`),
+      );
+
+      return this.toEmployee(resource);
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * createEmployee registers a worker of the platform.
    */
   async createEmployee(employee: NewEmployee): Promise<Employee> {

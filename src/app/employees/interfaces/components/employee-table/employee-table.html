@@ -56,7 +56,9 @@
           <tr>
             <th scope="row" class="cell-name">
               <span class="cell-label" aria-hidden="true">Trabajador</span>
-              {{ row.name }}
+              <a class="cell-link" [routerLink]="['/employees', row.id, 'assignments']">{{
+                row.name
+              }}</a>
             </th>
             <td>
               <span class="cell-label" aria-hidden="true">DNI</span>
