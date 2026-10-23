@@ -28,8 +28,9 @@ export interface CatalogPage<T> {
  */
 export interface CatalogCriteria {
   /**
-   * Services, positions and regimes match name prefixes. Work units match a
-   * case-insensitive substring of their code or name.
+   * The term is matched by coincidence: it is searched anywhere in the name
+   * of the services, positions and regimes, and in the code and the name of
+   * the work units.
    */
   readonly search?: string;
   /** The state the records are filtered by. */

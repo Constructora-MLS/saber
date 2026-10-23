@@ -220,7 +220,6 @@ export class EmployeesPage {
       lastName: row.lastName,
       dni: row.dni,
       regimeId: row.regimeId,
-      birthDate: row.birthDate,
     };
 
     this.dialog
@@ -329,7 +328,6 @@ export class EmployeesPage {
       dni: employee.dni.value,
       regimeId: employee.regimeId.value,
       regimeName: names.get(employee.regimeId.value) ?? null,
-      birthDate: employee.birthDate.value,
       status: employee.status,
     };
   }

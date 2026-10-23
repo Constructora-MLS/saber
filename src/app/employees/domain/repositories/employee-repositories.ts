@@ -3,7 +3,6 @@
 
 import { InjectionToken } from '@angular/core';
 import { Employee } from '../model/aggregates/employee';
-import { BirthDate } from '../model/value-objects/birth-date';
 import { DNI } from '../model/value-objects/dni';
 import { EmployeeId } from '../model/value-objects/employee-id';
 import { FilterableEmployeeStatus } from '../model/value-objects/employee-status';
@@ -27,7 +26,7 @@ export interface EmployeePage<T> {
  * EmployeeCriteria are the filters of the listing of the employees.
  */
 export interface EmployeeCriteria {
-  /** The prefix searched in the names and the exact value searched in the DNI. */
+  /** The term searched in the names and in the DNI. */
   readonly search?: string;
   /** The state the employees are filtered by. */
   readonly status?: FilterableEmployeeStatus;
@@ -46,7 +45,6 @@ export interface NewEmployee {
   readonly lastName: PersonName;
   readonly dni: DNI;
   readonly regimeId: RegimeId;
-  readonly birthDate: BirthDate;
 }
 
 /**
@@ -63,8 +61,6 @@ export interface EmployeeChanges {
   readonly dni?: DNI;
   /** The new labor regime of the worker. Absent when it does not change. */
   readonly regimeId?: RegimeId;
-  /** The new date of birth of the worker. Absent when it does not change. */
-  readonly birthDate?: BirthDate;
 }
 
 /**

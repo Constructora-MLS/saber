@@ -1,11 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import {
-  AbstractControl,
-  FormBuilder,
-  ReactiveFormsModule,
-  ValidationErrors,
-  Validators,
-} from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   MatAutocompleteModule,
   MatAutocompleteSelectedEvent,
@@ -25,33 +19,12 @@ import {
 import { EmployeeApiError } from '../../../infrastructure/http/employee-api.error';
 import { REGIME_NAME_RESOLVER, RegimeOption } from '../../../domain/services/regime-name-resolver';
 import { FieldCounter } from '../../../../shared/interfaces/components/field-counter/field-counter';
-import {
-  BIRTH_DATE_INPUT_LENGTH,
-  birthDateFormatError,
-  fromBirthDateInput,
-} from '../../date-format';
 
 /**
  * The pattern of a DNI: only digits, and exactly as many as the length of
  * the document.
  */
 const DNI_PATTERN = new RegExp(`^\\d{${DNI_LENGTH}}$`);
-
-/**
- * birthDateValidator checks the date of birth that the worker wrote.
- *
- * The date is written in the format of Peru, so the value is read and
- * checked before it reaches the use case.
- */
-function birthDateValidator(control: AbstractControl): ValidationErrors | null {
-  const raw = String(control.value ?? '').trim();
-  if (raw.length === 0) {
-    return null;
-  }
-
-  const error = birthDateFormatError(raw);
-  return error ? { birthDate: error } : null;
-}
 
 /**
  * RegisterEmployeeDialog registers a worker of the platform.
@@ -83,8 +56,6 @@ export class RegisterEmployeeDialog {
   protected readonly personNameMinLength = PERSON_NAME_MIN_LENGTH;
   /** The limit of the first name and of the last name. */
   protected readonly personNameMaxLength = PERSON_NAME_MAX_LENGTH;
-  /** The limit of the date of birth. */
-  protected readonly birthDateLength = BIRTH_DATE_INPUT_LENGTH;
 
   protected readonly form = this.formBuilder.nonNullable.group({
     dni: ['', [Validators.required, Validators.pattern(DNI_PATTERN)]],
@@ -104,7 +75,6 @@ export class RegisterEmployeeDialog {
         Validators.maxLength(PERSON_NAME_MAX_LENGTH),
       ],
     ],
-    birthDate: ['', [Validators.required, birthDateValidator]],
     regimeId: ['', [Validators.required]],
   });
 
@@ -191,7 +161,6 @@ export class RegisterEmployeeDialog {
         dni: raw.dni.trim(),
         firstName: raw.firstName.trim(),
         lastName: raw.lastName.trim(),
-        birthDate: fromBirthDateInput(raw.birthDate) ?? '',
         regimeId: raw.regimeId,
       });
       this.dialogRef.close(employee);

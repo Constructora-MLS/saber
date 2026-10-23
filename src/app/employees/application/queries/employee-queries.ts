@@ -9,7 +9,7 @@ import { FilterableEmployeeStatus } from '../../domain/model/value-objects/emplo
  * ListEmployeesQuery asks for a page of the workers of the platform.
  */
 export interface ListEmployeesQuery {
-  /** The prefix searched in the names and the exact value searched in the DNI. */
+  /** The term searched in the names and in the DNI. */
   readonly search?: string;
   /** The state the workers are filtered by. */
   readonly status?: FilterableEmployeeStatus;

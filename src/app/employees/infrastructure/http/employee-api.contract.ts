@@ -23,8 +23,6 @@ export interface EmployeeResource {
   readonly dni: string;
   readonly regimeId: string;
   readonly status: EmployeeStatusResource;
-  /** The date of birth of the worker, in the YYYY-MM-DD format. */
-  readonly birthDate: string;
   /** The moment the worker was registered, in the RFC 3339 format. */
   readonly createdAt?: string;
   /** The moment the worker was changed for the last time, in the RFC 3339 format. */
@@ -47,7 +45,6 @@ export interface CreateEmployeeRequest {
   readonly lastName: string;
   readonly dni: string;
   readonly regimeId: string;
-  readonly birthDate: string;
 }
 
 /**
@@ -60,7 +57,6 @@ export interface UpdateEmployeeRequest {
   readonly lastName?: string;
   readonly dni?: string;
   readonly regimeId?: string;
-  readonly birthDate?: string;
   readonly status?: EmployeeStatusResource;
 }
 

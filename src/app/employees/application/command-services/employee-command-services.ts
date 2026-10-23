@@ -12,7 +12,6 @@ import {
   UpdateEmployeeCommand,
 } from '../commands/employee-commands';
 import { Employee } from '../../domain/model/aggregates/employee';
-import { BirthDate } from '../../domain/model/value-objects/birth-date';
 import { DNI } from '../../domain/model/value-objects/dni';
 import { EmployeeId } from '../../domain/model/value-objects/employee-id';
 import { PersonName } from '../../domain/model/value-objects/person-name';
@@ -36,7 +35,6 @@ export class CreateEmployeeCommandService {
       lastName: PersonName.create(command.lastName),
       dni: DNI.create(command.dni),
       regimeId: RegimeId.create(command.regimeId),
-      birthDate: BirthDate.create(command.birthDate),
     };
 
     return this.repository.createEmployee(worker);
@@ -65,9 +63,6 @@ export class UpdateEmployeeCommandService {
       ...(command.lastName !== undefined ? { lastName: PersonName.create(command.lastName) } : {}),
       ...(command.dni !== undefined ? { dni: DNI.create(command.dni) } : {}),
       ...(command.regimeId !== undefined ? { regimeId: RegimeId.create(command.regimeId) } : {}),
-      ...(command.birthDate !== undefined
-        ? { birthDate: BirthDate.create(command.birthDate) }
-        : {}),
     };
 
     return this.repository.updateEmployee(changes);

@@ -18,7 +18,6 @@ import {
 } from './employee-api.contract';
 import { toEmployeeApiError } from './employee-api.error';
 import { Employee } from '../../domain/model/aggregates/employee';
-import { BirthDate } from '../../domain/model/value-objects/birth-date';
 import { DNI } from '../../domain/model/value-objects/dni';
 import { EmployeeId } from '../../domain/model/value-objects/employee-id';
 import { EmployeeStatus } from '../../domain/model/value-objects/employee-status';
@@ -65,7 +64,6 @@ export class EmployeeHttpGateway implements EmployeeRepository {
       lastName: employee.lastName.value,
       dni: employee.dni.value,
       regimeId: employee.regimeId.value,
-      birthDate: employee.birthDate.value,
     };
 
     const created = await firstValueFrom(
@@ -89,7 +87,6 @@ export class EmployeeHttpGateway implements EmployeeRepository {
       ...(changes.lastName ? { lastName: changes.lastName.value } : {}),
       ...(changes.dni ? { dni: changes.dni.value } : {}),
       ...(changes.regimeId ? { regimeId: changes.regimeId.value } : {}),
-      ...(changes.birthDate ? { birthDate: changes.birthDate.value } : {}),
     };
 
     const updated = await firstValueFrom(
@@ -151,7 +148,6 @@ export class EmployeeHttpGateway implements EmployeeRepository {
       DNI.restore(resource.dni),
       RegimeId.restore(resource.regimeId),
       this.status(resource.status),
-      BirthDate.restore(resource.birthDate),
     );
   }
 

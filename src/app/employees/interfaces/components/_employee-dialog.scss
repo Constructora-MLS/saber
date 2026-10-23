@@ -35,19 +35,15 @@
   --mat-button-filled-state-layer-color: var(--mat-sys-on-error);
 }
 
-/* The fields of the form are shown in two columns, as in the design of the
-   platform, and they fall into a single column on a narrow screen. */
+/* The names of the worker share a row, because they are the fields that
+   are written the most. The document and the regime stay in a row of their
+   own, because they are read and picked instead of written. On a narrow
+   screen the fields fall into a single column. */
 .dialog-fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: start;
   gap: 0.75rem 1rem;
-}
-
-/* The help of a field lives under its box, so the rows of the grid leave
-   room for the help of the field above and the fields never overlap. */
-.dialog-fields .field {
-  margin-bottom: 0.75rem;
 }
 
 .dialog-fields .field-wide {

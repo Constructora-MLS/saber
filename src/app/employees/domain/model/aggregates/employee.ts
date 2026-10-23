@@ -2,7 +2,6 @@
 // context.
 // package aggregates
 
-import { BirthDate } from '../value-objects/birth-date';
 import { DNI } from '../value-objects/dni';
 import { EmployeeId } from '../value-objects/employee-id';
 import { EmployeeStatus } from '../value-objects/employee-status';
@@ -23,7 +22,6 @@ export class Employee {
     readonly dni: DNI,
     readonly regimeId: RegimeId,
     readonly status: EmployeeStatus,
-    readonly birthDate: BirthDate,
   ) {}
 
   /**
@@ -36,9 +34,8 @@ export class Employee {
     dni: DNI,
     regimeId: RegimeId,
     status: EmployeeStatus,
-    birthDate: BirthDate,
   ): Employee {
-    return new Employee(id, firstName, lastName, dni, regimeId, status, birthDate);
+    return new Employee(id, firstName, lastName, dni, regimeId, status);
   }
 
   /**
@@ -51,9 +48,8 @@ export class Employee {
     dni: DNI,
     regimeId: RegimeId,
     status: EmployeeStatus,
-    birthDate: BirthDate,
   ): Employee {
-    return new Employee(id, firstName, lastName, dni, regimeId, status, birthDate);
+    return new Employee(id, firstName, lastName, dni, regimeId, status);
   }
 
   /**

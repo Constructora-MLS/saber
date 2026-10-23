@@ -9,7 +9,7 @@ import { FilterableCatalogStatus } from '../../domain/model/value-objects/catalo
  * ListServicesQuery asks for a page of the services.
  */
 export interface ListServicesQuery {
-  /** The prefix searched in service names. */
+  /** The term searched in the names of the services. */
   readonly search?: string;
   /** The state the services are filtered by. */
   readonly status?: FilterableCatalogStatus;

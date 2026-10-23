@@ -27,8 +27,6 @@ export interface EmployeeRow {
   readonly regimeId: string;
   /** The name of the labor regime, when the catalog could be read. */
   readonly regimeName: string | null;
-  /** The date of birth of the worker, in the YYYY-MM-DD format. */
-  readonly birthDate: string;
   /** The state of the worker. */
   readonly status: EmployeeStatus;
 }

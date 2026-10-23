@@ -17,8 +17,6 @@ export interface CreateEmployeeCommand {
   readonly dni: string;
   /** The labor regime of the worker. */
   readonly regimeId: string;
-  /** The date of birth of the worker, in the YYYY-MM-DD format. */
-  readonly birthDate: string;
 }
 
 /**
@@ -38,8 +36,6 @@ export interface UpdateEmployeeCommand {
   readonly dni?: string;
   /** The new labor regime of the worker. Absent when it does not change. */
   readonly regimeId?: string;
-  /** The new date of birth of the worker, in the YYYY-MM-DD format. Absent when it does not change. */
-  readonly birthDate?: string;
 }
 
 /**

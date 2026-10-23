@@ -11,7 +11,7 @@
 
   <form class="dialog-form" id="register-employee-form" [formGroup]="form" (ngSubmit)="submit()">
     <div class="dialog-fields">
-      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-form-field appearance="outline" class="field-wide" subscriptSizing="dynamic">
         <mat-label>DNI</mat-label>
         <input
           matInput
@@ -90,38 +90,6 @@
           appFieldCounter
           [control]="form.controls.lastName"
           [max]="personNameMaxLength"
-        />
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" subscriptSizing="dynamic">
-        <mat-label>Fecha de nacimiento</mat-label>
-        <input
-          matInput
-          formControlName="birthDate"
-          inputmode="numeric"
-          [maxLength]="birthDateLength"
-          placeholder="DD/MM/AAAA"
-          autocomplete="off"
-          required
-        />
-        @if (form.controls.birthDate.hasError('required')) {
-          <mat-error>La fecha de nacimiento es obligatoria.</mat-error>
-        }
-        @if (form.controls.birthDate.hasError('birthDate')) {
-          <mat-error>
-            {{
-              form.controls.birthDate.getError('birthDate') === 'future'
-                ? 'La fecha de nacimiento no puede ser posterior a hoy.'
-                : 'La fecha de nacimiento no es válida. Usa el formato DD/MM/AAAA.'
-            }}
-          </mat-error>
-        }
-        <mat-hint>No puede ser posterior a hoy.</mat-hint>
-        <mat-hint
-          align="end"
-          appFieldCounter
-          [control]="form.controls.birthDate"
-          [max]="birthDateLength"
         />
       </mat-form-field>
 
