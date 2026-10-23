@@ -10,8 +10,9 @@
  * holds no assignment is vigente by default, because it was just
  * registered.
  *
- * The logical deletion of a record is not a labour status: a deleted worker
- * is never published, so the state never reaches the interfaces.
+ * The logical deletion is a state of the record, the same way the Catalog
+ * context deletes its records: a deleted worker is never published, so the
+ * state never reaches the interfaces.
  */
 export type EmployeeStatus = 'VIGENTE' | 'RETIRADO';
 

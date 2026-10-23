@@ -15,6 +15,7 @@ import {
   AssignmentStatusResource,
   CeaseAssignmentRequest,
   CreateAssignmentRequest,
+  UpdateAssignmentRequest,
 } from './assignment-api.contract';
 import { toAssignmentApiError } from './assignment-api.error';
 import { Assignment } from '../../domain/model/aggregates/assignment';
@@ -25,6 +26,7 @@ import { EmployeeId } from '../../domain/model/value-objects/employee-id';
 import { PositionId } from '../../domain/model/value-objects/position-id';
 import { WorkUnitId } from '../../domain/model/value-objects/work-unit-id';
 import {
+  AssignmentChanges,
   AssignmentCriteria,
   AssignmentPage,
   AssignmentRepository,
@@ -79,7 +81,26 @@ export class AssignmentHttpGateway implements AssignmentRepository {
   }
 
   /**
-   * ceaseAssignment closes the labour period of an assignment.
+   * updateAssignment sends only changed fields to the API.
+   */
+  async updateAssignment(changes: AssignmentChanges): Promise<Assignment> {
+    const request: UpdateAssignmentRequest = {
+      ...(changes.workUnitId ? { workUnitId: changes.workUnitId.value } : {}),
+      ...(changes.positionId ? { positionId: changes.positionId.value } : {}),
+      ...(changes.startDate ? { startDate: changes.startDate.value } : {}),
+    };
+
+    const updated = await firstValueFrom(
+      this.http
+        .patch<AssignmentResource>(`${this.baseUrl}/assignments/${changes.id.value}`, request)
+        .pipe(catchError((error: HttpErrorResponse) => this.toFailure(error))),
+    );
+
+    return this.toAssignment(updated);
+  }
+
+  /**
+   * ceaseAssignment records the effective end date of an assignment.
    */
   async ceaseAssignment(id: AssignmentId, date: AssignmentDate): Promise<Assignment> {
     const request: CeaseAssignmentRequest = { date: date.value };

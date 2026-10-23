@@ -91,6 +91,15 @@
                 <button
                   mat-menu-item
                   type="button"
+                  [disabled]="!canEdit(row)"
+                  (click)="editRequested.emit(row)"
+                >
+                  <mat-icon aria-hidden="true">edit</mat-icon>
+                  <span>Editar</span>
+                </button>
+                <button
+                  mat-menu-item
+                  type="button"
                   [disabled]="!canCease(row)"
                   (click)="ceaseRequested.emit(row)"
                 >

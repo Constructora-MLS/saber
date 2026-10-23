@@ -26,15 +26,15 @@
         [documentValue]="person.documentValue"
         [facts]="facts()"
       >
-        <a
+        <button
           matButton="outlined"
           class="action-button action-button--secondary"
-          routerLink="/employees"
-          title="Los datos del trabajador se editan en Personal"
+          type="button"
+          (click)="openEditEmployeeDialog()"
         >
           <mat-icon aria-hidden="true">edit</mat-icon>
           Editar datos
-        </a>
+        </button>
         <button
           matButton="filled"
           class="action-button action-button--primary"
@@ -66,6 +66,7 @@
         [errorTitle]="loadFailure()?.title ?? null"
         [errorMessage]="loadFailure()?.message ?? null"
         emptyActionLabel="Registrar asignación"
+        (editRequested)="openEditAssignmentDialog($event)"
         (ceaseRequested)="openCeaseDialog($event)"
         (deleteRequested)="openDeleteDialog($event)"
         (createRequested)="openCreateDialog()"

@@ -35,6 +35,12 @@ export interface WorkerRecord {
   readonly id: string;
   /** The full name of the worker. */
   readonly name: string;
+  /** The first name of the worker. */
+  readonly firstName: string;
+  /** The last name of the worker. */
+  readonly lastName: string;
+  /** The identifier of the worker's regime. */
+  readonly regimeId: string;
   /** The identity document of the worker. */
   readonly documentValue: string;
   /** The name of the labor regime of the worker, when the catalog answered. */
@@ -102,7 +108,10 @@ export class GetWorkerRecordQueryService {
     return {
       id: worker.id.value,
       name: worker.fullName,
+      firstName: worker.firstName.value,
+      lastName: worker.lastName.value,
       documentValue: worker.dni.value,
+      regimeId: worker.regimeId.value,
       regimeName: regimes.get(worker.regimeId.value)?.name ?? null,
       status: worker.status,
     };

@@ -55,9 +55,21 @@ export interface NewAssignment {
 /**
  * AssignmentRepository is the port of the registry of the assignments.
  */
+export interface AssignmentChanges {
+  /** The assignment being changed. */
+  readonly id: AssignmentId;
+  /** The replacement work unit, when changed. */
+  readonly workUnitId?: WorkUnitId;
+  /** The replacement position, when changed. */
+  readonly positionId?: PositionId;
+  /** The replacement start date, when changed. */
+  readonly startDate?: AssignmentDate;
+}
+
 export interface AssignmentRepository {
   listAssignments(criteria: AssignmentCriteria): Promise<AssignmentPage<Assignment>>;
   createAssignment(assignment: NewAssignment): Promise<Assignment>;
+  updateAssignment(changes: AssignmentChanges): Promise<Assignment>;
   ceaseAssignment(id: AssignmentId, date: AssignmentDate): Promise<Assignment>;
   deleteAssignment(id: AssignmentId): Promise<void>;
 }

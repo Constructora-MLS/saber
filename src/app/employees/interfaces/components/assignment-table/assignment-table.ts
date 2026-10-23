@@ -27,8 +27,12 @@ export interface AssignmentRow {
   readonly workUnitName: string;
   /** The code of the unit of work, when the catalog could be read. */
   readonly workUnitCode: string | null;
+  /** The identifier of the unit of work. */
+  readonly workUnitId: string;
   /** The service the unit of work belongs to, when the catalog could be read. */
   readonly workUnitService: string | null;
+  /** The identifier of the position. */
+  readonly positionId: string;
   /** The name of the position the worker performs. */
   readonly positionName: string;
   /** The date the labour period starts, in the YYYY-MM-DD format. */
@@ -81,6 +85,8 @@ export class AssignmentTable {
   /** The label of the action that offers to register an assignment. */
   readonly emptyActionLabel = input<string | null>(null);
 
+  /** Editing an assignment was requested. */
+  readonly editRequested = output<AssignmentRow>();
   /** The cessation of an assignment was requested. */
   readonly ceaseRequested = output<AssignmentRow>();
   /** The deletion of an assignment was requested. */
@@ -103,6 +109,13 @@ export class AssignmentTable {
    *
    * The cessation closes a period that is open, so an assignment that is
    * already retired does not offer it.
+   */
+  protected canEdit(row: AssignmentRow): boolean {
+    return row.status === 'VIGENTE';
+  }
+
+  /**
+   * canCease reports whether the period can be given an end date.
    */
   protected canCease(row: AssignmentRow): boolean {
     return row.status === 'VIGENTE';

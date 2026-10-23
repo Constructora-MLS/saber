@@ -1,0 +1,76 @@
+<h2 mat-dialog-title>Editar Asignación</h2>
+
+<mat-dialog-content>
+  <p class="dialog-description">
+    Actualiza los datos de una asignación vigente. Un cese efectivo no se puede reactivar.
+  </p>
+
+  <div class="dialog-person">
+    <p class="dialog-person-name">{{ data.worker.name }}</p>
+    <p class="dialog-person-detail">
+      {{ data.worker.documentLabel }} · {{ data.worker.documentValue }}
+    </p>
+  </div>
+
+  <div class="dialog-record">
+    <p class="dialog-record-title">{{ data.assignment.workUnitName }}</p>
+    <p class="dialog-record-detail">
+      @if (data.assignment.workUnitCode) {
+        {{ data.assignment.workUnitCode }} ·
+      }
+      {{ data.assignment.positionName }}
+    </p>
+  </div>
+
+  <form class="dialog-form" id="edit-assignment-form" [formGroup]="form" (ngSubmit)="submit()">
+    <div class="dialog-fields">
+      <mat-form-field appearance="outline" class="field-wide" subscriptSizing="dynamic">
+        <mat-label>Unidad de Trabajo</mat-label>
+        <mat-select formControlName="workUnitId">
+          @for (unit of data.workUnits; track unit.id) {
+            <mat-option [value]="unit.id">
+              {{ unit.code }} · {{ unit.name }} · {{ unit.serviceName }}
+            </mat-option>
+          }
+        </mat-select>
+        @if (form.controls.workUnitId.hasError('required')) {
+          <mat-error>Selecciona una unidad de trabajo.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="field-wide" subscriptSizing="dynamic">
+        <mat-label>Cargo</mat-label>
+        <mat-select formControlName="positionId">
+          @for (position of data.positions; track position.id) {
+            <mat-option [value]="position.id">{{ position.name }}</mat-option>
+          }
+        </mat-select>
+        @if (form.controls.positionId.hasError('required')) {
+          <mat-error>Selecciona un cargo.</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="field-wide" subscriptSizing="dynamic">
+        <mat-label>Fecha de Ingreso</mat-label>
+        <input matInput type="date" formControlName="startDate" [max]="maxStartDate" required />
+        @if (form.controls.startDate.hasError('required')) {
+          <mat-error>La fecha de ingreso es obligatoria.</mat-error>
+        }
+        <mat-hint>No puede ser posterior a hoy ni al cese registrado.</mat-hint>
+      </mat-form-field>
+    </div>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="dialog-actions">
+  <button matButton type="button" (click)="cancel()">Cancelar</button>
+  <button
+    matButton="filled"
+    type="submit"
+    form="edit-assignment-form"
+    [disabled]="form.invalid || !hasChanges()"
+  >
+    <mat-icon aria-hidden="true">save</mat-icon>
+    Guardar cambios
+  </button>
+</mat-dialog-actions>

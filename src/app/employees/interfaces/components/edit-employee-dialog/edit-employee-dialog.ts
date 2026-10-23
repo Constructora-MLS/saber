@@ -11,6 +11,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { UpdateEmployeeCommandService } from '../../../application/command-services/employee-command-services';
 import { UpdateEmployeeCommand } from '../../../application/commands/employee-commands';
+import { Employee } from '../../../domain/model/aggregates/employee';
 import { EmployeeValidationError } from '../../../domain/model/errors/employee-errors';
 import { DNI_LENGTH } from '../../../domain/model/value-objects/dni';
 import {
@@ -34,6 +35,11 @@ const DNI_PATTERN = new RegExp(`^\\d{${DNI_LENGTH}}$`);
  * EditableEmployee is the worker that a worker of the application asks to
  * modify.
  */
+export interface EditEmployeeDialogResult {
+  readonly employee: Employee;
+  readonly regimeName: string | null;
+}
+
 export interface EditableEmployee {
   /** The identifier of the worker. */
   readonly id: string;
@@ -69,7 +75,9 @@ export class EditEmployeeDialog {
   private readonly formBuilder = inject(FormBuilder);
   private readonly updateEmployee = inject(UpdateEmployeeCommandService);
   private readonly catalog = inject(CATALOG_REFERENCE_RESOLVER);
-  private readonly dialogRef = inject<MatDialogRef<EditEmployeeDialog>>(MatDialogRef);
+  private readonly dialogRef = inject<
+    MatDialogRef<EditEmployeeDialog, EditEmployeeDialogResult | undefined>
+  >(MatDialogRef);
 
   /** The worker that is being modified. */
   protected readonly data = inject<EditableEmployee>(MAT_DIALOG_DATA);
@@ -184,7 +192,9 @@ export class EditEmployeeDialog {
 
     try {
       const employee = await this.updateEmployee.execute(this.toCommand(raw));
-      this.dialogRef.close(employee);
+      const regimeName =
+        this.regimes().find((regime) => regime.id === employee.regimeId.value)?.name ?? null;
+      this.dialogRef.close({ employee, regimeName });
     } catch (error) {
       this.errorMessage.set(this.describe(error));
     } finally {

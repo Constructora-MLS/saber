@@ -1,8 +1,5 @@
-// Package person-summary holds the identity card of a worker.
-//
-// The component belongs to the shared kernel of the interfaces: the
-// Personal module, the Certificates module and the Assignments module all
-// open the record of a worker, and all of them open it the same way.
+// Package person-summary holds the identity card shown in the Employees
+// bounded context.
 // package person-summary
 
 import { Component, input } from '@angular/core';

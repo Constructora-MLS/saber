@@ -20,8 +20,22 @@ export interface CreateAssignmentCommand {
 }
 
 /**
- * CeaseAssignmentCommand asks for the end of the labour period of an
- * assignment.
+ * UpdateAssignmentCommand asks for changes to editable assignment details.
+ * Omitted fields keep their current value.
+ */
+export interface UpdateAssignmentCommand {
+  /** The identifier of the assignment. */
+  readonly uuid: string;
+  /** The replacement work unit. */
+  readonly workUnitId?: string;
+  /** The replacement position. */
+  readonly positionId?: string;
+  /** The replacement start date, in the YYYY-MM-DD format. */
+  readonly startDate?: string;
+}
+
+/**
+ * CeaseAssignmentCommand records the effective end date of an assignment.
  */
 export interface CeaseAssignmentCommand {
   /** The identifier of the assignment. */

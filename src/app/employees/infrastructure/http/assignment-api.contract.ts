@@ -62,7 +62,16 @@ export interface CreateAssignmentRequest {
 }
 
 /**
- * The body of the cessation of an assignment.
+ * The body of a partial update of an assignment.
+ */
+export interface UpdateAssignmentRequest {
+  readonly workUnitId?: string;
+  readonly positionId?: string;
+  readonly startDate?: string;
+}
+
+/**
+ * The body of recording the effective end date of an assignment.
  */
 export interface CeaseAssignmentRequest {
   readonly date: string;

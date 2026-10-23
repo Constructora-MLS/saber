@@ -9,8 +9,9 @@
  * open. It is derived from the period: the cessation is the only way to
  * close it.
  *
- * The logical deletion of a record is not a labour status: a deleted
- * assignment has no labour period at all, and it is never published.
+ * The logical deletion is a state of the record, the same way the Catalog
+ * context deletes its records: a deleted assignment has no labour period at
+ * all, and it is never published.
  */
 export type AssignmentStatus = 'VIGENTE' | 'RETIRADO';
 

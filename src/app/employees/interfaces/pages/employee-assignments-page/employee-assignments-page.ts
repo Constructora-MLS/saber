@@ -17,7 +17,7 @@ import { distinctUntilChanged, map } from 'rxjs';
 import {
   PersonSummary,
   PersonSummaryFact,
-} from '../../../../shared/interfaces/components/person-summary/person-summary';
+} from '../../components/person-summary/person-summary';
 import { TableState } from '../../../../shared/interfaces/components/table-state/table-state';
 import {
   GetWorkerRecordQueryService,
@@ -29,8 +29,12 @@ import {
   CeaseAssignmentCommandService,
   CreateAssignmentCommandService,
   DeleteAssignmentCommandService,
+  UpdateAssignmentCommandService,
 } from '../../../application/command-services/assignment-command-services';
-import { CreateAssignmentCommand } from '../../../application/commands/assignment-commands';
+import {
+  CreateAssignmentCommand,
+  UpdateAssignmentCommand,
+} from '../../../application/commands/assignment-commands';
 import { Assignment } from '../../../domain/model/aggregates/assignment';
 import { AssignmentValidationError } from '../../../domain/model/errors/assignment-errors';
 import {
@@ -43,6 +47,15 @@ import { AssignmentRow, AssignmentTable } from '../../components/assignment-tabl
 import { CeaseAssignmentDialog } from '../../components/cease-assignment-dialog/cease-assignment-dialog';
 import { CreateAssignmentDialog } from '../../components/create-assignment-dialog/create-assignment-dialog';
 import { DeleteAssignmentDialog } from '../../components/delete-assignment-dialog/delete-assignment-dialog';
+import {
+  EditAssignmentDialog,
+  EditableAssignment,
+} from '../../components/edit-assignment-dialog/edit-assignment-dialog';
+import {
+  EditEmployeeDialog,
+  EditableEmployee,
+  EditEmployeeDialogResult,
+} from '../../components/edit-employee-dialog/edit-employee-dialog';
 
 /**
  * AssignmentLoadFailure is the failure of the consultation of the
@@ -100,6 +113,7 @@ export class EmployeeAssignmentsPage {
   private readonly createAssignment = inject(CreateAssignmentCommandService);
   private readonly ceaseAssignment = inject(CeaseAssignmentCommandService);
   private readonly deleteAssignment = inject(DeleteAssignmentCommandService);
+  private readonly updateAssignment = inject(UpdateAssignmentCommandService);
 
   /** The identifier of the worker that the address of the browser carries. */
   private employeeId = '';
@@ -150,8 +164,11 @@ export class EmployeeAssignmentsPage {
    */
   protected readonly assignmentCountLabel = computed(() => {
     const total = this.rows().length;
+    const noun = total === 1 ? 'asignación' : 'asignaciones';
 
-    return `${total} ${total === 1 ? 'registrada' : 'registradas'}`;
+    return this.nextCursor()
+      ? `${total} ${noun} cargadas`
+      : `${total} ${noun} registradas`;
   });
 
   /**
@@ -244,8 +261,114 @@ export class EmployeeAssignmentsPage {
   }
 
   /**
-   * openCeaseDialog opens the dialog that closes the period of an
-   * assignment.
+   * openEditEmployeeDialog edits the worker from the current ficha.
+   */
+  protected openEditEmployeeDialog(): void {
+    const worker = this.worker();
+    if (!worker) {
+      return;
+    }
+
+    const editable: EditableEmployee = {
+      id: worker.id,
+      firstName: worker.firstName,
+      lastName: worker.lastName,
+      dni: worker.documentValue,
+      regimeId: worker.regimeId,
+    };
+
+    this.dialog
+      .open<EditEmployeeDialog, EditableEmployee, EditEmployeeDialogResult>(EditEmployeeDialog, {
+        data: editable,
+        width: '38rem',
+        maxWidth: '94vw',
+      })
+      .afterClosed()
+      .subscribe((result) => {
+        if (!result) {
+          return;
+        }
+
+        const current = this.worker();
+        if (!current) {
+          return;
+        }
+        const employee = result.employee;
+        this.worker.set({
+          ...current,
+          id: employee.id.value,
+          name: employee.fullName,
+          firstName: employee.firstName.value,
+          lastName: employee.lastName.value,
+          documentValue: employee.dni.value,
+          regimeId: employee.regimeId.value,
+          regimeName:
+            result.regimeName ??
+            (employee.regimeId.value === current.regimeId ? current.regimeName : null),
+          status: employee.status,
+        });
+        this.notify('Trabajador actualizado.');
+      });
+  }
+
+  /**
+   * openEditAssignmentDialog opens the form for a vigente assignment.
+   */
+  protected async openEditAssignmentDialog(row: AssignmentRow): Promise<void> {
+    const worker = this.worker();
+    if (!worker) {
+      return;
+    }
+
+    let options;
+    try {
+      options = await this.listOptions.execute();
+    } catch {
+      this.notify('No se pudieron leer los catálogos.');
+      return;
+    }
+
+    const currentWorkUnit: WorkUnitReference = {
+      id: row.workUnitId,
+      name: row.workUnitName,
+      code: row.workUnitCode ?? '—',
+      serviceName: row.workUnitService ?? '—',
+    };
+    const currentPosition: PositionReference = { id: row.positionId, name: row.positionName };
+    const workUnits = options.workUnits.some((item) => item.id === row.workUnitId)
+      ? options.workUnits
+      : [...options.workUnits, currentWorkUnit];
+    const positions = options.positions.some((item) => item.id === row.positionId)
+      ? options.positions
+      : [...options.positions, currentPosition];
+
+    this.dialog
+      .open(EditAssignmentDialog, {
+        data: {
+          worker: {
+            name: worker.name,
+            documentLabel: 'DNI',
+            documentValue: worker.documentValue,
+            statusLabel: worker.status === 'VIGENTE' ? 'Vigente' : 'Retirado',
+          },
+          assignment: row,
+          workUnits,
+          positions,
+        },
+        width: '38rem',
+        maxWidth: '94vw',
+      })
+      .afterClosed()
+      .subscribe((command) => {
+        if (command) {
+          void this.update(command);
+        }
+      });
+  }
+
+  /**
+   * openCeaseDialog opens the dialog that records the effective end date of
+   * an assignment.
    */
   protected openCeaseDialog(row: AssignmentRow): void {
     const worker = this.worker();
@@ -416,9 +539,11 @@ export class EmployeeAssignmentsPage {
 
     return {
       id: assignment.id.value,
+      workUnitId: assignment.workUnitId.value,
       workUnitName: workUnit?.name ?? '—',
       workUnitCode: workUnit?.code ?? null,
       workUnitService: workUnit?.serviceName ?? null,
+      positionId: assignment.positionId.value,
       positionName: position?.name ?? '—',
       startDate: assignment.startDate.value,
       endDate: assignment.endDate?.value ?? null,
@@ -446,8 +571,24 @@ export class EmployeeAssignmentsPage {
   }
 
   /**
-   * cease asks the platform for the end of the period of an assignment and
-   * reads the listing again.
+   * update asks the platform to change assignment details and reads the
+   * listing again.
+   */
+  private async update(command: UpdateAssignmentCommand): Promise<void> {
+    try {
+      await this.updateAssignment.execute(command);
+      this.notify('Asignación actualizada.');
+    } catch (error) {
+      this.notify(this.describe(error).message);
+      return;
+    }
+
+    await this.reload();
+  }
+
+  /**
+   * cease asks the platform for the effective end date and reads the listing
+   * again.
    */
   private async cease(id: string, date: string): Promise<void> {
     try {

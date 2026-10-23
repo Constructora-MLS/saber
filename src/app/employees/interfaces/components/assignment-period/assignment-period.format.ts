@@ -84,16 +84,12 @@ export function formatAssignmentPeriod(startDate: string, endDate: string | null
 }
 
 /**
- * todayAsAssignmentDate writes the current day in the format of the
- * platform.
- *
- * The day is read from the clock of the browser, so the forms of the
- * assignments offer the same last day that the platform accepts.
+ * todayAsAssignmentDate writes the current UTC day in the format of the
+ * platform. The backend uses the same UTC business date when it derives
+ * assignment and employee statuses.
  */
 export function todayAsAssignmentDate(): string {
-  const now = new Date();
-
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  return new Date().toISOString().slice(0, 10);
 }
 
 /**
