@@ -1,4 +1,4 @@
-import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -7,7 +7,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { ActivatedRoute, Router } from '@angular/router';
 import { ListEmployeesQueryService } from '../../../application/query-services/employee-query-services';
 import { Employee } from '../../../domain/model/aggregates/employee';
 import { REGIME_NAME_RESOLVER } from '../../../domain/services/regime-name-resolver';
@@ -63,17 +62,14 @@ const PAGE_SIZE = 20;
   styleUrl: './employees-page.scss',
   templateUrl: './employees-page.html',
 })
-export class EmployeesPage {
+export class EmployeesPage implements OnInit {
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly listEmployees = inject(ListEmployeesQueryService);
   private readonly regimeNames = inject(REGIME_NAME_RESOLVER);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
 
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
-  private loaded = false;
   private readonly failedCursor = signal<string | null>(null);
 
   protected readonly searchTerm = signal('');
@@ -113,23 +109,15 @@ export class EmployeesPage {
     this.searchTerm().trim().length > 0 ? 'person_search' : 'group_off',
   );
 
-  constructor() {
-    this.route.queryParamMap.subscribe((params) => {
-      const requestedSearch = params.get('buscar') ?? '';
-      const search = this.searchTerm();
-
-      this.searchTerm.set(requestedSearch);
-
-      if (!this.loaded) {
-        this.loaded = true;
-        void this.reload();
-        return;
-      }
-
-      if (requestedSearch !== search) {
-        void this.reload();
-      }
-    });
+  /**
+   * ngOnInit loads the listing of workers.
+   *
+   * The search lives in the page, never in the address of the browser, so
+   * the url of the module stays clean and the menu keeps the item of the
+   * page selected.
+   */
+  ngOnInit(): void {
+    void this.reload();
   }
 
   /**
@@ -144,7 +132,6 @@ export class EmployeesPage {
 
     this.searchTimer = setTimeout(() => {
       this.searchTimer = null;
-      void this.syncUrl();
       void this.reload();
     }, 300);
 
@@ -164,7 +151,6 @@ export class EmployeesPage {
       return;
     }
     this.searchTerm.set('');
-    void this.syncUrl();
     void this.reload();
   }
 
@@ -330,21 +316,6 @@ export class EmployeesPage {
       regimeName: names.get(employee.regimeId.value) ?? null,
       status: employee.status,
     };
-  }
-
-  /**
-   * syncUrl writes the search of the listing in the address of the browser,
-   * so the worker finds the same listing after a reload.
-   */
-  private syncUrl(): void {
-    void this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: {
-        buscar: this.searchTerm().trim() || null,
-      },
-      queryParamsHandling: 'merge',
-      replaceUrl: true,
-    });
   }
 
   /**

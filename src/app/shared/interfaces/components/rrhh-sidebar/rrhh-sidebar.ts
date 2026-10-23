@@ -1,6 +1,6 @@
 import { Component, input, output, signal } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { IsActiveMatchOptions, RouterLink, RouterLinkActive } from '@angular/router';
 import { AppSwitcher, AppSwitcherOption } from '../app-switcher/app-switcher';
 import { MlsIcon } from '../icons/mls-icon/mls-icon';
 
@@ -32,6 +32,19 @@ export class RrhhSidebar {
   protected readonly isAppSwitcherOpen = signal(false);
   protected readonly isCompact = signal(false);
   protected readonly isDrawerOpen = signal(false);
+
+  /**
+   * activeLinkOptions decides when a navigation item is the current one.
+   *
+   * The item is decided by the path alone, so the menu keeps the page
+   * selected no matter what the pages write in the address of the browser.
+   */
+  protected readonly activeLinkOptions: IsActiveMatchOptions = {
+    paths: 'exact',
+    queryParams: 'ignored',
+    fragment: 'ignored',
+    matrixParams: 'ignored',
+  };
 
   protected readonly applications: readonly AppSwitcherOption[] = [
     { label: 'Recursos Humanos', icon: 'groups', status: 'active', dividerAfter: true },

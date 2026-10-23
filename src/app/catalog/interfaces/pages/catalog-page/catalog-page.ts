@@ -1,4 +1,4 @@
-import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
@@ -8,7 +8,6 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { ActivatedRoute, Router } from '@angular/router';
 import {
   ListPositionsQueryService,
   ListRegimeQueryService,
@@ -59,15 +58,6 @@ interface CatalogTabDefinition {
 }
 
 /**
- * isCatalogTab reports whether a value is the identifier of a view.
- */
-function isCatalogTab(value: string | null): value is CatalogTab {
-  return (
-    value === 'servicios' || value === 'unidades' || value === 'cargos' || value === 'regimenes'
-  );
-}
-
-/**
  * isCatalogStatus reports whether a value is a state of a record.
  */
 function isCatalogStatus(value: string | null): value is FilterableCatalogStatus {
@@ -109,12 +99,10 @@ interface CatalogLoadFailure {
   styleUrl: './catalog-page.scss',
   templateUrl: './catalog-page.html',
 })
-export class CatalogPage {
+export class CatalogPage implements OnInit {
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
 
   private readonly listServices = inject(ListServicesQueryService);
   private readonly listPositions = inject(ListPositionsQueryService);
@@ -122,7 +110,6 @@ export class CatalogPage {
   private readonly listWorkUnits = inject(ListWorkUnitsQueryService);
 
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
-  private loaded = false;
   private readonly failedCursor = signal<string | null>(null);
 
   protected readonly tabs: readonly CatalogTabDefinition[] = [
@@ -206,24 +193,15 @@ export class CatalogPage {
     () => this.tabs.find((tab) => tab.id === this.activeTab()) ?? this.tabs[0],
   );
 
-  constructor() {
-    this.route.queryParamMap.subscribe((params) => {
-      const requestedTab = params.get('vista');
-      const requestedStatus = params.get('estado');
-      const tab: CatalogTab = isCatalogTab(requestedTab) ? requestedTab : 'unidades';
-      const status: FilterableCatalogStatus | '' = isCatalogStatus(requestedStatus)
-        ? requestedStatus
-        : '';
-      const changed = tab !== this.activeTab() || status !== this.statusFilter();
-
-      this.activeTab.set(tab);
-      this.statusFilter.set(status);
-
-      if (changed || !this.loaded) {
-        this.loaded = true;
-        void this.reload();
-      }
-    });
+  /**
+   * ngOnInit loads the listing of the catalog.
+   *
+   * The view, the filter and the search live in the page, never in the
+   * address of the browser, so the url of the module stays clean and the
+   * menu keeps the item of the page selected.
+   */
+  ngOnInit(): void {
+    void this.reload();
   }
 
   /**
@@ -235,7 +213,6 @@ export class CatalogPage {
     }
     this.activeTab.set(tab);
     this.loadFailure.set(null);
-    void this.syncUrl();
     void this.reload();
   }
 
@@ -264,7 +241,6 @@ export class CatalogPage {
    */
   protected onStatusChanged(value: FilterableCatalogStatus | ''): void {
     this.statusFilter.set(value);
-    void this.syncUrl();
     void this.reload();
   }
 
@@ -285,7 +261,6 @@ export class CatalogPage {
   protected clearFilters(): void {
     this.searchTerm.set('');
     this.statusFilter.set('');
-    void this.syncUrl();
     void this.reload();
   }
 
@@ -566,22 +541,6 @@ export class CatalogPage {
           status: record.record.status,
         };
     }
-  }
-
-  /**
-   * syncUrl writes the view and the filter of the listing in the address of
-   * the browser, so the worker finds the same listing after a reload.
-   */
-  private syncUrl(): void {
-    void this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: {
-        vista: this.activeTab(),
-        estado: this.statusFilter() || null,
-      },
-      queryParamsHandling: 'merge',
-      replaceUrl: true,
-    });
   }
 
   /**

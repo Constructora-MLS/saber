@@ -59,7 +59,7 @@
             [attr.title]="isCollapsed() ? item.label : null"
             routerLinkActive="is-active"
             ariaCurrentWhenActive="page"
-            [routerLinkActiveOptions]="{ exact: true }"
+            [routerLinkActiveOptions]="activeLinkOptions"
             (click)="closeDrawer()"
           >
             <mat-icon aria-hidden="true">{{ item.icon }}</mat-icon>
