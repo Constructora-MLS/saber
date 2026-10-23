@@ -15,8 +15,13 @@ import { normalizeCatalogSearch } from '../../../application/queries/catalog-sea
 import { ListServicesQueryService } from '../../../application/query-services/catalog-query-services';
 import { Service } from '../../../domain/model/aggregates/service';
 import { CatalogValidationError } from '../../../domain/model/errors/catalog-errors';
+import {
+  CATALOG_NAME_MAX_LENGTH,
+  CATALOG_NAME_MIN_LENGTH,
+} from '../../../domain/model/value-objects/catalog-name';
+import { DESCRIPTION_MAX_LENGTH } from '../../../domain/model/value-objects/description';
 import { CatalogApiError } from '../../../infrastructure/http/catalog-api.error';
-import { FieldCounter } from '../field-counter/field-counter';
+import { FieldCounter } from '../../../../shared/interfaces/components/field-counter/field-counter';
 
 /**
  * CreateWorkUnitDialog registers a work unit in the catalog.
@@ -49,9 +54,23 @@ export class CreateWorkUnitDialog implements OnInit {
 
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
+  /** The shortest name that a record accepts. */
+  protected readonly nameMinLength = CATALOG_NAME_MIN_LENGTH;
+  /** The limit of the name of the record. */
+  protected readonly nameMaxLength = CATALOG_NAME_MAX_LENGTH;
+  /** The limit of the description of the record. */
+  protected readonly descriptionMaxLength = DESCRIPTION_MAX_LENGTH;
+
   protected readonly form = this.formBuilder.nonNullable.group({
-    name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(120)]],
-    description: ['', [Validators.maxLength(500)]],
+    name: [
+      '',
+      [
+        Validators.required,
+        Validators.minLength(CATALOG_NAME_MIN_LENGTH),
+        Validators.maxLength(CATALOG_NAME_MAX_LENGTH),
+      ],
+    ],
+    description: ['', [Validators.maxLength(DESCRIPTION_MAX_LENGTH)]],
     // The identifier of the chosen service. It is the only mandatory field
     // of the reference: the text is only the label of the selection.
     serviceId: ['', [Validators.required]],

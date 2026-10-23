@@ -25,8 +25,13 @@ import { Service } from '../../../domain/model/aggregates/service';
 import { WorkUnit } from '../../../domain/model/aggregates/work-unit';
 import { CatalogValidationError } from '../../../domain/model/errors/catalog-errors';
 import { UpdatableCatalogStatus } from '../../../domain/model/value-objects/catalog-status';
+import {
+  CATALOG_NAME_MAX_LENGTH,
+  CATALOG_NAME_MIN_LENGTH,
+} from '../../../domain/model/value-objects/catalog-name';
+import { DESCRIPTION_MAX_LENGTH } from '../../../domain/model/value-objects/description';
 import { CatalogApiError } from '../../../infrastructure/http/catalog-api.error';
-import { FieldCounter } from '../field-counter/field-counter';
+import { FieldCounter } from '../../../../shared/interfaces/components/field-counter/field-counter';
 
 /**
  * EditableCatalogRecord is the record that a worker of the application asks
@@ -93,9 +98,23 @@ export class EditCatalogRecordDialog implements OnInit {
 
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
+  /** The shortest name that a record accepts. */
+  protected readonly nameMinLength = CATALOG_NAME_MIN_LENGTH;
+  /** The limit of the name of the record. */
+  protected readonly nameMaxLength = CATALOG_NAME_MAX_LENGTH;
+  /** The limit of the description of the record. */
+  protected readonly descriptionMaxLength = DESCRIPTION_MAX_LENGTH;
+
   protected readonly form = this.formBuilder.nonNullable.group({
-    name: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(120)]],
-    description: ['', [Validators.maxLength(500)]],
+    name: [
+      '',
+      [
+        Validators.required,
+        Validators.minLength(CATALOG_NAME_MIN_LENGTH),
+        Validators.maxLength(CATALOG_NAME_MAX_LENGTH),
+      ],
+    ],
+    description: ['', [Validators.maxLength(DESCRIPTION_MAX_LENGTH)]],
     // The identifier of the chosen service. It is the only mandatory field
     // of the reference: the text is only the label of the selection.
     serviceId: [''],

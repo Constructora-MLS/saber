@@ -18,13 +18,26 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { UpdateEmployeeCommandService } from '../../../application/command-services/employee-command-services';
 import { UpdateEmployeeCommand } from '../../../application/commands/employee-commands';
 import { EmployeeValidationError } from '../../../domain/model/errors/employee-errors';
+import { DNI_LENGTH } from '../../../domain/model/value-objects/dni';
+import {
+  PERSON_NAME_MAX_LENGTH,
+  PERSON_NAME_MIN_LENGTH,
+} from '../../../domain/model/value-objects/person-name';
 import { REGIME_NAME_RESOLVER, RegimeOption } from '../../../domain/services/regime-name-resolver';
 import { EmployeeApiError } from '../../../infrastructure/http/employee-api.error';
+import { FieldCounter } from '../../../../shared/interfaces/components/field-counter/field-counter';
 import {
+  BIRTH_DATE_INPUT_LENGTH,
   birthDateFormatError,
   fromBirthDateInput,
   toBirthDateInput,
 } from '../../date-format';
+
+/**
+ * The pattern of a DNI: only digits, and exactly as many as the length of
+ * the document.
+ */
+const DNI_PATTERN = new RegExp(`^\\d{${DNI_LENGTH}}$`);
 
 /**
  * birthDateValidator checks the date of birth that the worker wrote.
@@ -66,6 +79,7 @@ export interface EditableEmployee {
  */
 @Component({
   imports: [
+    FieldCounter,
     MatAutocompleteModule,
     MatButtonModule,
     MatDialogModule,
@@ -87,10 +101,33 @@ export class EditEmployeeDialog {
   /** The worker that is being modified. */
   protected readonly data = inject<EditableEmployee>(MAT_DIALOG_DATA);
 
+  /** The limit of the DNI. */
+  protected readonly dniLength = DNI_LENGTH;
+  /** The shortest name that a worker accepts. */
+  protected readonly personNameMinLength = PERSON_NAME_MIN_LENGTH;
+  /** The limit of the first name and of the last name. */
+  protected readonly personNameMaxLength = PERSON_NAME_MAX_LENGTH;
+  /** The limit of the date of birth. */
+  protected readonly birthDateLength = BIRTH_DATE_INPUT_LENGTH;
+
   protected readonly form = this.formBuilder.nonNullable.group({
-    dni: [this.data.dni, [Validators.required, Validators.pattern(/^\d{8}$/)]],
-    firstName: [this.data.firstName, [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
-    lastName: [this.data.lastName, [Validators.required, Validators.minLength(2), Validators.maxLength(100)]],
+    dni: [this.data.dni, [Validators.required, Validators.pattern(DNI_PATTERN)]],
+    firstName: [
+      this.data.firstName,
+      [
+        Validators.required,
+        Validators.minLength(PERSON_NAME_MIN_LENGTH),
+        Validators.maxLength(PERSON_NAME_MAX_LENGTH),
+      ],
+    ],
+    lastName: [
+      this.data.lastName,
+      [
+        Validators.required,
+        Validators.minLength(PERSON_NAME_MIN_LENGTH),
+        Validators.maxLength(PERSON_NAME_MAX_LENGTH),
+      ],
+    ],
     birthDate: [toBirthDateInput(this.data.birthDate), [Validators.required, birthDateValidator]],
     regimeId: [this.data.regimeId, [Validators.required]],
   });

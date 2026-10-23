@@ -12,26 +12,44 @@
   <form class="dialog-form" id="catalog-regime-form" [formGroup]="form" (ngSubmit)="submit()">
     <mat-form-field appearance="outline">
       <mat-label>Nombre del régimen</mat-label>
-      <input matInput formControlName="name" maxlength="120" required autocomplete="off" />
+      <input
+        matInput
+        formControlName="name"
+        [maxLength]="nameMaxLength"
+        required
+        autocomplete="off"
+      />
       @if (form.controls.name.hasError('required')) {
         <mat-error>El nombre es obligatorio.</mat-error>
       }
       @if (form.controls.name.hasError('minlength')) {
-        <mat-error>El nombre debe tener al menos 2 caracteres.</mat-error>
+        <mat-error>El nombre debe tener al menos {{ nameMinLength }} caracteres.</mat-error>
       }
       @if (form.controls.name.hasError('maxlength')) {
-        <mat-error>El nombre no puede superar los 120 caracteres.</mat-error>
+        <mat-error>El nombre no puede superar los {{ nameMaxLength }} caracteres.</mat-error>
       }
-      <mat-hint align="end" appFieldCounter [control]="form.controls.name" limit="name" />
+      <mat-hint align="end" appFieldCounter [control]="form.controls.name" [max]="nameMaxLength" />
     </mat-form-field>
 
     <mat-form-field appearance="outline">
       <mat-label>Descripción (opcional)</mat-label>
-      <textarea matInput formControlName="description" rows="3" maxlength="500"></textarea>
+      <textarea
+        matInput
+        formControlName="description"
+        rows="3"
+        [maxLength]="descriptionMaxLength"
+      ></textarea>
       @if (form.controls.description.hasError('maxlength')) {
-        <mat-error>La descripción no puede superar los 500 caracteres.</mat-error>
+        <mat-error>
+          La descripción no puede superar los {{ descriptionMaxLength }} caracteres.
+        </mat-error>
       }
-      <mat-hint align="end" appFieldCounter [control]="form.controls.description" limit="description" />
+      <mat-hint
+        align="end"
+        appFieldCounter
+        [control]="form.controls.description"
+        [max]="descriptionMaxLength"
+      />
     </mat-form-field>
   </form>
 </mat-dialog-content>

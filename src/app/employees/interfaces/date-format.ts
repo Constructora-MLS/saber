@@ -7,6 +7,14 @@
 /** The format that the interfaces show. */
 const DISPLAY_PATTERN = /^(\d{2})\/(\d{2})\/(\d{4})$/;
 
+/**
+ * The number of characters of a date of birth as the interfaces show it.
+ *
+ * The field holds the day, the month and the year, so the limit of the
+ * field is the length of the format.
+ */
+export const BIRTH_DATE_INPUT_LENGTH = 10;
+
 /** The format that the platform publishes. */
 const PLATFORM_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 

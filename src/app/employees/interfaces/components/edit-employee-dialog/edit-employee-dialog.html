@@ -1,9 +1,7 @@
 <h2 mat-dialog-title>Editar Trabajador</h2>
 
 <mat-dialog-content>
-  <p class="dialog-description">
-    Actualiza los datos personales que utiliza RR. HH.
-  </p>
+  <p class="dialog-description">Actualiza los datos personales que utiliza RR. HH.</p>
 
   @if (errorMessage(); as message) {
     <p class="dialog-error" role="alert">{{ message }}</p>
@@ -17,7 +15,7 @@
           matInput
           formControlName="dni"
           inputmode="numeric"
-          maxlength="8"
+          [maxLength]="dniLength"
           autocomplete="off"
           required
         />
@@ -25,20 +23,41 @@
           <mat-error>El DNI es obligatorio.</mat-error>
         }
         @if (form.controls.dni.hasError('pattern')) {
-          <mat-error>El DNI debe tener 8 dígitos.</mat-error>
+          <mat-error>El DNI debe tener {{ dniLength }} dígitos.</mat-error>
         }
-        <mat-hint>8 dígitos, único.</mat-hint>
+        <mat-hint>{{ dniLength }} dígitos, único.</mat-hint>
+        <mat-hint align="end" appFieldCounter [control]="form.controls.dni" [max]="dniLength" />
       </mat-form-field>
 
       <mat-form-field appearance="outline" subscriptSizing="dynamic">
         <mat-label>Nombres</mat-label>
-        <input matInput formControlName="firstName" maxlength="100" autocomplete="given-name" required />
+        <input
+          matInput
+          formControlName="firstName"
+          [maxLength]="personNameMaxLength"
+          autocomplete="given-name"
+          required
+        />
         @if (form.controls.firstName.hasError('required')) {
           <mat-error>Los nombres son obligatorios.</mat-error>
         }
         @if (form.controls.firstName.hasError('minlength')) {
-          <mat-error>Los nombres deben tener al menos 2 caracteres.</mat-error>
+          <mat-error>
+            Los nombres deben tener al menos {{ personNameMinLength }} caracteres.
+          </mat-error>
         }
+        @if (form.controls.firstName.hasError('maxlength')) {
+          <mat-error>
+            Los nombres no pueden superar los {{ personNameMaxLength }} caracteres.
+          </mat-error>
+        }
+        <mat-hint>Solo letras y espacios.</mat-hint>
+        <mat-hint
+          align="end"
+          appFieldCounter
+          [control]="form.controls.firstName"
+          [max]="personNameMaxLength"
+        />
       </mat-form-field>
 
       <mat-form-field appearance="outline" subscriptSizing="dynamic">
@@ -46,7 +65,7 @@
         <input
           matInput
           formControlName="lastName"
-          maxlength="100"
+          [maxLength]="personNameMaxLength"
           autocomplete="family-name"
           required
         />
@@ -54,8 +73,22 @@
           <mat-error>Los apellidos son obligatorios.</mat-error>
         }
         @if (form.controls.lastName.hasError('minlength')) {
-          <mat-error>Los apellidos deben tener al menos 2 caracteres.</mat-error>
+          <mat-error>
+            Los apellidos deben tener al menos {{ personNameMinLength }} caracteres.
+          </mat-error>
         }
+        @if (form.controls.lastName.hasError('maxlength')) {
+          <mat-error>
+            Los apellidos no pueden superar los {{ personNameMaxLength }} caracteres.
+          </mat-error>
+        }
+        <mat-hint>Letras, espacios y apóstrofos.</mat-hint>
+        <mat-hint
+          align="end"
+          appFieldCounter
+          [control]="form.controls.lastName"
+          [max]="personNameMaxLength"
+        />
       </mat-form-field>
 
       <mat-form-field appearance="outline" subscriptSizing="dynamic">
@@ -64,7 +97,7 @@
           matInput
           formControlName="birthDate"
           inputmode="numeric"
-          maxlength="10"
+          [maxLength]="birthDateLength"
           placeholder="DD/MM/AAAA"
           autocomplete="off"
           required
@@ -82,6 +115,12 @@
           </mat-error>
         }
         <mat-hint>No puede ser posterior a hoy.</mat-hint>
+        <mat-hint
+          align="end"
+          appFieldCounter
+          [control]="form.controls.birthDate"
+          [max]="birthDateLength"
+        />
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="field-wide" subscriptSizing="dynamic">

@@ -1,14 +1,8 @@
-// Package fieldcounter holds the character counter of the catalog forms.
+// Package fieldcounter holds the character counter of the forms of the
+// platform.
 
 import { ChangeDetectionStrategy, Component, computed, effect, input, signal } from '@angular/core';
 import { AbstractControl } from '@angular/forms';
-import { CATALOG_NAME_MAX_LENGTH } from '../../../domain/model/value-objects/catalog-name';
-import { DESCRIPTION_MAX_LENGTH } from '../../../domain/model/value-objects/description';
-
-/**
- * FieldCounterLimit is the kind of text that the counter measures.
- */
-export type FieldCounterLimit = 'name' | 'description';
 
 /**
  * The share of the limit that turns the counter into a warning.
@@ -24,6 +18,10 @@ const FIELD_COUNTER_WARNING_RATIO = 0.9;
  * The counter is the way Material shows how much room is left in a field,
  * and the limit of every text is the limit of the platform, so the counter
  * and the validation never disagree.
+ *
+ * The component is presentational: it measures the control that the caller
+ * gives and it never talks to the API. The limit travels as a number, so
+ * every bounded context measures its own fields with its own rules.
  */
 @Component({
   selector: 'mat-hint[appFieldCounter]',
@@ -50,16 +48,11 @@ const FIELD_COUNTER_WARNING_RATIO = 0.9;
 export class FieldCounter {
   /** The control that the counter measures. */
   readonly control = input.required<AbstractControl>();
-  /** The kind of text that the counter measures. */
-  readonly limit = input.required<FieldCounterLimit>();
+  /** The limit of the field. */
+  readonly max = input.required<number>();
 
   /** The number of characters of the field. */
   protected readonly length = signal(0);
-
-  /** The limit of the field. */
-  protected readonly max = computed(() =>
-    this.limit() === 'name' ? CATALOG_NAME_MAX_LENGTH : DESCRIPTION_MAX_LENGTH,
-  );
 
   /** Whether the field is almost full. */
   protected readonly isWarning = computed(
@@ -70,7 +63,9 @@ export class FieldCounter {
     effect((onCleanup) => {
       const control = this.control();
       const measure = (value: unknown): void => {
-        this.length.set(typeof value === 'string' ? value.length : 0);
+        // The platform counts the characters by code point, so the counter
+        // counts them the same way.
+        this.length.set(typeof value === 'string' ? [...value].length : 0);
       };
 
       measure(control.value);
