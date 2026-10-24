@@ -1,14 +1,12 @@
+// Package editedmployeedialog modifies the data of a worker of the platform.
+// package editedmployeedialog
+
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import {
-  MatAutocompleteModule,
-  MatAutocompleteSelectedEvent,
-} from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { UpdateEmployeeCommandService } from '../../../application/command-services/employee-command-services';
 import { UpdateEmployeeCommand } from '../../../application/commands/employee-commands';
 import { Employee } from '../../../domain/model/aggregates/employee';
@@ -18,12 +16,13 @@ import {
   PERSON_NAME_MAX_LENGTH,
   PERSON_NAME_MIN_LENGTH,
 } from '../../../domain/model/value-objects/person-name';
-import {
-  CATALOG_REFERENCE_RESOLVER,
-  RegimeReference,
-} from '../../../domain/services/catalog-reference-resolver';
 import { EmployeeApiError } from '../../../infrastructure/http/employee-api.error';
+import { CATALOG_REFERENCE_RESOLVER } from '../../../domain/services/catalog-reference-resolver';
 import { FieldCounter } from '../../../../shared/interfaces/components/field-counter/field-counter';
+import {
+  CatalogOption,
+  CatalogSearchSelect,
+} from '../../../../shared/interfaces/components/catalog-search-select/catalog-search-select';
 
 /**
  * The pattern of a DNI: only digits, and exactly as many as the length of
@@ -51,6 +50,8 @@ export interface EditableEmployee {
   readonly dni: string;
   /** The labor regime of the worker. */
   readonly regimeId: string;
+  /** The name of the labor regime of the worker, when it is known. */
+  readonly regimeName: string | null;
 }
 
 /**
@@ -58,13 +59,12 @@ export interface EditableEmployee {
  */
 @Component({
   imports: [
+    CatalogSearchSelect,
     FieldCounter,
-    MatAutocompleteModule,
     MatButtonModule,
     MatDialogModule,
     MatFormFieldModule,
     MatInputModule,
-    MatProgressSpinnerModule,
     ReactiveFormsModule,
   ],
   selector: 'app-edit-employee-dialog',
@@ -75,9 +75,8 @@ export class EditEmployeeDialog {
   private readonly formBuilder = inject(FormBuilder);
   private readonly updateEmployee = inject(UpdateEmployeeCommandService);
   private readonly catalog = inject(CATALOG_REFERENCE_RESOLVER);
-  private readonly dialogRef = inject<
-    MatDialogRef<EditEmployeeDialog, EditEmployeeDialogResult | undefined>
-  >(MatDialogRef);
+  private readonly dialogRef =
+    inject<MatDialogRef<EditEmployeeDialog, EditEmployeeDialogResult | undefined>>(MatDialogRef);
 
   /** The worker that is being modified. */
   protected readonly data = inject<EditableEmployee>(MAT_DIALOG_DATA);
@@ -112,29 +111,34 @@ export class EditEmployeeDialog {
 
   protected readonly submitting = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
-  /**
-   * The regimes that the worker can choose.
-   *
-   * The regime that the worker already carries stays in the list even when
-   * it is no longer available, so the form never loses the value of the
-   * record that it modifies.
-   */
-  protected readonly regimes = signal<readonly RegimeReference[]>([]);
+  /** Whether the regimes are being read. */
   protected readonly loadingRegimes = signal(true);
-  protected readonly regimeQuery = signal('');
-  protected readonly filteredRegimes = computed(() => {
-    const query = this.regimeQuery().trim().toLocaleLowerCase();
-    return this.regimes()
-      .filter(
-        (regime) =>
-          (regime.availability === 'ACTIVE' || regime.id === this.data.regimeId) &&
-          regime.name.toLocaleLowerCase().includes(query),
-      )
-      .slice(0, 20);
+  /** The failure that prevented the reading of the regimes. */
+  protected readonly regimesError = signal<string | null>(null);
+
+  /** The regimes that the platform offered. */
+  private readonly found = signal<readonly CatalogOption[]>([]);
+  /** The regime that the worker already carries. */
+  private readonly current = signal<CatalogOption | null>(null);
+
+  /**
+   * The options of the selector: the regime of the record and the available
+   * ones.
+   */
+  protected readonly regimes = computed<readonly CatalogOption[]>(() => {
+    const current = this.current();
+    const found = this.found();
+
+    if (!current || found.some((option) => option.id === current.id)) {
+      return found;
+    }
+
+    return [current, ...found];
   });
 
   constructor() {
-    void this.loadRegimes();
+    void this.loadCurrentRegime();
+    void this.searchRegimes('');
   }
 
   /**
@@ -145,32 +149,19 @@ export class EditEmployeeDialog {
   }
 
   /**
-   * onRegimeQueryChanged filters the regimes as the worker types.
+   * searchRegimes reads the available regimes that match the term.
    */
-  protected onRegimeQueryChanged(event: Event): void {
-    const query = (event.target as HTMLInputElement).value;
-    this.regimeQuery.set(query);
-
-    const selected = this.regimes().find(
-      (regime) => regime.id === this.form.controls.regimeId.value,
-    );
-    if (selected && query !== selected.name) {
-      this.form.controls.regimeId.setValue('');
+  protected async searchRegimes(term: string): Promise<void> {
+    this.loadingRegimes.set(true);
+    this.regimesError.set(null);
+    try {
+      const regimes = await this.catalog.listRegimes(term);
+      this.found.set(regimes.map((regime) => ({ id: regime.id, label: regime.name })));
+    } catch {
+      this.regimesError.set('No se pudieron leer los regímenes.');
+    } finally {
+      this.loadingRegimes.set(false);
     }
-  }
-
-  /**
-   * selectRegime stores the identifier of the chosen active regime.
-   */
-  protected selectRegime(event: MatAutocompleteSelectedEvent): void {
-    const id = event.option.value as string;
-    const regime = this.regimes().find((item) => item.id === id && item.availability === 'ACTIVE');
-    if (!regime) {
-      return;
-    }
-
-    this.form.controls.regimeId.setValue(id);
-    this.regimeQuery.set(regime.name);
   }
 
   /**
@@ -193,7 +184,7 @@ export class EditEmployeeDialog {
     try {
       const employee = await this.updateEmployee.execute(this.toCommand(raw));
       const regimeName =
-        this.regimes().find((regime) => regime.id === employee.regimeId.value)?.name ?? null;
+        this.regimes().find((option) => option.id === employee.regimeId.value)?.label ?? null;
       this.dialogRef.close({ employee, regimeName });
     } catch (error) {
       this.errorMessage.set(this.describe(error));
@@ -225,30 +216,22 @@ export class EditEmployeeDialog {
   }
 
   /**
-   * loadRegimes asks the catalog for the regimes that the worker can
-   * choose.
+   * loadCurrentRegime reads the regime that the worker already carries.
    *
-   * The regime that the worker already carries is added when it is not
-   * offered any more, so the selection always shows what the record holds.
+   * The regime is asked by its identifier, so it is found even when it is
+   * no longer available.
    */
-  private async loadRegimes(): Promise<void> {
-    try {
-      const available = await this.catalog.listRegimes();
-      const current = this.data.regimeId;
-      const currentRegime =
-        available.find((regime) => regime.id === current) ??
-        (await this.catalog.findRegime(current));
+  private async loadCurrentRegime(): Promise<void> {
+    const id = this.data.regimeId;
 
-      this.regimes.set(
-        currentRegime && !available.some((regime) => regime.id === currentRegime.id)
-          ? [...available, currentRegime]
-          : available,
-      );
-      this.regimeQuery.set(currentRegime?.name ?? '');
+    try {
+      const name = this.data.regimeName ?? (await this.catalog.findRegime(id))?.name;
+      if (name) {
+        this.current.set({ id, label: name, current: true });
+      }
     } catch {
-      this.regimes.set([]);
-    } finally {
-      this.loadingRegimes.set(false);
+      // The regime of the record is unknown: the form still shows the
+      // available regimes.
     }
   }
 

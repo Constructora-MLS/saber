@@ -1,14 +1,9 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import {
-  MatAutocompleteModule,
-  MatAutocompleteSelectedEvent,
-} from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { CreateEmployeeCommandService } from '../../../application/command-services/employee-command-services';
 import { EmployeeValidationError } from '../../../domain/model/errors/employee-errors';
 import { DNI_LENGTH } from '../../../domain/model/value-objects/dni';
@@ -17,11 +12,12 @@ import {
   PERSON_NAME_MIN_LENGTH,
 } from '../../../domain/model/value-objects/person-name';
 import { EmployeeApiError } from '../../../infrastructure/http/employee-api.error';
-import {
-  CATALOG_REFERENCE_RESOLVER,
-  RegimeReference,
-} from '../../../domain/services/catalog-reference-resolver';
+import { CATALOG_REFERENCE_RESOLVER } from '../../../domain/services/catalog-reference-resolver';
 import { FieldCounter } from '../../../../shared/interfaces/components/field-counter/field-counter';
+import {
+  CatalogOption,
+  CatalogSearchSelect,
+} from '../../../../shared/interfaces/components/catalog-search-select/catalog-search-select';
 
 /**
  * The pattern of a DNI: only digits, and exactly as many as the length of
@@ -34,13 +30,12 @@ const DNI_PATTERN = new RegExp(`^\\d{${DNI_LENGTH}}$`);
  */
 @Component({
   imports: [
+    CatalogSearchSelect,
     FieldCounter,
-    MatAutocompleteModule,
     MatButtonModule,
     MatDialogModule,
     MatFormFieldModule,
     MatInputModule,
-    MatProgressSpinnerModule,
     ReactiveFormsModule,
   ],
   selector: 'app-register-employee-dialog',
@@ -89,21 +84,12 @@ export class RegisterEmployeeDialog {
    * Only the available regimes are offered: the resolver never returns an
    * unavailable one.
    */
-  protected readonly regimes = signal<readonly RegimeReference[]>([]);
+  protected readonly regimes = signal<readonly CatalogOption[]>([]);
   protected readonly loadingRegimes = signal(true);
-  protected readonly regimeQuery = signal('');
-  protected readonly filteredRegimes = computed(() => {
-    const query = this.regimeQuery().trim().toLocaleLowerCase();
-    return this.regimes()
-      .filter(
-        (regime) =>
-          regime.availability === 'ACTIVE' && regime.name.toLocaleLowerCase().includes(query),
-      )
-      .slice(0, 20);
-  });
+  protected readonly regimesError = signal<string | null>(null);
 
   constructor() {
-    void this.loadRegimes();
+    void this.searchRegimes('');
   }
 
   /**
@@ -114,32 +100,19 @@ export class RegisterEmployeeDialog {
   }
 
   /**
-   * onRegimeQueryChanged filters the regimes as the worker types.
+   * searchRegimes reads the available regimes that match the term.
    */
-  protected onRegimeQueryChanged(event: Event): void {
-    const query = (event.target as HTMLInputElement).value;
-    this.regimeQuery.set(query);
-
-    const selected = this.regimes().find(
-      (regime) => regime.id === this.form.controls.regimeId.value,
-    );
-    if (selected && query !== selected.name) {
-      this.form.controls.regimeId.setValue('');
+  protected async searchRegimes(term: string): Promise<void> {
+    this.loadingRegimes.set(true);
+    this.regimesError.set(null);
+    try {
+      const regimes = await this.catalog.listRegimes(term);
+      this.regimes.set(regimes.map((regime) => ({ id: regime.id, label: regime.name })));
+    } catch {
+      this.regimesError.set('No se pudieron leer los regímenes.');
+    } finally {
+      this.loadingRegimes.set(false);
     }
-  }
-
-  /**
-   * selectRegime stores the identifier of the chosen regime.
-   */
-  protected selectRegime(event: MatAutocompleteSelectedEvent): void {
-    const id = event.option.value as string;
-    const regime = this.regimes().find((item) => item.id === id && item.availability === 'ACTIVE');
-    if (!regime) {
-      return;
-    }
-
-    this.form.controls.regimeId.setValue(id);
-    this.regimeQuery.set(regime.name);
   }
 
   /**
@@ -171,20 +144,6 @@ export class RegisterEmployeeDialog {
       this.errorMessage.set(this.describe(error));
     } finally {
       this.submitting.set(false);
-    }
-  }
-
-  /**
-   * loadRegimes asks the catalog for the regimes that the worker can
-   * choose.
-   */
-  private async loadRegimes(): Promise<void> {
-    try {
-      this.regimes.set(await this.catalog.listRegimes());
-    } catch {
-      this.regimes.set([]);
-    } finally {
-      this.loadingRegimes.set(false);
     }
   }
 

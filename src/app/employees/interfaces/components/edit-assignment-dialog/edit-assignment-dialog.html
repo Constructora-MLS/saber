@@ -24,31 +24,33 @@
 
   <form class="dialog-form" id="edit-assignment-form" [formGroup]="form" (ngSubmit)="submit()">
     <div class="dialog-fields">
-      <mat-form-field appearance="outline" class="field-wide" subscriptSizing="dynamic">
-        <mat-label>Unidad de Trabajo</mat-label>
-        <mat-select formControlName="workUnitId">
-          @for (unit of data.workUnits; track unit.id) {
-            <mat-option [value]="unit.id">
-              {{ unit.code }} · {{ unit.name }} · {{ unit.serviceName }}
-            </mat-option>
-          }
-        </mat-select>
-        @if (form.controls.workUnitId.hasError('required')) {
-          <mat-error>Selecciona una unidad de trabajo.</mat-error>
-        }
-      </mat-form-field>
+      <app-catalog-search-select
+        class="field-wide"
+        formControlName="workUnitId"
+        label="Unidad de Trabajo"
+        placeholder="Buscar por código o nombre…"
+        hint="El tipo de la unidad se toma del catálogo."
+        requiredMessage="Selecciona una unidad de trabajo."
+        emptyText="No hay unidades de trabajo activas que coincidan con la búsqueda."
+        [options]="workUnits()"
+        [loading]="loadingWorkUnits()"
+        [error]="workUnitsError()"
+        (searched)="searchWorkUnits($event)"
+      />
 
-      <mat-form-field appearance="outline" class="field-wide" subscriptSizing="dynamic">
-        <mat-label>Cargo</mat-label>
-        <mat-select formControlName="positionId">
-          @for (position of data.positions; track position.id) {
-            <mat-option [value]="position.id">{{ position.name }}</mat-option>
-          }
-        </mat-select>
-        @if (form.controls.positionId.hasError('required')) {
-          <mat-error>Selecciona un cargo.</mat-error>
-        }
-      </mat-form-field>
+      <app-catalog-search-select
+        class="field-wide"
+        formControlName="positionId"
+        label="Cargo"
+        placeholder="Buscar por nombre…"
+        hint="El cargo que el trabajador ejecuta en la unidad de trabajo."
+        requiredMessage="Selecciona un cargo."
+        emptyText="No hay cargos activos que coincidan con la búsqueda."
+        [options]="positions()"
+        [loading]="loadingPositions()"
+        [error]="positionsError()"
+        (searched)="searchPositions($event)"
+      />
 
       <mat-form-field appearance="outline" class="field-wide" subscriptSizing="dynamic">
         <mat-label>Fecha de Ingreso</mat-label>

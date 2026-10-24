@@ -40,6 +40,14 @@ import {
 type CatalogTab = 'servicios' | 'unidades' | 'cargos' | 'regimenes';
 
 /**
+ * The size of the page of records.
+ *
+ * Every request asks for twenty records: the listing never downloads more
+ * than a page of the platform.
+ */
+const PAGE_SIZE = 20;
+
+/**
  * CatalogTabDefinition describes one of the views of the catalog.
  */
 interface CatalogTabDefinition {
@@ -193,6 +201,17 @@ export class CatalogPage implements OnInit {
     () => this.tabs.find((tab) => tab.id === this.activeTab()) ?? this.tabs[0],
   );
 
+  constructor() {
+    // The pending search is cancelled once, when the page goes away: the
+    // callback is not registered on every keystroke.
+    this.destroyRef.onDestroy(() => {
+      if (this.searchTimer !== null) {
+        clearTimeout(this.searchTimer);
+        this.searchTimer = null;
+      }
+    });
+  }
+
   /**
    * ngOnInit loads the listing of the catalog.
    *
@@ -228,12 +247,6 @@ export class CatalogPage implements OnInit {
       this.searchTimer = null;
       void this.reload();
     }, 300);
-    this.destroyRef.onDestroy(() => {
-      if (this.searchTimer !== null) {
-        clearTimeout(this.searchTimer);
-        this.searchTimer = null;
-      }
-    });
   }
 
   /**
@@ -425,6 +438,7 @@ export class CatalogPage implements OnInit {
         const page = await this.listServices.execute({
           search: search || undefined,
           status: status || undefined,
+          limit: PAGE_SIZE,
           cursor: cursor ?? undefined,
         });
         this.publish(
@@ -439,6 +453,7 @@ export class CatalogPage implements OnInit {
         const page = await this.listWorkUnits.execute({
           search: search || undefined,
           status: status || undefined,
+          limit: PAGE_SIZE,
           cursor: cursor ?? undefined,
         });
         this.publish(
@@ -453,6 +468,7 @@ export class CatalogPage implements OnInit {
         const page = await this.listPositions.execute({
           search: search || undefined,
           status: status || undefined,
+          limit: PAGE_SIZE,
           cursor: cursor ?? undefined,
         });
         this.publish(
@@ -466,6 +482,7 @@ export class CatalogPage implements OnInit {
       const page = await this.listRegimes.execute({
         search: search || undefined,
         status: status || undefined,
+        limit: PAGE_SIZE,
         cursor: cursor ?? undefined,
       });
       this.publish(

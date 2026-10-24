@@ -22,8 +22,6 @@ import {
 } from '../commands/catalog-commands';
 import { CatalogName } from '../../domain/model/value-objects/catalog-name';
 import { Description } from '../../domain/model/value-objects/description';
-import { REGIME_CHANGED } from '../../domain/model/events/regime-changed.event';
-import { DomainEventBus } from '../../../shared/infrastructure/domain-event-bus';
 import {
   POSITION_REPOSITORY,
   REGIME_REPOSITORY,
@@ -87,20 +85,12 @@ export class CreatePositionCommandService {
 @Injectable({ providedIn: 'root' })
 export class CreateRegimeCommandService {
   private readonly repository = inject(REGIME_REPOSITORY);
-  private readonly events = inject(DomainEventBus);
 
   async execute(command: CreateRegimeCommand): Promise<Regime> {
     const name = CatalogName.create(command.name);
     const description = this.description(command.description);
 
-    const regime = await this.repository.createRegime({ name, description });
-    this.events.publish({
-      kind: REGIME_CHANGED,
-      regimeId: regime.id,
-      occurredOn: new Date(),
-    });
-
-    return regime;
+    return this.repository.createRegime({ name, description });
   }
 
   private description(raw: string | null | undefined): Description | null {
@@ -222,25 +212,17 @@ export class DeletePositionCommandService {
 @Injectable({ providedIn: 'root' })
 export class UpdateRegimeCommandService {
   private readonly repository = inject(REGIME_REPOSITORY);
-  private readonly events = inject(DomainEventBus);
 
   async execute(command: UpdateRegimeCommand): Promise<Regime> {
     const name = CatalogName.create(command.name);
     const description = this.description(command.description);
 
-    const regime = await this.repository.updateRegime({
+    return this.repository.updateRegime({
       id: command.uuid,
       name,
       description,
       status: command.status,
     });
-    this.events.publish({
-      kind: REGIME_CHANGED,
-      regimeId: regime.id,
-      occurredOn: new Date(),
-    });
-
-    return regime;
   }
 
   private description(raw: string): Description | null {
@@ -255,15 +237,9 @@ export class UpdateRegimeCommandService {
 @Injectable({ providedIn: 'root' })
 export class DeleteRegimeCommandService {
   private readonly repository = inject(REGIME_REPOSITORY);
-  private readonly events = inject(DomainEventBus);
 
   async execute(command: DeleteRegimeCommand): Promise<void> {
     await this.repository.deleteRegime(command.uuid);
-    this.events.publish({
-      kind: REGIME_CHANGED,
-      regimeId: command.uuid,
-      occurredOn: new Date(),
-    });
   }
 }
 

@@ -15,11 +15,7 @@ import {
 import { Assignment } from '../../domain/model/aggregates/assignment';
 import { Employee } from '../../domain/model/aggregates/employee';
 import { EmployeeId } from '../../domain/model/value-objects/employee-id';
-import {
-  CATALOG_REFERENCE_RESOLVER,
-  PositionReference,
-  WorkUnitReference,
-} from '../../domain/services/catalog-reference-resolver';
+import { CATALOG_REFERENCE_RESOLVER } from '../../domain/services/catalog-reference-resolver';
 import { EmployeeStatus } from '../../domain/model/value-objects/employee-status';
 import { EMPLOYEE_REPOSITORY } from '../../domain/repositories/employee-repositories';
 
@@ -47,16 +43,6 @@ export interface WorkerRecord {
   readonly regimeName: string | null;
   /** The state of the worker. */
   readonly status: EmployeeStatus;
-}
-
-/**
- * AssignmentOptions are the references that a new assignment can point at.
- */
-export interface AssignmentOptions {
-  /** The units of work that the assignment can point at. */
-  readonly workUnits: readonly WorkUnitReference[];
-  /** The positions that the assignment can point at. */
-  readonly positions: readonly PositionReference[];
 }
 
 /**
@@ -142,26 +128,5 @@ export class GetWorkerRecordQueryService {
     } catch {
       return new Map();
     }
-  }
-}
-
-/**
- * ListAssignmentOptionsQueryService returns the references that a new
- * assignment can point at.
- */
-@Injectable({ providedIn: 'root' })
-export class ListAssignmentOptionsQueryService {
-  private readonly catalog = inject(CATALOG_REFERENCE_RESOLVER);
-
-  /**
-   * execute reads the units of work and the positions of the catalogs.
-   */
-  async execute(): Promise<AssignmentOptions> {
-    const [workUnits, positions] = await Promise.all([
-      this.catalog.listWorkUnits(),
-      this.catalog.listPositions(),
-    ]);
-
-    return { workUnits, positions };
   }
 }

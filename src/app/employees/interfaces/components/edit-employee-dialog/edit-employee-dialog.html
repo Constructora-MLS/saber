@@ -91,35 +91,19 @@
         />
       </mat-form-field>
 
-      <mat-form-field appearance="outline" class="field-wide" subscriptSizing="dynamic">
-        <mat-label>Régimen</mat-label>
-        <input
-          matInput
-          type="text"
-          [value]="regimeQuery()"
-          [matAutocomplete]="regimeAuto"
-          (input)="onRegimeQueryChanged($event)"
-          placeholder="Buscar régimen…"
-          autocomplete="off"
-        />
-        <mat-autocomplete #regimeAuto="matAutocomplete" (optionSelected)="selectRegime($event)">
-          @for (regime of filteredRegimes(); track regime.id) {
-            <mat-option [value]="regime.id" [disabled]="regime.availability !== 'ACTIVE'">
-              {{ regime.name }}{{ regime.availability !== 'ACTIVE' ? ' (inactivo)' : '' }}
-            </mat-option>
-          }
-        </mat-autocomplete>
-        @if (loadingRegimes()) {
-          <mat-spinner matSuffix diameter="18" aria-label="Cargando regímenes" />
-        }
-        @if (form.controls.regimeId.hasError('required')) {
-          <mat-error>Selecciona un régimen activo de la lista.</mat-error>
-        }
-        @if (!loadingRegimes() && filteredRegimes().length === 0) {
-          <mat-hint>No hay regímenes que coincidan con la búsqueda.</mat-hint>
-        }
-      </mat-form-field>
-      <input type="hidden" formControlName="regimeId" />
+      <app-catalog-search-select
+        class="field-wide"
+        formControlName="regimeId"
+        label="Régimen"
+        placeholder="Buscar régimen…"
+        hint="El régimen laboral que el trabajador tiene asignado."
+        requiredMessage="Selecciona un régimen activo de la lista."
+        emptyText="No hay regímenes que coincidan con la búsqueda."
+        [options]="regimes()"
+        [loading]="loadingRegimes()"
+        [error]="regimesError()"
+        (searched)="searchRegimes($event)"
+      />
     </div>
   </form>
 </mat-dialog-content>

@@ -14,15 +14,11 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { distinctUntilChanged, map } from 'rxjs';
-import {
-  PersonSummary,
-  PersonSummaryFact,
-} from '../../components/person-summary/person-summary';
+import { PersonSummary, PersonSummaryFact } from '../../components/person-summary/person-summary';
 import { TableState } from '../../../../shared/interfaces/components/table-state/table-state';
 import {
   GetWorkerRecordQueryService,
   ListAssignmentsQueryService,
-  ListAssignmentOptionsQueryService,
   WorkerRecord,
 } from '../../../application/query-services/assignment-query-services';
 import {
@@ -108,7 +104,6 @@ export class EmployeeAssignmentsPage {
 
   private readonly listAssignments = inject(ListAssignmentsQueryService);
   private readonly getWorkerRecord = inject(GetWorkerRecordQueryService);
-  private readonly listOptions = inject(ListAssignmentOptionsQueryService);
   private readonly catalog = inject(CATALOG_REFERENCE_RESOLVER);
   private readonly createAssignment = inject(CreateAssignmentCommandService);
   private readonly ceaseAssignment = inject(CeaseAssignmentCommandService);
@@ -166,9 +161,7 @@ export class EmployeeAssignmentsPage {
     const total = this.rows().length;
     const noun = total === 1 ? 'asignación' : 'asignaciones';
 
-    return this.nextCursor()
-      ? `${total} ${noun} cargadas`
-      : `${total} ${noun} registradas`;
+    return this.nextCursor() ? `${total} ${noun} cargadas` : `${total} ${noun} registradas`;
   });
 
   /**
@@ -218,20 +211,12 @@ export class EmployeeAssignmentsPage {
   /**
    * openCreateDialog opens the dialog that registers an assignment.
    *
-   * The catalogs are read before the dialog is opened: the form offers the
-   * units of work and the positions that the platform publishes.
+   * The dialog looks for the units of work and the positions by itself, so
+   * the page never downloads a whole catalog.
    */
-  protected async openCreateDialog(): Promise<void> {
+  protected openCreateDialog(): void {
     const worker = this.worker();
     if (!worker) {
-      return;
-    }
-
-    let options;
-    try {
-      options = await this.listOptions.execute();
-    } catch {
-      this.notify('No se pudieron leer los catálogos.');
       return;
     }
 
@@ -244,8 +229,6 @@ export class EmployeeAssignmentsPage {
             documentValue: worker.documentValue,
             statusLabel: worker.status === 'VIGENTE' ? 'Vigente' : 'Retirado',
           },
-          workUnits: options.workUnits,
-          positions: options.positions,
         },
         width: '38rem',
         maxWidth: '94vw',
@@ -275,6 +258,7 @@ export class EmployeeAssignmentsPage {
       lastName: worker.lastName,
       dni: worker.documentValue,
       regimeId: worker.regimeId,
+      regimeName: worker.regimeName,
     };
 
     this.dialog
@@ -314,33 +298,11 @@ export class EmployeeAssignmentsPage {
   /**
    * openEditAssignmentDialog opens the form for a vigente assignment.
    */
-  protected async openEditAssignmentDialog(row: AssignmentRow): Promise<void> {
+  protected openEditAssignmentDialog(row: AssignmentRow): void {
     const worker = this.worker();
     if (!worker) {
       return;
     }
-
-    let options;
-    try {
-      options = await this.listOptions.execute();
-    } catch {
-      this.notify('No se pudieron leer los catálogos.');
-      return;
-    }
-
-    const currentWorkUnit: WorkUnitReference = {
-      id: row.workUnitId,
-      name: row.workUnitName,
-      code: row.workUnitCode ?? '—',
-      serviceName: row.workUnitService ?? '—',
-    };
-    const currentPosition: PositionReference = { id: row.positionId, name: row.positionName };
-    const workUnits = options.workUnits.some((item) => item.id === row.workUnitId)
-      ? options.workUnits
-      : [...options.workUnits, currentWorkUnit];
-    const positions = options.positions.some((item) => item.id === row.positionId)
-      ? options.positions
-      : [...options.positions, currentPosition];
 
     this.dialog
       .open(EditAssignmentDialog, {
@@ -352,8 +314,6 @@ export class EmployeeAssignmentsPage {
             statusLabel: worker.status === 'VIGENTE' ? 'Vigente' : 'Retirado',
           },
           assignment: row,
-          workUnits,
-          positions,
         },
         width: '38rem',
         maxWidth: '94vw',

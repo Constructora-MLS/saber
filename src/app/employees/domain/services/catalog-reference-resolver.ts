@@ -8,13 +8,14 @@
 import { InjectionToken } from '@angular/core';
 
 /**
- * RegimeAvailability tells whether a labor regime can be shown and chosen.
+ * CatalogAvailability tells whether a record of a catalog can be shown and
+ * chosen.
  *
- * The catalog publishes the state of the regime; the Employees context reads
+ * The catalog publishes the state of the record; the Employees context reads
  * it as the availability of the reference, because that is the only thing it
  * decides with it.
  */
-export type RegimeAvailability = 'ACTIVE' | 'INACTIVE';
+export type CatalogAvailability = 'ACTIVE' | 'INACTIVE';
 
 /**
  * RegimeReference is a labor regime, as the Employees context knows it.
@@ -27,10 +28,9 @@ export interface RegimeReference {
   /**
    * Whether the regime is available.
    *
-   * An unavailable regime is never shown in a listing and it is never
-   * offered to choose.
+   * An unavailable regime is never offered to choose.
    */
-  readonly availability: RegimeAvailability;
+  readonly availability: CatalogAvailability;
 }
 
 /**
@@ -48,6 +48,8 @@ export interface WorkUnitReference {
   readonly name: string;
   /** The name of the service the unit of work belongs to. */
   readonly serviceName: string;
+  /** Whether the unit of work is available. */
+  readonly availability: CatalogAvailability;
 }
 
 /**
@@ -58,6 +60,8 @@ export interface PositionReference {
   readonly id: string;
   /** The name of the position. */
   readonly name: string;
+  /** Whether the position is available. */
+  readonly availability: CatalogAvailability;
 }
 
 /**
@@ -67,6 +71,10 @@ export interface PositionReference {
  * The labor regimes, the units of work and the positions belong to the
  * Catalog bounded context, so this context asks for them through this port
  * and keeps only the references in its own model.
+ *
+ * Every read is a page of the platform, never the whole catalog: a selector
+ * asks for the records that match a term and the platform answers with a
+ * page.
  */
 export interface CatalogReferenceResolver {
   /**
@@ -75,12 +83,11 @@ export interface CatalogReferenceResolver {
   resolveRegimes(regimeIds: readonly string[]): Promise<ReadonlyMap<string, RegimeReference>>;
 
   /**
-   * listRegimes returns the regimes that the worker can choose.
+   * listRegimes returns the available regimes that match the term.
    *
-   * Only the available regimes are offered: an unavailable regime is not a
-   * choice.
+   * An empty term lists the first page of the available regimes.
    */
-  listRegimes(): Promise<readonly RegimeReference[]>;
+  listRegimes(search?: string): Promise<readonly RegimeReference[]>;
 
   /**
    * findRegime returns the regime of a reference, whatever its availability.
@@ -97,9 +104,9 @@ export interface CatalogReferenceResolver {
   resolveWorkUnits(workUnitIds: readonly string[]): Promise<ReadonlyMap<string, WorkUnitReference>>;
 
   /**
-   * listWorkUnits returns the units of work that the worker can choose.
+   * listWorkUnits returns the available units of work that match the term.
    */
-  listWorkUnits(): Promise<readonly WorkUnitReference[]>;
+  listWorkUnits(search?: string): Promise<readonly WorkUnitReference[]>;
 
   /**
    * resolvePositions returns the position of every given reference.
@@ -107,9 +114,9 @@ export interface CatalogReferenceResolver {
   resolvePositions(positionIds: readonly string[]): Promise<ReadonlyMap<string, PositionReference>>;
 
   /**
-   * listPositions returns the positions that the worker can choose.
+   * listPositions returns the available positions that match the term.
    */
-  listPositions(): Promise<readonly PositionReference[]>;
+  listPositions(search?: string): Promise<readonly PositionReference[]>;
 }
 
 /** The token of the resolver of the catalogs. */

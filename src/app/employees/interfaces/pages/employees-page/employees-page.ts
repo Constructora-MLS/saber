@@ -109,6 +109,17 @@ export class EmployeesPage implements OnInit {
     this.searchTerm().trim().length > 0 ? 'person_search' : 'group_off',
   );
 
+  constructor() {
+    // The pending search is cancelled once, when the page goes away: the
+    // callback is not registered on every keystroke.
+    this.destroyRef.onDestroy(() => {
+      if (this.searchTimer !== null) {
+        clearTimeout(this.searchTimer);
+        this.searchTimer = null;
+      }
+    });
+  }
+
   /**
    * ngOnInit loads the listing of workers.
    *
@@ -134,13 +145,6 @@ export class EmployeesPage implements OnInit {
       this.searchTimer = null;
       void this.reload();
     }, 300);
-
-    this.destroyRef.onDestroy(() => {
-      if (this.searchTimer !== null) {
-        clearTimeout(this.searchTimer);
-        this.searchTimer = null;
-      }
-    });
   }
 
   /**
@@ -206,6 +210,7 @@ export class EmployeesPage implements OnInit {
       lastName: row.lastName,
       dni: row.dni,
       regimeId: row.regimeId,
+      regimeName: row.regimeName,
     };
 
     this.dialog
