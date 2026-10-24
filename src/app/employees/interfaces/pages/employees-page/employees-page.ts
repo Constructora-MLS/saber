@@ -82,8 +82,6 @@ export class EmployeesPage implements OnInit {
   protected readonly page = signal(1);
   /** The number of pages of the listing. */
   protected readonly totalPages = signal(0);
-  /** The number of records that match the query. */
-  protected readonly total = signal(0);
   protected readonly loading = signal(false);
   protected readonly loadFailure = signal<EmployeeLoadFailure | null>(null);
 
@@ -279,7 +277,6 @@ export class EmployeesPage implements OnInit {
 
     this.page.set(result.page);
     this.totalPages.set(result.totalPages);
-    this.total.set(result.total);
     this.failedPage.set(null);
   }
 

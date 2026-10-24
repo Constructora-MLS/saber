@@ -10,16 +10,20 @@
     Anterior
   </button>
 
-  @for (item of pages(); track item.number) {
-    <button
-      type="button"
-      class="paginator__page"
-      [class.paginator__page--current]="item.current"
-      [attr.aria-current]="item.current ? 'page' : null"
-      (click)="goTo(item.number)"
-    >
-      {{ item.number }}
-    </button>
+  @for (item of pages(); track $index) {
+    @if (item.number === null) {
+      <span class="paginator__gap" aria-hidden="true">…</span>
+    } @else {
+      <button
+        type="button"
+        class="paginator__page"
+        [class.paginator__page--current]="item.current"
+        [attr.aria-current]="item.current ? 'page' : null"
+        (click)="goTo(item.number)"
+      >
+        {{ item.number }}
+      </button>
+    }
   }
 
   <button
@@ -32,8 +36,4 @@
     Siguiente
     <mat-icon aria-hidden="true">chevron_right</mat-icon>
   </button>
-
-  <span class="paginator__summary">
-    Página {{ page() }} de {{ totalPages() }} · {{ total() }} {{ label() }}
-  </span>
 </nav>

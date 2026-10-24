@@ -11,10 +11,13 @@ import { visiblePages } from './paginator-pages';
 
 /**
  * PaginatorPage is a page of the paginator.
+ *
+ * A null number is the ellipsis that hides the pages between two shown
+ * ones.
  */
 export interface PaginatorPage {
-  /** The number of the page. */
-  readonly number: number;
+  /** The number of the page, or null when the pages are hidden. */
+  readonly number: number | null;
   /** Whether the page is the one that is shown. */
   readonly current: boolean;
 }
@@ -37,10 +40,6 @@ export class Paginator {
   readonly page = input.required<number>();
   /** The number of pages of the listing. */
   readonly totalPages = input.required<number>();
-  /** The number of records that match the query. */
-  readonly total = input(0);
-  /** The name of the records that the listing shows. */
-  readonly label = input('registros');
 
   /** The page that the worker asked for. */
   readonly pageRequested = output<number>();
