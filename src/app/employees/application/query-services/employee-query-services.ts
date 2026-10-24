@@ -32,7 +32,7 @@ export class ListEmployeesQueryService {
       search: normalizeEmployeeSearch(query.search),
       status: query.status,
       limit: query.limit,
-      cursor: query.cursor,
+      page: query.page,
     };
   }
 }

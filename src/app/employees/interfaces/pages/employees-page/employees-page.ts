@@ -9,6 +9,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ListEmployeesQueryService } from '../../../application/query-services/employee-query-services';
 import { Employee } from '../../../domain/model/aggregates/employee';
+import { EmployeePage } from '../../../domain/repositories/employee-repositories';
 import { CATALOG_REFERENCE_RESOLVER } from '../../../domain/services/catalog-reference-resolver';
 import { EmployeeApiError } from '../../../infrastructure/http/employee-api.error';
 import {
@@ -20,6 +21,7 @@ import {
   EditEmployeeDialog,
 } from '../../components/edit-employee-dialog/edit-employee-dialog';
 import { EmployeeRow, EmployeeTable } from '../../components/employee-table/employee-table';
+import { Paginator } from '../../../../shared/interfaces/components/paginator/paginator';
 import { RegisterEmployeeDialog } from '../../components/register-employee-dialog/register-employee-dialog';
 
 /**
@@ -50,6 +52,7 @@ const PAGE_SIZE = 20;
   imports: [
     EmployeeTable,
     FormsModule,
+    Paginator,
     MatButtonModule,
     MatDialogModule,
     MatFormFieldModule,
@@ -70,11 +73,17 @@ export class EmployeesPage implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
-  private readonly failedCursor = signal<string | null>(null);
+  /** The page that failed, so the retry asks for the same one. */
+  private readonly failedPage = signal<number | null>(null);
 
   protected readonly searchTerm = signal('');
   protected readonly rows = signal<readonly EmployeeRow[]>([]);
-  protected readonly nextCursor = signal<string | null>(null);
+  /** The number of the page that is shown, starting at one. */
+  protected readonly page = signal(1);
+  /** The number of pages of the listing. */
+  protected readonly totalPages = signal(0);
+  /** The number of records that match the query. */
+  protected readonly total = signal(0);
   protected readonly loading = signal(false);
   protected readonly loadFailure = signal<EmployeeLoadFailure | null>(null);
 
@@ -159,30 +168,20 @@ export class EmployeesPage implements OnInit {
   }
 
   /**
-   * loadMore brings the next page of the listing.
+   * goToPage shows another page of the listing.
    */
-  protected async loadMore(): Promise<void> {
-    const cursor = this.nextCursor();
-    if (!cursor) {
-      return;
-    }
-    await this.load(cursor, true);
+  protected goToPage(page: number): void {
+    void this.load(page);
   }
 
   /**
    * retry consults the workers again.
    *
-   * The page that failed is asked again, so a failure that happened while
-   * more records were being loaded does not throw away the records that are
-   * already on the screen.
+   * The page that failed is asked again, so the worker does not lose the
+   * place that he was in.
    */
   protected retry(): void {
-    const cursor = this.failedCursor();
-    if (cursor) {
-      void this.load(cursor, true);
-      return;
-    }
-    void this.reload();
+    void this.load(this.failedPage() ?? 1);
   }
 
   /**
@@ -245,28 +244,26 @@ export class EmployeesPage implements OnInit {
    * reload brings the first page of the workers.
    */
   private async reload(): Promise<void> {
-    this.nextCursor.set(null);
-    this.failedCursor.set(null);
-    await this.load(null, false);
+    await this.load(1);
   }
 
   /**
    * load asks the use case for a page of the workers.
    */
-  private async load(cursor: string | null, append: boolean): Promise<void> {
+  private async load(page: number): Promise<void> {
     this.loading.set(true);
     this.loadFailure.set(null);
 
     try {
-      const page = await this.listEmployees.execute({
+      const result = await this.listEmployees.execute({
         search: this.searchTerm().trim() || undefined,
-        cursor: cursor ?? undefined,
+        page,
         limit: PAGE_SIZE,
       });
 
-      await this.publish(page.items, page.nextCursor, append);
+      this.publish(result);
     } catch (error) {
-      this.failedCursor.set(cursor);
+      this.failedPage.set(page);
       this.loadFailure.set(this.describe(error));
     } finally {
       this.loading.set(false);
@@ -276,17 +273,14 @@ export class EmployeesPage implements OnInit {
   /**
    * publish stores the page that was read, with the names of the regimes.
    */
-  private async publish(
-    employees: readonly Employee[],
-    nextCursor: string | null,
-    append: boolean,
-  ): Promise<void> {
-    const names = await this.resolveRegimeNames(employees);
-    const rows = employees.map((employee) => this.toRow(employee, names));
+  private async publish(result: EmployeePage<Employee>): Promise<void> {
+    const names = await this.resolveRegimeNames(result.items);
+    this.rows.set(result.items.map((employee) => this.toRow(employee, names)));
 
-    this.rows.set(append ? [...this.rows(), ...rows] : rows);
-    this.nextCursor.set(nextCursor);
-    this.failedCursor.set(null);
+    this.page.set(result.page);
+    this.totalPages.set(result.totalPages);
+    this.total.set(result.total);
+    this.failedPage.set(null);
   }
 
   /**

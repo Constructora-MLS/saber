@@ -51,7 +51,9 @@ export class EmployeeHttpGateway implements EmployeeRepository {
 
     return {
       items: page.items.map((item) => this.toEmployee(item)),
-      nextCursor: page.nextCursor,
+      page: page.page,
+      totalPages: page.totalPages,
+      total: page.total,
     };
   }
 
@@ -143,8 +145,8 @@ export class EmployeeHttpGateway implements EmployeeRepository {
     if (criteria.limit) {
       params = params.set('limit', criteria.limit);
     }
-    if (criteria.cursor) {
-      params = params.set('cursor', criteria.cursor);
+    if (criteria.page) {
+      params = params.set('page', String(criteria.page));
     }
     return params;
   }

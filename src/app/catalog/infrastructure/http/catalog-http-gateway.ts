@@ -72,7 +72,9 @@ export class CatalogHttpGateway
 
     return {
       items: page.items.map((item) => this.toService(item)),
-      nextCursor: page.nextCursor,
+      page: page.page,
+      totalPages: page.totalPages,
+      total: page.total,
     };
   }
 
@@ -118,7 +120,9 @@ export class CatalogHttpGateway
 
     return {
       items: page.items.map((item) => this.toPosition(item)),
-      nextCursor: page.nextCursor,
+      page: page.page,
+      totalPages: page.totalPages,
+      total: page.total,
     };
   }
 
@@ -164,7 +168,9 @@ export class CatalogHttpGateway
 
     return {
       items: page.items.map((item) => this.toRegime(item)),
-      nextCursor: page.nextCursor,
+      page: page.page,
+      totalPages: page.totalPages,
+      total: page.total,
     };
   }
 
@@ -215,7 +221,9 @@ export class CatalogHttpGateway
 
     return {
       items: page.items.map((item) => this.toWorkUnit(item)),
-      nextCursor: page.nextCursor,
+      page: page.page,
+      totalPages: page.totalPages,
+      total: page.total,
     };
   }
 
@@ -272,8 +280,8 @@ export class CatalogHttpGateway
     if (criteria.limit) {
       params = params.set('limit', criteria.limit);
     }
-    if (criteria.cursor) {
-      params = params.set('cursor', criteria.cursor);
+    if (criteria.page) {
+      params = params.set('page', String(criteria.page));
     }
     return params;
   }

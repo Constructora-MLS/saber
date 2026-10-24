@@ -1,8 +1,8 @@
 // Package queryservices holds the use cases that read the state of the
 // Catalog bounded context.
 //
-// The listings are served by keyset pagination, so the cursor is opaque and
-// it is never composed by the interfaces.
+// The listings are served by page number, so the worker reaches any page of
+// the listing with a single request.
 // package queryservices
 
 import { inject, Injectable } from '@angular/core';
@@ -44,7 +44,7 @@ export class ListServicesQueryService {
       search: this.search(query.search),
       status: query.status,
       limit: query.limit,
-      cursor: query.cursor,
+      page: query.page,
     };
   }
 
@@ -66,7 +66,7 @@ export class ListPositionsQueryService {
       search: this.search(query.search),
       status: query.status,
       limit: query.limit,
-      cursor: query.cursor,
+      page: query.page,
     });
   }
 
@@ -88,7 +88,7 @@ export class ListRegimeQueryService {
       search: this.search(query.search),
       status: query.status,
       limit: query.limit,
-      cursor: query.cursor,
+      page: query.page,
     });
   }
 
@@ -111,7 +111,7 @@ export class ListWorkUnitsQueryService {
       search: this.search(query.search),
       status: query.status,
       limit: query.limit,
-      cursor: query.cursor,
+      page: query.page,
       ...(serviceId ? { serviceId } : {}),
     };
 

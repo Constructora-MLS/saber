@@ -32,6 +32,7 @@ import {
   UpdateAssignmentCommand,
 } from '../../../application/commands/assignment-commands';
 import { Assignment } from '../../../domain/model/aggregates/assignment';
+import { AssignmentPage } from '../../../domain/repositories/assignment-repositories';
 import { AssignmentValidationError } from '../../../domain/model/errors/assignment-errors';
 import {
   CATALOG_REFERENCE_RESOLVER,
@@ -40,6 +41,7 @@ import {
 } from '../../../domain/services/catalog-reference-resolver';
 import { AssignmentApiError } from '../../../infrastructure/http/assignment-api.error';
 import { AssignmentRow, AssignmentTable } from '../../components/assignment-table/assignment-table';
+import { Paginator } from '../../../../shared/interfaces/components/paginator/paginator';
 import { CeaseAssignmentDialog } from '../../components/cease-assignment-dialog/cease-assignment-dialog';
 import { CreateAssignmentDialog } from '../../components/create-assignment-dialog/create-assignment-dialog';
 import { DeleteAssignmentDialog } from '../../components/delete-assignment-dialog/delete-assignment-dialog';
@@ -83,6 +85,7 @@ const PAGE_SIZE = 20;
   imports: [
     AssignmentTable,
     MatButtonModule,
+    Paginator,
     MatDialogModule,
     MatIconModule,
     MatProgressBarModule,
@@ -112,6 +115,8 @@ export class EmployeeAssignmentsPage {
 
   /** The identifier of the worker that the address of the browser carries. */
   private employeeId = '';
+  /** The page that failed, so the retry asks for the same one. */
+  private readonly failedPage = signal<number | null>(null);
 
   /** The record of the worker. */
   protected readonly worker = signal<WorkerRecord | null>(null);
@@ -119,8 +124,12 @@ export class EmployeeAssignmentsPage {
   /** The assignments of the worker. */
   protected readonly rows = signal<readonly AssignmentRow[]>([]);
 
-  /** The cursor of the next page of the listing. */
-  protected readonly nextCursor = signal<string | null>(null);
+  /** The number of the page that is shown, starting at one. */
+  protected readonly page = signal(1);
+  /** The number of pages of the listing. */
+  protected readonly totalPages = signal(0);
+  /** The number of records that match the query. */
+  protected readonly total = signal(0);
 
   /** Whether the page is waiting for the answer of the platform. */
   protected readonly loading = signal(false);
@@ -158,10 +167,10 @@ export class EmployeeAssignmentsPage {
    * interfaces.
    */
   protected readonly assignmentCountLabel = computed(() => {
-    const total = this.rows().length;
+    const total = this.total();
     const noun = total === 1 ? 'asignación' : 'asignaciones';
 
-    return this.nextCursor() ? `${total} ${noun} cargadas` : `${total} ${noun} registradas`;
+    return `${total} ${noun} registradas`;
   });
 
   /**
@@ -190,22 +199,20 @@ export class EmployeeAssignmentsPage {
   }
 
   /**
-   * loadMore brings the next page of the listing.
+   * goToPage shows another page of the listing.
    */
-  protected async loadMore(): Promise<void> {
-    const cursor = this.nextCursor();
-    if (!cursor) {
-      return;
-    }
-
-    await this.load(cursor, true);
+  protected goToPage(page: number): void {
+    void this.load(page);
   }
 
   /**
    * retry consults the assignments again.
+   *
+   * The page that failed is asked again, so the worker does not lose the
+   * place that he was in.
    */
   protected retry(): void {
-    void this.reload();
+    void this.load(this.failedPage() ?? 1);
   }
 
   /**
@@ -401,30 +408,30 @@ export class EmployeeAssignmentsPage {
    * reload brings the first page of the assignments.
    */
   private async reload(): Promise<void> {
-    this.nextCursor.set(null);
-    await this.load(null, false);
+    await this.load(1);
   }
 
   /**
    * load asks the use cases for a page of the assignments.
    */
-  private async load(cursor: string | null, append: boolean): Promise<void> {
+  private async load(page: number): Promise<void> {
     this.loading.set(true);
     this.loadFailure.set(null);
 
     try {
-      const [record, page] = await Promise.all([
+      const [record, result] = await Promise.all([
         this.getWorkerRecord.execute(this.employeeId),
         this.listAssignments.execute({
           employeeId: this.employeeId,
-          cursor: cursor ?? undefined,
+          page,
           limit: PAGE_SIZE,
         }),
       ]);
 
       this.worker.set(record);
-      await this.publish(page.items, page.nextCursor, append);
+      await this.publish(result);
     } catch (error) {
+      this.failedPage.set(page);
       this.loadFailure.set(this.describe(error));
     } finally {
       this.loading.set(false);
@@ -435,20 +442,18 @@ export class EmployeeAssignmentsPage {
    * publish stores the page that was read, with the names of the
    * references.
    */
-  private async publish(
-    assignments: readonly Assignment[],
-    nextCursor: string | null,
-    append: boolean,
-  ): Promise<void> {
+  private async publish(result: AssignmentPage<Assignment>): Promise<void> {
     const [workUnits, positions] = await Promise.all([
-      this.resolveWorkUnits(assignments),
-      this.resolvePositions(assignments),
+      this.resolveWorkUnits(result.items),
+      this.resolvePositions(result.items),
     ]);
 
-    const rows = assignments.map((assignment) => this.toRow(assignment, workUnits, positions));
+    this.rows.set(result.items.map((assignment) => this.toRow(assignment, workUnits, positions)));
 
-    this.rows.set(append ? [...this.rows(), ...rows] : rows);
-    this.nextCursor.set(nextCursor);
+    this.page.set(result.page);
+    this.totalPages.set(result.totalPages);
+    this.total.set(result.total);
+    this.failedPage.set(null);
   }
 
   /**

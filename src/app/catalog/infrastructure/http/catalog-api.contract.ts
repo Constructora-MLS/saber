@@ -63,25 +63,45 @@ export interface WorkUnitResource {
 /** A page of services. */
 export interface ServicePageResource {
   readonly items: readonly ServiceResource[];
-  readonly nextCursor: string | null;
+  /** The number of the page, starting at one. */
+  readonly page: number;
+  /** The number of pages of the listing. */
+  readonly totalPages: number;
+  /** The number of records that match the query. */
+  readonly total: number;
 }
 
 /** A page of positions. */
 export interface PositionPageResource {
   readonly items: readonly PositionResource[];
-  readonly nextCursor: string | null;
+  /** The number of the page, starting at one. */
+  readonly page: number;
+  /** The number of pages of the listing. */
+  readonly totalPages: number;
+  /** The number of records that match the query. */
+  readonly total: number;
 }
 
 /** A page of regimes. */
 export interface RegimePageResource {
   readonly items: readonly RegimeResource[];
-  readonly nextCursor: string | null;
+  /** The number of the page, starting at one. */
+  readonly page: number;
+  /** The number of pages of the listing. */
+  readonly totalPages: number;
+  /** The number of records that match the query. */
+  readonly total: number;
 }
 
 /** A page of work units. */
 export interface WorkUnitPageResource {
   readonly items: readonly WorkUnitResource[];
-  readonly nextCursor: string | null;
+  /** The number of the page, starting at one. */
+  readonly page: number;
+  /** The number of pages of the listing. */
+  readonly totalPages: number;
+  /** The number of records that match the query. */
+  readonly total: number;
 }
 
 /** The body of the creation of a service. */

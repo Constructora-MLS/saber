@@ -21,6 +21,7 @@ import {
   CatalogRow,
   CatalogTable,
 } from '../../components/catalog-table/catalog-table';
+import { Paginator } from '../../../../shared/interfaces/components/paginator/paginator';
 import { CreatePositionDialog } from '../../components/create-position-dialog/create-position-dialog';
 import { CreateRegimeDialog } from '../../components/create-regime-dialog/create-regime-dialog';
 import { CreateServiceDialog } from '../../components/create-service-dialog/create-service-dialog';
@@ -33,6 +34,18 @@ import {
   EditableCatalogRecord,
   EditCatalogRecordDialog,
 } from '../../components/edit-catalog-record-dialog/edit-catalog-record-dialog';
+
+/**
+ * CatalogListing is the pagination of a listing of the catalog.
+ */
+interface CatalogListing {
+  /** The number of the page, starting at one. */
+  readonly page: number;
+  /** The number of pages of the listing. */
+  readonly totalPages: number;
+  /** The number of records that match the query. */
+  readonly total: number;
+}
 
 /**
  * CatalogTab is the view of the catalog that is shown.
@@ -94,6 +107,7 @@ interface CatalogLoadFailure {
   imports: [
     CatalogTable,
     FormsModule,
+    Paginator,
     MatButtonModule,
     MatDialogModule,
     MatFormFieldModule,
@@ -118,7 +132,8 @@ export class CatalogPage implements OnInit {
   private readonly listWorkUnits = inject(ListWorkUnitsQueryService);
 
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
-  private readonly failedCursor = signal<string | null>(null);
+  /** The page that failed, so the retry asks for the same one. */
+  private readonly failedPage = signal<number | null>(null);
 
   protected readonly tabs: readonly CatalogTabDefinition[] = [
     {
@@ -193,7 +208,12 @@ export class CatalogPage implements OnInit {
   protected readonly statusFilter = signal<FilterableCatalogStatus | ''>('');
   protected readonly rows = signal<readonly CatalogRow[]>([]);
   protected readonly records = signal<ReadonlyMap<string, EditableCatalogRecord>>(new Map());
-  protected readonly nextCursor = signal<string | null>(null);
+  /** The number of the page that is shown, starting at one. */
+  protected readonly page = signal(1);
+  /** The number of pages of the listing. */
+  protected readonly totalPages = signal(0);
+  /** The number of records that match the query. */
+  protected readonly total = signal(0);
   protected readonly loading = signal(false);
   protected readonly loadFailure = signal<CatalogLoadFailure | null>(null);
 
@@ -278,30 +298,20 @@ export class CatalogPage implements OnInit {
   }
 
   /**
-   * loadMore brings the next page of the listing.
+   * goToPage shows another page of the listing.
    */
-  protected async loadMore(): Promise<void> {
-    const cursor = this.nextCursor();
-    if (!cursor) {
-      return;
-    }
-    await this.load(cursor, true);
+  protected goToPage(page: number): void {
+    void this.load(page);
   }
 
   /**
    * retry consults the catalog again.
    *
-   * The page that failed is asked again, so a failure that happened while
-   * more records were being loaded does not throw away the records that are
-   * already on the screen.
+   * The page that failed is asked again, so the worker does not lose the
+   * place that he was in.
    */
   protected retry(): void {
-    const cursor = this.failedCursor();
-    if (cursor) {
-      void this.load(cursor, true);
-      return;
-    }
-    void this.reload();
+    void this.load(this.failedPage() ?? 1);
   }
 
   /**
@@ -417,15 +427,13 @@ export class CatalogPage implements OnInit {
    * reload brings the first page of the active catalog.
    */
   private async reload(): Promise<void> {
-    this.nextCursor.set(null);
-    this.failedCursor.set(null);
-    await this.load(null, false);
+    await this.load(1);
   }
 
   /**
    * load asks the use case for a page of the active catalog.
    */
-  private async load(cursor: string | null, append: boolean): Promise<void> {
+  private async load(page: number): Promise<void> {
     this.loading.set(true);
     this.loadFailure.set(null);
 
@@ -435,63 +443,59 @@ export class CatalogPage implements OnInit {
       const status = this.statusFilter();
 
       if (tab === 'servicios') {
-        const page = await this.listServices.execute({
+        const result = await this.listServices.execute({
           search: search || undefined,
           status: status || undefined,
           limit: PAGE_SIZE,
-          cursor: cursor ?? undefined,
+          page,
         });
         this.publish(
-          page.items.map((service) => ({ kind: 'service', record: service }) as const),
-          page.nextCursor,
-          append,
+          result.items.map((service) => ({ kind: 'service', record: service }) as const),
+          result,
         );
         return;
       }
 
       if (tab === 'unidades') {
-        const page = await this.listWorkUnits.execute({
+        const result = await this.listWorkUnits.execute({
           search: search || undefined,
           status: status || undefined,
           limit: PAGE_SIZE,
-          cursor: cursor ?? undefined,
+          page,
         });
         this.publish(
-          page.items.map((unit) => ({ kind: 'work-unit', record: unit }) as const),
-          page.nextCursor,
-          append,
+          result.items.map((unit) => ({ kind: 'work-unit', record: unit }) as const),
+          result,
         );
         return;
       }
 
       if (tab === 'cargos') {
-        const page = await this.listPositions.execute({
+        const result = await this.listPositions.execute({
           search: search || undefined,
           status: status || undefined,
           limit: PAGE_SIZE,
-          cursor: cursor ?? undefined,
+          page,
         });
         this.publish(
-          page.items.map((position) => ({ kind: 'position', record: position }) as const),
-          page.nextCursor,
-          append,
+          result.items.map((position) => ({ kind: 'position', record: position }) as const),
+          result,
         );
         return;
       }
 
-      const page = await this.listRegimes.execute({
+      const result = await this.listRegimes.execute({
         search: search || undefined,
         status: status || undefined,
         limit: PAGE_SIZE,
-        cursor: cursor ?? undefined,
+        page,
       });
       this.publish(
-        page.items.map((regime) => ({ kind: 'regime', record: regime }) as const),
-        page.nextCursor,
-        append,
+        result.items.map((regime) => ({ kind: 'regime', record: regime }) as const),
+        result,
       );
     } catch (error) {
-      this.failedCursor.set(cursor);
+      this.failedPage.set(page);
       this.loadFailure.set(this.describe(error));
     } finally {
       this.loading.set(false);
@@ -501,19 +505,15 @@ export class CatalogPage implements OnInit {
   /**
    * publish stores the page that was read.
    */
-  private publish(
-    records: readonly EditableCatalogRecord[],
-    nextCursor: string | null,
-    append: boolean,
-  ): void {
-    const rows = records.map((record) => this.toRow(record));
-    this.rows.set(append ? [...this.rows(), ...rows] : rows);
+  private publish(records: readonly EditableCatalogRecord[], result: CatalogListing): void {
+    this.rows.set(records.map((record) => this.toRow(record)));
 
-    const entries = new Map(records.map((record) => [record.record.id, record]));
-    this.records.set(append ? new Map([...this.records(), ...entries]) : entries);
+    this.records.set(new Map(records.map((record) => [record.record.id, record])));
 
-    this.nextCursor.set(nextCursor);
-    this.failedCursor.set(null);
+    this.page.set(result.page);
+    this.totalPages.set(result.totalPages);
+    this.total.set(result.total);
+    this.failedPage.set(null);
   }
 
   /**

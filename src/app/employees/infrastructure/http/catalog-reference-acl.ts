@@ -56,14 +56,6 @@ interface PositionResource {
 }
 
 /**
- * A page of records of the catalog.
- */
-interface CatalogPageResource<T> {
-  readonly items: readonly T[];
-  readonly nextCursor: string | null;
-}
-
-/**
  * The size of the page that a selector shows.
  *
  * The platform caps the page at a hundred records, and a selector offers
@@ -109,13 +101,13 @@ export class CatalogReferenceAcl implements CatalogReferenceResolver {
    * listRegimes returns the available regimes that match the term.
    */
   async listRegimes(search?: string): Promise<readonly RegimeReference[]> {
-    const page = await this.read<RegimeResource>('/regimes', {
+    const records = await this.read<RegimeResource>('/regimes', {
       search: this.term(search),
       status: 'ACTIVE',
       limit: CATALOG_PAGE_SIZE,
     });
 
-    return page.items.map((resource) => ({
+    return records.map((resource) => ({
       id: resource.uuid,
       name: resource.name,
       availability: this.availability(resource.status),
@@ -150,13 +142,13 @@ export class CatalogReferenceAcl implements CatalogReferenceResolver {
    * listWorkUnits returns the available units of work that match the term.
    */
   async listWorkUnits(search?: string): Promise<readonly WorkUnitReference[]> {
-    const page = await this.read<WorkUnitResource>('/work-units', {
+    const records = await this.read<WorkUnitResource>('/work-units', {
       search: this.term(search),
       status: 'ACTIVE',
       limit: CATALOG_PAGE_SIZE,
     });
 
-    return page.items.map((resource) => ({
+    return records.map((resource) => ({
       id: resource.uuid,
       code: resource.code,
       name: resource.name,
@@ -182,13 +174,13 @@ export class CatalogReferenceAcl implements CatalogReferenceResolver {
    * listPositions returns the available positions that match the term.
    */
   async listPositions(search?: string): Promise<readonly PositionReference[]> {
-    const page = await this.read<PositionResource>('/positions', {
+    const records = await this.read<PositionResource>('/positions', {
       search: this.term(search),
       status: 'ACTIVE',
       limit: CATALOG_PAGE_SIZE,
     });
 
-    return page.items.map((resource) => ({
+    return records.map((resource) => ({
       id: resource.uuid,
       name: resource.name,
       availability: this.availability(resource.status),
@@ -214,12 +206,12 @@ export class CatalogReferenceAcl implements CatalogReferenceResolver {
     const references = new Map<string, TReference>();
 
     for (let index = 0; index < ids.length; index += MAX_IDS_PER_REQUEST) {
-      const page = await this.read<TResource>(path, {
+      const records = await this.read<TResource>(path, {
         ids: ids.slice(index, index + MAX_IDS_PER_REQUEST),
         limit: MAX_IDS_PER_REQUEST,
       });
 
-      for (const item of page.items) {
+      for (const item of records) {
         const reference = toReference(item);
         references.set(reference.id, reference);
       }
@@ -239,7 +231,7 @@ export class CatalogReferenceAcl implements CatalogReferenceResolver {
       readonly ids?: readonly string[];
       readonly limit: number;
     },
-  ): Promise<CatalogPageResource<TResource>> {
+  ): Promise<readonly TResource[]> {
     let params = new HttpParams().set('limit', String(filters.limit));
     if (filters.search) {
       params = params.set('search', filters.search);
@@ -251,9 +243,11 @@ export class CatalogReferenceAcl implements CatalogReferenceResolver {
       params = params.set('ids', filters.ids.join(','));
     }
 
-    return firstValueFrom(
-      this.http.get<CatalogPageResource<TResource>>(`${this.baseUrl}${path}`, { params }),
+    const page = await firstValueFrom(
+      this.http.get<{ readonly items: readonly TResource[] }>(`${this.baseUrl}${path}`, { params }),
     );
+
+    return page.items;
   }
 
   /**

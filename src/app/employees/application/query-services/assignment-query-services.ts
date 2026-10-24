@@ -62,7 +62,7 @@ export class ListAssignmentsQueryService {
       employeeId: query.employeeId,
       status: query.status,
       limit: query.limit,
-      cursor: query.cursor,
+      page: query.page,
     };
   }
 }

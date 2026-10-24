@@ -13,14 +13,18 @@ import { Description } from '../model/value-objects/description';
 /**
  * CatalogPage is a page of a listing.
  *
- * The pagination is by keyset, so the cursor is opaque and it points to the
- * next position of the order.
+ * The pagination is by page number, so the worker reaches any page of the
+ * listing with a single request.
  */
 export interface CatalogPage<T> {
   /** The records of the page. It is never empty by contract. */
   readonly items: readonly T[];
-  /** The opaque cursor of the next page, when it exists. */
-  readonly nextCursor: string | null;
+  /** The number of the page, starting at one. */
+  readonly page: number;
+  /** The number of pages of the listing. */
+  readonly totalPages: number;
+  /** The number of records that match the query. */
+  readonly total: number;
 }
 
 /**
@@ -37,8 +41,8 @@ export interface CatalogCriteria {
   readonly status?: FilterableCatalogStatus;
   /** The size of the page. */
   readonly limit?: number;
-  /** The opaque cursor of the previous page. */
-  readonly cursor?: string;
+  /** The number of the requested page, starting at one. */
+  readonly page?: number;
 }
 
 /**

@@ -3,9 +3,7 @@
     <div class="page-heading">
       <p class="eyebrow">Recursos Humanos · Personal</p>
       <h1 id="employees-page-title" class="page-title">Lista de empleados</h1>
-      <p class="page-subtitle">
-        Busca a los trabajadores registrados.
-      </p>
+      <p class="page-subtitle">Busca a los trabajadores registrados.</p>
     </div>
 
     <button matButton="filled" type="button" class="create-button" (click)="openCreateDialog()">
@@ -67,9 +65,15 @@
       (deleteRequested)="openDeleteDialog($event)"
     />
 
-    @if (nextCursor()) {
+    @if (totalPages() > 1) {
       <div class="panel-footer">
-        <button matButton="tonal" type="button" (click)="loadMore()">Cargar más trabajadores</button>
+        <app-paginator
+          [page]="page()"
+          [totalPages]="totalPages()"
+          [total]="total()"
+          label="trabajadores"
+          (pageRequested)="goToPage($event)"
+        />
       </div>
     }
   </section>

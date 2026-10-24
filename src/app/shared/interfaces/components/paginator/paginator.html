@@ -1,0 +1,39 @@
+<nav class="paginator" aria-label="Paginación del listado">
+  <button
+    matButton="tonal"
+    type="button"
+    class="paginator__step"
+    [disabled]="page() <= 1"
+    (click)="goTo(page() - 1)"
+  >
+    <mat-icon aria-hidden="true">chevron_left</mat-icon>
+    Anterior
+  </button>
+
+  @for (item of pages(); track item.number) {
+    <button
+      type="button"
+      class="paginator__page"
+      [class.paginator__page--current]="item.current"
+      [attr.aria-current]="item.current ? 'page' : null"
+      (click)="goTo(item.number)"
+    >
+      {{ item.number }}
+    </button>
+  }
+
+  <button
+    matButton="tonal"
+    type="button"
+    class="paginator__step"
+    [disabled]="page() >= totalPages()"
+    (click)="goTo(page() + 1)"
+  >
+    Siguiente
+    <mat-icon aria-hidden="true">chevron_right</mat-icon>
+  </button>
+
+  <span class="paginator__summary">
+    Página {{ page() }} de {{ totalPages() }} · {{ total() }} {{ label() }}
+  </span>
+</nav>

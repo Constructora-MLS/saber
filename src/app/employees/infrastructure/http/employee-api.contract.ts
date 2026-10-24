@@ -36,7 +36,12 @@ export interface EmployeeResource {
  */
 export interface EmployeePageResource {
   readonly items: readonly EmployeeResource[];
-  readonly nextCursor: string | null;
+  /** The number of the page, starting at one. */
+  readonly page: number;
+  /** The number of pages of the listing. */
+  readonly totalPages: number;
+  /** The number of records that match the query. */
+  readonly total: number;
 }
 
 /**

@@ -15,6 +15,6 @@ export interface ListEmployeesQuery {
   readonly status?: FilterableEmployeeStatus;
   /** The size of the page. */
   readonly limit?: number;
-  /** The opaque cursor of the previous page. */
-  readonly cursor?: string;
+  /** The number of the requested page, starting at one. */
+  readonly page?: number;
 }

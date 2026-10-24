@@ -15,8 +15,8 @@ export interface ListServicesQuery {
   readonly status?: FilterableCatalogStatus;
   /** The size of the page. */
   readonly limit?: number;
-  /** The opaque cursor of the previous page. */
-  readonly cursor?: string;
+  /** The number of the requested page, starting at one. */
+  readonly page?: number;
 }
 
 /**
@@ -26,7 +26,8 @@ export interface ListPositionsQuery {
   readonly search?: string;
   readonly status?: FilterableCatalogStatus;
   readonly limit?: number;
-  readonly cursor?: string;
+  /** The number of the requested page, starting at one. */
+  readonly page?: number;
 }
 
 /**
@@ -36,7 +37,8 @@ export interface ListRegimesQuery {
   readonly search?: string;
   readonly status?: FilterableCatalogStatus;
   readonly limit?: number;
-  readonly cursor?: string;
+  /** The number of the requested page, starting at one. */
+  readonly page?: number;
 }
 
 /**
@@ -48,5 +50,6 @@ export interface ListWorkUnitsQuery {
   readonly status?: FilterableCatalogStatus;
   readonly serviceId?: string;
   readonly limit?: number;
-  readonly cursor?: string;
+  /** The number of the requested page, starting at one. */
+  readonly page?: number;
 }

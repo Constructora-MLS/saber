@@ -73,11 +73,15 @@
         (retryRequested)="retry()"
       />
 
-      @if (nextCursor()) {
+      @if (totalPages() > 1) {
         <div class="panel-footer">
-          <button matButton="tonal" type="button" (click)="loadMore()">
-            Cargar más asignaciones
-          </button>
+          <app-paginator
+            [page]="page()"
+            [totalPages]="totalPages()"
+            [total]="total()"
+            label="asignaciones"
+            (pageRequested)="goToPage($event)"
+          />
         </div>
       }
     </section>

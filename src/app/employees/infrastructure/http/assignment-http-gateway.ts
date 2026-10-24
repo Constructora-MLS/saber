@@ -56,7 +56,9 @@ export class AssignmentHttpGateway implements AssignmentRepository {
 
     return {
       items: page.items.map((item) => this.toAssignment(item)),
-      nextCursor: page.nextCursor,
+      page: page.page,
+      totalPages: page.totalPages,
+      total: page.total,
     };
   }
 
@@ -137,8 +139,8 @@ export class AssignmentHttpGateway implements AssignmentRepository {
     if (criteria.limit) {
       params = params.set('limit', String(criteria.limit));
     }
-    if (criteria.cursor) {
-      params = params.set('cursor', criteria.cursor);
+    if (criteria.page) {
+      params = params.set('page', String(criteria.page));
     }
     return params;
   }
