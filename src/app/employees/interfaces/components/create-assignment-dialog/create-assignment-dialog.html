@@ -1,9 +1,7 @@
 <h2 mat-dialog-title>Nueva Asignación</h2>
 
 <mat-dialog-content>
-  <p class="dialog-description">
-    {{ data.worker.name }} ya está seleccionado. Completa la Unidad de Trabajo, el Cargo y la fecha.
-  </p>
+  <p class="dialog-description">Completa la unidad de trabajo, el cargo y la fecha.</p>
 
   <form class="dialog-form" id="create-assignment-form" [formGroup]="form" (ngSubmit)="submit()">
     <div class="dialog-fields">

@@ -102,7 +102,10 @@
   font-size: 0.8rem;
 }
 
+/* The record of the assignment is shown apart from the fields, so the
+   worker knows what is being changed. */
 .dialog-record {
+  margin: 0 0 0.9rem;
   padding: 0.7rem 0.85rem;
   border: 1px solid var(--rrhh-divider);
   border-radius: 0.9rem;
@@ -119,19 +122,6 @@
   margin: 0.25rem 0 0;
   color: var(--app-text-muted);
   font-size: 0.8rem;
-}
-
-/* The callout explains what the platform does with the answer of the
-   dialog. */
-.dialog-callout {
-  margin: 1rem 0 0;
-  padding: 0.7rem 0.9rem;
-  border-left: 3px solid var(--mat-sys-primary);
-  border-radius: 0.75rem;
-  background: var(--mat-sys-surface-container-low);
-  color: var(--mat-sys-on-surface-variant);
-  font-size: 0.82rem;
-  line-height: 1.5;
 }
 
 @media (max-width: 40rem) {
