@@ -23,11 +23,21 @@ export const routes: Routes = [
       ),
   },
   {
-    path: 'certified',
+    path: 'certificates',
     title: 'Certificados',
     loadComponent: () =>
-      import('./certified/interfaces/pages/certified-page/certified-page').then(
-        (module) => module.CertifiedPage,
+      import('./certificates/interfaces/pages/certificates-page/certificates-page').then(
+        (module) => module.CertificatesPage,
+      ),
+  },
+  {
+    // The certificate is reviewed and issued from the assignment that
+    // receives it, so its address carries the assignment.
+    path: 'certificates/assignment/:assignmentId',
+    title: 'Revisar certificado',
+    loadComponent: () =>
+      import('./certificates/interfaces/pages/certificate-review-page/certificate-review-page').then(
+        (module) => module.CertificateReviewPage,
       ),
   },
   {

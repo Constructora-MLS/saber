@@ -1,0 +1,69 @@
+<div class="queue">
+  <p class="sr-only">{{ caption() }}</p>
+
+  @if (loading() && cards().length === 0) {
+    <div class="queue__loading" role="status">
+      <mat-spinner diameter="28" aria-hidden="true" />
+      <span>Cargando la cola de emisión…</span>
+    </div>
+  } @else if (cards().length === 0 && errorMessage() !== null) {
+    <app-table-state
+      kind="error"
+      [title]="errorTitle()"
+      [message]="errorMessage()"
+      actionLabel="Reintentar"
+      actionIcon="refresh"
+      (actionRequested)="retryRequested.emit()"
+    />
+  } @else if (cards().length === 0) {
+    <app-table-state
+      kind="empty"
+      [icon]="emptyIcon()"
+      [title]="emptyTitle()"
+      [message]="emptyMessage()"
+    />
+  } @else {
+    @for (card of cards(); track card.assignmentId) {
+      <article class="queue__card">
+        <div class="queue__body">
+          <h2 class="queue__name">{{ card.workerName }}</h2>
+          <p class="queue__meta">
+            DNI · <span class="mono">{{ card.dni }}</span>
+          </p>
+
+          <div class="queue__facts">
+            <span>
+              <mat-icon aria-hidden="true">work</mat-icon>
+              {{ card.position }}
+            </span>
+            <span>
+              <mat-icon aria-hidden="true">event_busy</mat-icon>
+              Cese {{ formatDate(card.endDate) }}
+            </span>
+          </div>
+
+          <p class="queue__unit">
+            <b>Unidad:</b> {{ card.workUnit }}
+            @if (card.workUnitCode) {
+              · <span class="mono">{{ card.workUnitCode }}</span>
+            }
+          </p>
+        </div>
+
+        <div class="queue__actions">
+          @if (card.serviceName; as serviceName) {
+            <span class="type-badge">{{ serviceName }}</span>
+          }
+          <button
+            matButton="filled"
+            type="button"
+            (click)="reviewRequested.emit(card.assignmentId)"
+          >
+            <mat-icon aria-hidden="true">fact_check</mat-icon>
+            Revisar y emitir
+          </button>
+        </div>
+      </article>
+    }
+  }
+</div>

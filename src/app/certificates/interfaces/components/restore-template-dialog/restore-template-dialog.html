@@ -1,0 +1,16 @@
+<h2 mat-dialog-title>Restablecer el contenido</h2>
+
+<mat-dialog-content>
+  <p class="description">
+    El certificado de {{ data.serviceName }} volverá al texto que la plataforma usa por defecto. Los
+    certificados ya emitidos no cambian.
+  </p>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="actions">
+  <button matButton type="button" (click)="cancel()">Cancelar</button>
+  <button matButton="filled" type="button" (click)="confirm()">
+    <mat-icon aria-hidden="true">restart_alt</mat-icon>
+    Restablecer
+  </button>
+</mat-dialog-actions>

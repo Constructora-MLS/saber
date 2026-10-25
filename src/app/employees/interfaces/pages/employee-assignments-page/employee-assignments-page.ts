@@ -398,6 +398,19 @@ export class EmployeeAssignmentsPage {
   }
 
   /**
+   * openCertificate opens the page that reviews and issues the certificate
+   * of an assignment.
+   *
+   * The address of the page carries the worker, so the page returns to the
+   * record of the worker when the certificate is done.
+   */
+  protected openCertificate(row: AssignmentRow): void {
+    void this.router.navigate(['/certificates/assignment', row.id], {
+      queryParams: { employeeId: this.employeeId },
+    });
+  }
+
+  /**
    * goBack returns to the listing of the workers.
    */
   protected goBack(): void {
@@ -612,6 +625,14 @@ export class EmployeeAssignmentsPage {
           title: 'No se pudieron cargar las asignaciones',
           message:
             'La plataforma no devolvió una respuesta válida. Inténtalo nuevamente en unos instantes.',
+        };
+      }
+
+      if (error.code === 'assignment_certificate_history') {
+        return {
+          title: 'La asignación tiene certificados emitidos',
+          message:
+            'Anula el certificado que se emitió por error y vuelve a intentarlo: el historial del certificado se conserva.',
         };
       }
 

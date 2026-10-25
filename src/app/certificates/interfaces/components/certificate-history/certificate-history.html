@@ -1,0 +1,93 @@
+<div class="history">
+  <p class="sr-only">{{ caption() }}</p>
+
+  @if (loading() && cards().length === 0) {
+    <div class="history__loading" role="status">
+      <mat-spinner diameter="28" aria-hidden="true" />
+      <span>Cargando los certificados emitidos…</span>
+    </div>
+  } @else if (cards().length === 0 && errorMessage() !== null) {
+    <app-table-state
+      kind="error"
+      [title]="errorTitle()"
+      [message]="errorMessage()"
+      actionLabel="Reintentar"
+      actionIcon="refresh"
+      (actionRequested)="retryRequested.emit()"
+    />
+  } @else if (cards().length === 0) {
+    <app-table-state
+      kind="empty"
+      [icon]="emptyIcon()"
+      [title]="emptyTitle()"
+      [message]="emptyMessage()"
+    />
+  } @else {
+    @for (card of cards(); track card.certificateId) {
+      <article class="history__card">
+        <div class="history__body">
+          <h2 class="history__name">{{ card.workerName }}</h2>
+          <p class="history__meta">
+            DNI · <span class="mono">{{ card.dni }}</span>
+          </p>
+
+          <div class="history__facts">
+            <span>
+              <mat-icon aria-hidden="true">work</mat-icon>
+              {{ card.workUnit }}
+              @if (card.workUnitCode) {
+                · <span class="mono">{{ card.workUnitCode }}</span>
+              }
+            </span>
+            <span>
+              <mat-icon aria-hidden="true">event</mat-icon>
+              {{ formatDate(card.issuedAt) }}
+            </span>
+          </div>
+        </div>
+
+        <div class="history__actions">
+          <div class="history__badges">
+            @if (card.serviceName; as serviceName) {
+              <span class="type-badge">{{ serviceName }}</span>
+            }
+            <span class="status-badge" [class.is-annulled]="card.status === 'ANNULLED'">
+              {{ statusLabel(card.status) }}
+            </span>
+          </div>
+
+          <div class="history__buttons">
+            <button matButton="outlined" type="button" (click)="viewRequested.emit(card)">
+              <mat-icon aria-hidden="true">visibility</mat-icon>
+              Visualizar
+            </button>
+            <button matButton="filled" type="button" (click)="downloadRequested.emit(card)">
+              <mat-icon aria-hidden="true">download</mat-icon>
+              Descargar
+            </button>
+            <button
+              matIconButton
+              type="button"
+              [matMenuTriggerFor]="cardMenu"
+              [attr.aria-label]="'Acciones del certificado de ' + card.workerName"
+              [disabled]="card.status !== 'ISSUED'"
+            >
+              <mat-icon aria-hidden="true">more_vert</mat-icon>
+            </button>
+            <mat-menu #cardMenu="matMenu" xPosition="before">
+              <button
+                mat-menu-item
+                type="button"
+                [disabled]="card.status !== 'ISSUED'"
+                (click)="annulRequested.emit(card)"
+              >
+                <mat-icon aria-hidden="true">block</mat-icon>
+                <span>Anular certificado</span>
+              </button>
+            </mat-menu>
+          </div>
+        </div>
+      </article>
+    }
+  }
+</div>

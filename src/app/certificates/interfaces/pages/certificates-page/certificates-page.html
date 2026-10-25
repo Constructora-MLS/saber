@@ -1,0 +1,188 @@
+<section class="page" aria-labelledby="certificates-page-title">
+  <header class="page-header">
+    <div class="page-heading">
+      <p class="eyebrow">Recursos Humanos · Certificados</p>
+      <h1 id="certificates-page-title" class="page-title">{{ activeTabDefinition().title }}</h1>
+      <p class="page-subtitle">{{ activeTabDefinition().subtitle }}</p>
+    </div>
+
+    @if (activeTab() === 'pendientes' && pendingCount() > 0) {
+      <span class="pending-count">
+        <mat-icon aria-hidden="true">pending_actions</mat-icon>
+        {{ pendingCount() }} pendientes
+      </span>
+    }
+  </header>
+
+  <nav class="certificate-tabs" aria-label="Vistas de Certificados">
+    @for (tab of tabs; track tab.id) {
+      <button
+        type="button"
+        class="certificate-tab"
+        [class.is-active]="activeTab() === tab.id"
+        [attr.aria-current]="activeTab() === tab.id ? 'page' : null"
+        (click)="activateTab(tab.id)"
+      >
+        <mat-icon aria-hidden="true">{{ tab.icon }}</mat-icon>
+        <span>{{ tab.label }}</span>
+      </button>
+    }
+  </nav>
+
+  @if (activeTab() === 'contenido') {
+    <section class="panel" aria-labelledby="template-panel-title">
+      <header class="panel-header">
+        <div>
+          <h2 id="template-panel-title">{{ activeTabDefinition().recordsLabel }}</h2>
+          <p class="panel-hint">
+            Los certificados ya emitidos no cambian: el PDF se archiva tal como se emitió.
+          </p>
+        </div>
+      </header>
+
+      <div class="panel-content">
+        <div class="editor-grid">
+          <app-certificate-template-editor
+            [services]="catalogServices()"
+            [serviceId]="selectedServiceId()"
+            [body]="templateBody()"
+            [tokens]="templateTokens()"
+            [loading]="templateLoading()"
+            [saving]="templateSaving()"
+            [failure]="templateFailure()"
+            (serviceSelected)="selectService($event)"
+            (bodyChanged)="onTemplateBodyChanged($event)"
+            (saveRequested)="saveTemplate()"
+            (restoreRequested)="restoreTemplate()"
+          />
+
+          <section class="editor-preview" aria-labelledby="editor-preview-title">
+            <header class="editor-preview__header">
+              <h3 id="editor-preview-title">Vista previa del PDF</h3>
+              <p>Se actualiza al escribir · es el documento que se archivará</p>
+            </header>
+            <div class="editor-preview__body">
+              @if (editorPreviewUrl(); as url) {
+                <iframe
+                  class="preview"
+                  [src]="url"
+                  title="Vista previa del certificado de trabajo"
+                ></iframe>
+              } @else if (editorPreviewFailure(); as message) {
+                <p class="editor-preview__failure" role="alert">{{ message }}</p>
+              } @else {
+                <p class="editor-preview__placeholder">Preparando la vista previa…</p>
+              }
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+  } @else {
+    <section class="panel" aria-labelledby="certificates-panel-title">
+      <header class="panel-header">
+        <div>
+          <h2 id="certificates-panel-title">{{ activeTabDefinition().recordsLabel }}</h2>
+          <p class="panel-hint">
+            @if (activeTab() === 'pendientes') {
+              Las asignaciones cesadas que todavía no tienen certificado emitido.
+            } @else {
+              Los certificados que la plataforma ya emitió y archivó.
+            }
+          </p>
+        </div>
+      </header>
+
+      <div class="filters">
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>
+            {{
+              activeTab() === 'pendientes'
+                ? 'Buscar por trabajador o DNI'
+                : 'Buscar por trabajador o DNI'
+            }}
+          </mat-label>
+          <input
+            matInput
+            type="search"
+            autocomplete="off"
+            placeholder="Buscar…"
+            [ngModel]="searchTerm()"
+            (ngModelChange)="onSearchChanged($event)"
+          />
+          @if (searchTerm()) {
+            <button
+              matIconButton
+              matSuffix
+              type="button"
+              aria-label="Limpiar la búsqueda"
+              (click)="clearSearch()"
+            >
+              <mat-icon aria-hidden="true">close</mat-icon>
+            </button>
+          }
+        </mat-form-field>
+
+        @if (activeTab() === 'pendientes') {
+          <mat-form-field appearance="outline" class="status-field">
+            <mat-label>Tipo de certificado</mat-label>
+            <mat-select [ngModel]="serviceFilter()" (ngModelChange)="onServiceChanged($event)">
+              <mat-option value="">Todos</mat-option>
+              @for (option of serviceOptions(); track option.id) {
+                <mat-option [value]="option.id">{{ option.name }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+        } @else {
+          <mat-form-field appearance="outline" class="date-field">
+            <mat-label>Emitido desde</mat-label>
+            <input
+              matInput
+              type="date"
+              [ngModel]="issuedFrom()"
+              (ngModelChange)="onIssuedFromChanged($event)"
+            />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="date-field">
+            <mat-label>Emitido hasta</mat-label>
+            <input
+              matInput
+              type="date"
+              [ngModel]="issuedTo()"
+              (ngModelChange)="onIssuedToChanged($event)"
+            />
+          </mat-form-field>
+        }
+      </div>
+
+      @if (loading()) {
+        <mat-progress-bar mode="indeterminate" aria-label="Cargando certificados" />
+      }
+
+      @if (activeTab() === 'pendientes') {
+        <app-certificate-queue
+          caption="Asignaciones pendientes de certificado"
+          [cards]="pendingCards()"
+          [loading]="loading()"
+          [errorTitle]="loadFailure()?.title ?? null"
+          [errorMessage]="loadFailure()?.message ?? null"
+          (reviewRequested)="review($event)"
+          (retryRequested)="retry()"
+        />
+      } @else {
+        <app-certificate-history
+          caption="Certificados emitidos"
+          [cards]="issuedCards()"
+          [loading]="loading()"
+          [errorTitle]="loadFailure()?.title ?? null"
+          [errorMessage]="loadFailure()?.message ?? null"
+          (viewRequested)="view($event)"
+          (downloadRequested)="download($event)"
+          (annulRequested)="annul($event)"
+          (retryRequested)="retry()"
+        />
+      }
+    </section>
+  }
+</section>

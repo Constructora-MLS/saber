@@ -1,0 +1,132 @@
+<section class="page" aria-labelledby="certificate-review-title">
+  <button matButton="tonal" type="button" class="back-link" (click)="goBack()">
+    <mat-icon aria-hidden="true">arrow_back</mat-icon>
+    Volver
+  </button>
+
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" aria-label="Cargando el certificado" />
+  }
+
+  @if (loadFailure(); as failure) {
+    <section class="panel">
+      <app-table-state
+        kind="error"
+        [title]="failure.title"
+        [message]="failure.message"
+        actionLabel="Reintentar"
+        actionIcon="refresh"
+        (actionRequested)="retry()"
+      />
+    </section>
+  } @else if (notEligible()) {
+    <section class="panel">
+      <app-table-state
+        kind="empty"
+        icon="block"
+        title="Esta asignación no puede recibir un certificado"
+        message="El periodo de trabajo de la asignación todavía está abierto."
+        actionLabel="Volver a Certificados"
+        actionIcon="arrow_back"
+        (actionRequested)="goBack()"
+      />
+    </section>
+  } @else if (draft(); as draft) {
+    <header class="page-header">
+      <div class="page-heading">
+        <p class="eyebrow">Certificaciones · Revisar emisión</p>
+        <h1 id="certificate-review-title" class="page-title">Revisar y emitir</h1>
+        <p class="page-subtitle">
+          Comprueba la persona y los datos antes de generar el certificado.
+        </p>
+      </div>
+    </header>
+
+    <div class="review-grid">
+      <section class="panel" aria-labelledby="assignment-title">
+        <header class="panel-header">
+          <div>
+            <h2 id="assignment-title">Trabajador y asignación</h2>
+            <p class="panel-hint">Los datos que el certificado va a archivar.</p>
+          </div>
+        </header>
+
+        <div class="panel-body">
+          <p class="person">
+            {{ draft.assignment.snapshot.fullName }}
+            <small
+              >DNI · <span class="mono">{{ draft.assignment.snapshot.dni }}</span></small
+            >
+          </p>
+
+          <dl class="data">
+            <div>
+              <dt>Tipo de certificado</dt>
+              <dd>
+                <span class="type-badge">{{ draft.serviceName ?? '—' }}</span>
+              </dd>
+            </div>
+            <div>
+              <dt>Unidad de trabajo</dt>
+              <dd>
+                {{ draft.assignment.snapshot.workUnit }}
+                @if (draft.assignment.snapshot.workUnitCode) {
+                  · <span class="mono">{{ draft.assignment.snapshot.workUnitCode }}</span>
+                }
+              </dd>
+            </div>
+            <div>
+              <dt>Cargo</dt>
+              <dd>{{ draft.assignment.snapshot.position }}</dd>
+            </div>
+            <div>
+              <dt>Fecha de ingreso</dt>
+              <dd>{{ formatDate(draft.assignment.snapshot.startDate) }}</dd>
+            </div>
+            <div>
+              <dt>Fecha de cese</dt>
+              <dd>{{ formatDate(draft.assignment.snapshot.endDate) }}</dd>
+            </div>
+          </dl>
+
+          <div class="actions">
+            <button matButton="outlined" type="button" (click)="goBack()">Volver</button>
+            @if (certificate(); as issued) {
+              <button matButton="filled" type="button" (click)="openCertificate(issued)">
+                <mat-icon aria-hidden="true">visibility</mat-icon>
+                Visualizar
+              </button>
+            } @else {
+              <button matButton="filled" type="button" [disabled]="issuing()" (click)="issue()">
+                <mat-icon aria-hidden="true">fact_check</mat-icon>
+                {{ issuing() ? 'Emitiendo…' : 'Emitir' }}
+              </button>
+            }
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="preview-title">
+        <header class="panel-header">
+          <div>
+            <h2 id="preview-title">Vista previa del PDF</h2>
+            <p class="panel-hint">Es el documento que la plataforma archivará al emitir.</p>
+          </div>
+          <mat-icon aria-hidden="true">picture_as_pdf</mat-icon>
+        </header>
+
+        <div class="panel-body">
+          @if (previewUrl(); as url) {
+            <iframe
+              class="preview"
+              [src]="url"
+              title="Vista previa del certificado de trabajo"
+            ></iframe>
+          } @else {
+            <p class="preview__placeholder">Preparando la vista previa del documento…</p>
+          }
+        </div>
+      </section>
+    </div>
+  }
+</section>

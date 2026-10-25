@@ -1,0 +1,32 @@
+<h2 mat-dialog-title>Anular certificado</h2>
+
+<mat-dialog-content>
+  <p class="dialog-description">
+    El certificado de {{ data.workerName }} dejará de estar en vigor. Su historial y su archivo se
+    conservan, y la asignación vuelve a poder eliminarse.
+  </p>
+
+  <form class="dialog-form" id="annul-certificate-form" [formGroup]="form" (ngSubmit)="submit()">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Motivo de la anulación</mat-label>
+      <textarea
+        matInput
+        rows="3"
+        formControlName="reason"
+        placeholder="El certificado se emitió por error…"
+        required
+      ></textarea>
+      @if (form.controls.reason.hasError('required')) {
+        <mat-error>El motivo de la anulación es obligatorio.</mat-error>
+      }
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="dialog-actions">
+  <button matButton type="button" (click)="cancel()">Cancelar</button>
+  <button matButton="filled" type="submit" form="annul-certificate-form" [disabled]="form.invalid">
+    <mat-icon aria-hidden="true">block</mat-icon>
+    Anular certificado
+  </button>
+</mat-dialog-actions>
