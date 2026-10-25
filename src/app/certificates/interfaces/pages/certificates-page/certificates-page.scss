@@ -203,8 +203,7 @@
   max-width: 26rem;
 }
 
-.status-field,
-.date-field {
+.status-field {
   flex: 0 1 13rem;
 }
 
@@ -219,8 +218,7 @@
   }
 
   .search-field,
-  .status-field,
-  .date-field {
+  .status-field {
     flex: 1 1 100%;
     max-width: none;
   }

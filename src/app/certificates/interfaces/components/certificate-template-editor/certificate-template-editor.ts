@@ -5,7 +5,7 @@
 // of the worker through its outputs. It never talks to the API.
 // package certificatetemplateeditor
 
-import { Component, ElementRef, input, output, viewChild } from '@angular/core';
+import { Component, computed, ElementRef, input, output, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -14,12 +14,15 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { CertificateServiceReference } from '../../../domain/services/certificate-service-resolver';
+import { TEMPLATE_MAX_LENGTH } from '../../../domain/model/value-objects/template';
+import { FieldCounter } from '../../../../shared/interfaces/components/field-counter/field-counter';
 
 /**
  * CertificateTemplateEditor edits the text of the certificate of a service.
  */
 @Component({
   imports: [
+    FieldCounter,
     FormsModule,
     MatButtonModule,
     MatFormFieldModule,
@@ -58,6 +61,22 @@ export class CertificateTemplateEditor {
   readonly restoreRequested = output<void>();
 
   private readonly editor = viewChild<ElementRef<HTMLTextAreaElement>>('editor');
+
+  /** The limit of the text of the certificate. */
+  protected readonly bodyMaxLength = TEMPLATE_MAX_LENGTH;
+
+  /**
+   * The number of characters of the text of the certificate.
+   *
+   * The platform counts the characters by code point, so the counter counts
+   * them the same way.
+   */
+  protected readonly bodyLength = computed(() => [...this.body()].length);
+
+  /**
+   * Whether the text of the certificate is longer than the limit.
+   */
+  protected readonly bodyTooLong = computed(() => this.bodyLength() > this.bodyMaxLength);
 
   /**
    * selectService asks for another service.

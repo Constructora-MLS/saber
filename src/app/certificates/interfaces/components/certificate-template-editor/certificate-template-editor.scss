@@ -18,6 +18,9 @@
 
 .editor__text {
   width: 100%;
+  /* The text of the certificate is written after the vocabulary, so it
+     breathes below the variables instead of touching them. */
+  margin-top: 1.1rem;
 }
 
 .editor__text textarea {

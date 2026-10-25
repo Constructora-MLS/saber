@@ -14,11 +14,23 @@
         rows="3"
         formControlName="reason"
         placeholder="El certificado se emitió por error…"
+        [maxLength]="reasonMaxLength"
         required
       ></textarea>
       @if (form.controls.reason.hasError('required')) {
         <mat-error>El motivo de la anulación es obligatorio.</mat-error>
       }
+      @if (form.controls.reason.hasError('maxlength')) {
+        <mat-error>
+          El motivo de la anulación no puede superar los {{ reasonMaxLength }} caracteres.
+        </mat-error>
+      }
+      <mat-hint
+        align="end"
+        appFieldCounter
+        [control]="form.controls.reason"
+        [max]="reasonMaxLength"
+      />
     </mat-form-field>
   </form>
 </mat-dialog-content>

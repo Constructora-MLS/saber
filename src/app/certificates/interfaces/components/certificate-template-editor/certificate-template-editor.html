@@ -9,18 +9,6 @@
       </mat-select>
     </mat-form-field>
 
-    <mat-form-field appearance="outline" class="editor__text" subscriptSizing="dynamic">
-      <mat-label>Texto del certificado</mat-label>
-      <textarea
-        #editor
-        matInput
-        rows="12"
-        spellcheck="false"
-        [ngModel]="body()"
-        (ngModelChange)="onBodyChanged($event)"
-      ></textarea>
-    </mat-form-field>
-
     <div class="editor__variables">
       <p class="editor__variables-label">Variables disponibles</p>
       <div class="editor__chips">
@@ -31,6 +19,25 @@
         }
       </div>
     </div>
+
+    <mat-form-field appearance="outline" class="editor__text" subscriptSizing="dynamic">
+      <mat-label>Texto del certificado</mat-label>
+      <textarea
+        #editor
+        matInput
+        rows="12"
+        spellcheck="false"
+        [maxLength]="bodyMaxLength"
+        [ngModel]="body()"
+        (ngModelChange)="onBodyChanged($event)"
+      ></textarea>
+      @if (bodyTooLong()) {
+        <mat-error>
+          El texto del certificado no puede superar los {{ bodyMaxLength }} caracteres.
+        </mat-error>
+      }
+      <mat-hint align="end" appFieldCounter [value]="bodyLength()" [max]="bodyMaxLength" />
+    </mat-form-field>
 
     @if (failure(); as message) {
       <p class="editor__failure" role="alert">{{ message }}</p>

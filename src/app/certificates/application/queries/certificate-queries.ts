@@ -5,6 +5,7 @@
 // package queries
 
 import { Certificate } from '../../domain/model/aggregates/certificate';
+import { CertificateStatus } from '../../domain/model/value-objects/certificate-status';
 import { EligibleAssignment } from '../../domain/repositories/certificate-repositories';
 
 /**
@@ -44,4 +45,23 @@ export interface CertificateDraft {
   readonly serviceName: string | null;
   /** The certificates that were already issued for the assignment. */
   readonly certificates: readonly Certificate[];
+}
+
+/**
+ * ListCertificatesQuery asks for the certificates of the platform.
+ *
+ * The state is the filter of the search: the certificates in force, the
+ * certificates that were annulled, or every certificate.
+ */
+export interface ListCertificatesQuery {
+  /**
+   * The state the certificates are filtered by.
+   *
+   * It is absent when the search shows every certificate.
+   */
+  readonly status?: CertificateStatus;
+  /** The size of the page of the listing. */
+  readonly limit?: number;
+  /** The number of the requested page, starting at one. */
+  readonly page?: number;
 }

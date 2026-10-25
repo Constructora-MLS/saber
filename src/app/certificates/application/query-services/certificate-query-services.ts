@@ -3,13 +3,19 @@
 // package queryservices
 
 import { inject, Injectable } from '@angular/core';
-import { CertificateDraft, CertificateQueue } from '../queries/certificate-queries';
+import {
+  CertificateDraft,
+  CertificateQueue,
+  ListCertificatesQuery,
+} from '../queries/certificate-queries';
 import { CertificateId } from '../../domain/model/value-objects/certificate-id';
 import {
   CERTIFICATE_REPOSITORY,
   EligibleAssignment,
   ServiceTemplate,
 } from '../../domain/repositories/certificate-repositories';
+import { Certificate } from '../../domain/model/aggregates/certificate';
+import { CERTIFICATE_PAGE_SIZE } from '../../domain/model/value-objects/listing';
 import { CERTIFICATE_SERVICE_RESOLVER } from '../../domain/services/certificate-service-resolver';
 
 /**
@@ -26,7 +32,9 @@ export class ListCertificateQueueQueryService {
   private readonly repository = inject(CERTIFICATE_REPOSITORY);
 
   async execute(): Promise<CertificateQueue> {
-    const assignments = await this.repository.listEligibleAssignments();
+    const assignments = await this.repository.listEligibleAssignments({
+      limit: CERTIFICATE_PAGE_SIZE,
+    });
     const histories = await Promise.all(
       assignments.map((assignment) =>
         this.repository.listAssignmentCertificates(assignment.assignmentId),
@@ -43,6 +51,26 @@ export class ListCertificateQueueQueryService {
 }
 
 /**
+ * ListCertificatesQueryService returns the certificates of the platform that
+ * match the query.
+ *
+ * The search of the certificates is filtered by state, so the platform
+ * answers the certificates that the worker is looking for.
+ */
+@Injectable({ providedIn: 'root' })
+export class ListCertificatesQueryService {
+  private readonly repository = inject(CERTIFICATE_REPOSITORY);
+
+  async execute(query: ListCertificatesQuery): Promise<readonly Certificate[]> {
+    return this.repository.listCertificates({
+      status: query.status,
+      limit: query.limit,
+      page: query.page,
+    });
+  }
+}
+
+/**
  * GetCertificateDraftQueryService returns the certificate that is about to
  * be issued for an assignment.
  *
@@ -55,7 +83,9 @@ export class GetCertificateDraftQueryService {
   private readonly services = inject(CERTIFICATE_SERVICE_RESOLVER);
 
   async execute(assignmentId: string): Promise<CertificateDraft | null> {
-    const assignments = await this.repository.listEligibleAssignments();
+    const assignments = await this.repository.listEligibleAssignments({
+      limit: CERTIFICATE_PAGE_SIZE,
+    });
     const assignment = assignments.find((item) => item.assignmentId === assignmentId);
 
     if (!assignment) {

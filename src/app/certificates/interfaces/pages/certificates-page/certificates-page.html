@@ -87,7 +87,7 @@
             @if (activeTab() === 'pendientes') {
               Las asignaciones cesadas que todavía no tienen certificado emitido.
             } @else {
-              Los certificados que la plataforma ya emitió y archivó.
+              Los certificados que la plataforma ya emitió y archivó, con su estado.
             }
           </p>
         </div>
@@ -134,24 +134,16 @@
             </mat-select>
           </mat-form-field>
         } @else {
-          <mat-form-field appearance="outline" class="date-field">
-            <mat-label>Emitido desde</mat-label>
-            <input
-              matInput
-              type="date"
-              [ngModel]="issuedFrom()"
-              (ngModelChange)="onIssuedFromChanged($event)"
-            />
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="date-field">
-            <mat-label>Emitido hasta</mat-label>
-            <input
-              matInput
-              type="date"
-              [ngModel]="issuedTo()"
-              (ngModelChange)="onIssuedToChanged($event)"
-            />
+          <mat-form-field appearance="outline" class="status-field">
+            <mat-label>Estado</mat-label>
+            <mat-select
+              [ngModel]="statusFilter()"
+              (ngModelChange)="onStatusFilterChanged($event)"
+            >
+              @for (filter of statusFilters; track filter) {
+                <mat-option [value]="filter">{{ statusFilterLabel(filter) }}</mat-option>
+              }
+            </mat-select>
           </mat-form-field>
         }
       </div>

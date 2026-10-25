@@ -5,6 +5,7 @@ import { InjectionToken } from '@angular/core';
 import { Certificate } from '../model/aggregates/certificate';
 import { CertificateId } from '../model/value-objects/certificate-id';
 import { CertificateSnapshot } from '../model/value-objects/certificate-snapshot';
+import { CertificateStatus } from '../model/value-objects/certificate-status';
 
 /**
  * EligibleAssignment is an assignment whose labour period is closed and
@@ -41,6 +42,31 @@ export interface ServiceTemplate {
 }
 
 /**
+ * ListingCriteria are the pagination of a listing.
+ *
+ * The platform answers a page of every listing, so the client asks for the
+ * size of the page that it shows.
+ */
+export interface ListingCriteria {
+  /** The size of the page. */
+  readonly limit?: number;
+  /** The number of the requested page, starting at one. */
+  readonly page?: number;
+}
+
+/**
+ * CertificateCriteria are the filters of the search of the certificates.
+ */
+export interface CertificateCriteria extends ListingCriteria {
+  /**
+   * The state the certificates are filtered by.
+   *
+   * It is absent when the search shows every certificate.
+   */
+  readonly status?: CertificateStatus;
+}
+
+/**
  * CertificateRepository is the port of the registry of the certificates.
  */
 export interface CertificateRepository {
@@ -48,7 +74,16 @@ export interface CertificateRepository {
    * listEligibleAssignments returns the assignments whose labour period is
    * closed and that may receive a certificate.
    */
-  listEligibleAssignments(): Promise<readonly EligibleAssignment[]>;
+  listEligibleAssignments(criteria?: ListingCriteria): Promise<readonly EligibleAssignment[]>;
+
+  /**
+   * listCertificates returns the certificates of the platform that match the
+   * criteria.
+   *
+   * The search of the certificates is filtered by state: the certificates in
+   * force, the certificates that were annulled, or every certificate.
+   */
+  listCertificates(criteria: CertificateCriteria): Promise<readonly Certificate[]>;
 
   /**
    * issueCertificate issues the certificate of an eligible assignment.

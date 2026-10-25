@@ -13,6 +13,8 @@ import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/materia
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { ANNULMENT_REASON_MAX_LENGTH } from '../../../domain/model/value-objects/annulment-reason';
+import { FieldCounter } from '../../../../shared/interfaces/components/field-counter/field-counter';
 
 /**
  * AnnulCertificateDialogData is the certificate that is annulled.
@@ -30,6 +32,7 @@ export interface AnnulCertificateDialogData {
  */
 @Component({
   imports: [
+    FieldCounter,
     MatButtonModule,
     MatDialogModule,
     MatFormFieldModule,
@@ -49,8 +52,11 @@ export class AnnulCertificateDialog {
   /** The certificate that is annulled. */
   protected readonly data = inject<AnnulCertificateDialogData>(MAT_DIALOG_DATA);
 
+  /** The limit of the reason of the annulment. */
+  protected readonly reasonMaxLength = ANNULMENT_REASON_MAX_LENGTH;
+
   protected readonly form = this.formBuilder.nonNullable.group({
-    reason: ['', [Validators.required]],
+    reason: ['', [Validators.required, Validators.maxLength(ANNULMENT_REASON_MAX_LENGTH)]],
   });
 
   /**

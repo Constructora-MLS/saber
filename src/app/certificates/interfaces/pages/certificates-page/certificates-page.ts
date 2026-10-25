@@ -23,6 +23,7 @@ import {
   GetServiceTemplatePreviewQueryService,
   GetServiceTemplateQueryService,
   ListCertificateQueueQueryService,
+  ListCertificatesQueryService,
 } from '../../../application/query-services/certificate-query-services';
 import {
   AnnulCertificateCommandService,
@@ -31,6 +32,13 @@ import {
 } from '../../../application/command-services/certificate-command-services';
 import { CertificateQueueItem } from '../../../application/queries/certificate-queries';
 import { Certificate } from '../../../domain/model/aggregates/certificate';
+import {
+  CERTIFICATE_STATUS_FILTER,
+  certificateStatusFilterLabel,
+  certificateStatusOf,
+  CertificateStatusFilter,
+} from '../../../domain/model/value-objects/certificate-status';
+import { CERTIFICATE_PAGE_SIZE } from '../../../domain/model/value-objects/listing';
 import { CertificateApiError } from '../../../infrastructure/http/certificate-api.error';
 import {
   CertificateServiceReference,
@@ -128,6 +136,7 @@ export class CertificatesPage implements OnInit {
   private readonly snackBar = inject(MatSnackBar);
 
   private readonly listQueue = inject(ListCertificateQueueQueryService);
+  private readonly listCertificates = inject(ListCertificatesQueryService);
   private readonly getFile = inject(GetCertificateFileQueryService);
   private readonly getTemplate = inject(GetServiceTemplateQueryService);
   private readonly saveServiceTemplate = inject(SaveServiceTemplateCommandService);
@@ -148,10 +157,16 @@ export class CertificatesPage implements OnInit {
   protected readonly searchTerm = signal('');
   /** The service that the listing is filtered by. */
   protected readonly serviceFilter = signal('');
-  /** The day the issuance of the listing starts at. */
-  protected readonly issuedFrom = signal('');
-  /** The day the issuance of the listing ends at. */
-  protected readonly issuedTo = signal('');
+  /**
+   * The state that the search of the certificates is filtered by.
+   *
+   * The search shows the certificates in force by default, because a worker
+   * looks for the certificate that certifies the labour period.
+   */
+  protected readonly statusFilter = signal<CertificateStatusFilter>('ISSUED');
+
+  /** The certificates of the platform that the search shows. */
+  protected readonly certificates = signal<readonly Certificate[]>([]);
 
   /** The queue of the assignments that may receive a certificate. */
   protected readonly queue = signal<readonly CertificateQueueItem[]>([]);
@@ -200,11 +215,11 @@ export class CertificatesPage implements OnInit {
     },
     {
       id: 'emitidos',
-      label: 'Emitidos',
+      label: 'Historial',
       icon: 'history',
       title: 'Historial de certificados',
-      subtitle: 'Consulta los certificados emitidos y descarga su PDF.',
-      recordsLabel: 'Certificados emitidos',
+      subtitle: 'Consulta los certificados de la plataforma y descarga su PDF.',
+      recordsLabel: 'Certificados',
     },
     {
       id: 'contenido',
@@ -245,21 +260,33 @@ export class CertificatesPage implements OnInit {
   });
 
   /**
-   * The certificates that were issued.
+   * The certificates that the search shows.
+   *
+   * The state of the certificate is the filter of the search, and it is
+   * applied by the platform: the listing holds every certificate that
+   * matches it.
    */
   protected readonly issuedCards = computed<readonly IssuedCertificateCard[]>(() => {
     const term = normalize(this.searchTerm());
-    const from = this.issuedFrom();
-    const to = this.issuedTo();
 
-    return this.queue()
-      .flatMap((item) => item.certificates)
-      .filter((certificate) => this.withinRange(certificate.issuedAt, from, to))
+    return this.certificates()
       .map((certificate) => this.toIssuedCard(certificate))
       .filter((card) =>
         this.matches([card.workerName, card.dni, card.workUnit, card.workUnitCode], term),
       );
   });
+
+  /**
+   * The filters of the search of the certificates.
+   */
+  protected readonly statusFilters = CERTIFICATE_STATUS_FILTER;
+
+  /**
+   * The label of a filter of the search.
+   */
+  protected statusFilterLabel(filter: CertificateStatusFilter): string {
+    return certificateStatusFilterLabel(filter);
+  }
 
   /**
    * The services that the queue offers as a filter.
@@ -348,17 +375,14 @@ export class CertificatesPage implements OnInit {
   }
 
   /**
-   * onIssuedFromChanged filters the history by the day of the issuance.
+   * onStatusFilterChanged filters the search of the certificates by state.
+   *
+   * The filter is applied by the platform, so the search asks again for the
+   * certificates that match it.
    */
-  protected onIssuedFromChanged(value: string): void {
-    this.issuedFrom.set(value);
-  }
-
-  /**
-   * onIssuedToChanged filters the history by the day of the issuance.
-   */
-  protected onIssuedToChanged(value: string): void {
-    this.issuedTo.set(value);
+  protected onStatusFilterChanged(filter: CertificateStatusFilter): void {
+    this.statusFilter.set(filter);
+    void this.loadCertificates();
   }
 
   /**
@@ -591,14 +615,48 @@ export class CertificatesPage implements OnInit {
       const queue = await this.listQueue.execute();
       this.queue.set(queue.items);
 
-      const names = await this.resolveServiceNames(queue.items);
+      const names = await this.resolveServiceNames(
+        queue.items.map((item) => item.assignment.serviceId),
+      );
       this.serviceNames.set(names);
+
+      await this.loadCertificates();
 
       // The preview of the editor renders the document with the data of a
       // real assignment of the service, so it waits for the queue.
       if (this.activeTab() === 'contenido') {
         await this.loadEditorPreview();
       }
+    } catch (error) {
+      this.loadFailure.set(this.describe(error));
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  /**
+   * loadCertificates reads the certificates of the search.
+   *
+   * The state is the filter of the search, so the platform answers the
+   * certificates that match it.
+   */
+  private async loadCertificates(): Promise<void> {
+    this.loading.set(true);
+    this.loadFailure.set(null);
+
+    try {
+      const certificates = await this.listCertificates.execute({
+        status: certificateStatusOf(this.statusFilter()),
+        limit: CERTIFICATE_PAGE_SIZE,
+      });
+      this.certificates.set(certificates);
+
+      // The certificates may belong to services that are not in the queue,
+      // so their names are resolved with the ones of the queue.
+      const names = await this.resolveServiceNames(
+        certificates.map((certificate) => certificate.serviceId),
+      );
+      this.serviceNames.set(new Map([...this.serviceNames(), ...names]));
     } catch (error) {
       this.loadFailure.set(this.describe(error));
     } finally {
@@ -642,19 +700,17 @@ export class CertificatesPage implements OnInit {
   }
 
   /**
-   * resolveServiceNames asks the catalog for the names of the services of
-   * the queue.
+   * resolveServiceNames asks the catalog for the names of the given
+   * services.
    *
    * The catalog is not the owner of this listing, so a failure of the
    * catalog only leaves the badge without a name.
    */
   private async resolveServiceNames(
-    items: readonly CertificateQueueItem[],
+    serviceIds: readonly string[],
   ): Promise<ReadonlyMap<string, string>> {
-    const serviceIds = [...new Set(items.map((item) => item.assignment.serviceId))];
-
     try {
-      return await this.services.resolveServiceNames(serviceIds);
+      return await this.services.resolveServiceNames([...new Set(serviceIds)]);
     } catch {
       return new Map();
     }
@@ -719,24 +775,6 @@ export class CertificatesPage implements OnInit {
     }
 
     return normalize(values.join(' ')).includes(term);
-  }
-
-  /**
-   * withinRange reports whether a moment of the issuance is between the two
-   * days of the filter.
-   */
-  private withinRange(issuedAt: string, from: string, to: string): boolean {
-    const day = issuedAt.slice(0, 10);
-
-    if (from && day < from) {
-      return false;
-    }
-
-    if (to && day > to) {
-      return false;
-    }
-
-    return true;
   }
 
   /**

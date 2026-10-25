@@ -1,7 +1,7 @@
 // Package fieldcounter holds the character counter of the forms of the
 // platform.
 
-import { ChangeDetectionStrategy, Component, computed, effect, input, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, effect, input, signal } from '@angular/core';
 import { AbstractControl } from '@angular/forms';
 
 /**
@@ -46,8 +46,17 @@ const FIELD_COUNTER_WARNING_RATIO = 0.9;
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FieldCounter {
-  /** The control that the counter measures. */
-  readonly control = input.required<AbstractControl>();
+  /**
+   * The control that the counter measures.
+   *
+   * It is absent when the field has no control: the counter then measures
+   * the number of characters that the caller gives.
+   */
+  readonly control = input<AbstractControl | undefined>(undefined);
+  /**
+   * The number of characters of a field that has no control.
+   */
+  readonly value = input<number | undefined>(undefined);
   /** The limit of the field. */
   readonly max = input.required<number>();
 
@@ -62,6 +71,12 @@ export class FieldCounter {
   constructor() {
     effect((onCleanup) => {
       const control = this.control();
+
+      if (!control) {
+        this.length.set(this.value() ?? 0);
+        return;
+      }
+
       const measure = (value: unknown): void => {
         // The platform counts the characters by code point, so the counter
         // counts them the same way.

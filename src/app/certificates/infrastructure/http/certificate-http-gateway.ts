@@ -27,8 +27,10 @@ import { CertificateSnapshot } from '../../domain/model/value-objects/certificat
 import { CertificateStatus } from '../../domain/model/value-objects/certificate-status';
 import { SNAPSHOT_FIELD } from '../../domain/model/value-objects/certificate-snapshot';
 import {
+  CertificateCriteria,
   CertificateRepository,
   EligibleAssignment,
+  ListingCriteria,
   ServiceTemplate,
 } from '../../domain/repositories/certificate-repositories';
 
@@ -44,14 +46,64 @@ export class CertificateHttpGateway implements CertificateRepository {
    * listEligibleAssignments returns the assignments whose labour period is
    * closed and that may receive a certificate.
    */
-  async listEligibleAssignments(): Promise<readonly EligibleAssignment[]> {
+  async listEligibleAssignments(
+    criteria: ListingCriteria = {},
+  ): Promise<readonly EligibleAssignment[]> {
     const queue = await firstValueFrom(
       this.http
-        .get<EligibleAssignmentListResource>(`${this.baseUrl}/certificates/eligible-assignments`)
+        .get<EligibleAssignmentListResource>(`${this.baseUrl}/certificates/eligible-assignments`, {
+          params: this.pageParams(criteria),
+        })
         .pipe(catchError((error: HttpErrorResponse) => this.toFailure(error))),
     );
 
     return queue.items.map((item) => this.toEligibleAssignment(item));
+  }
+
+  /**
+   * listCertificates returns the certificates of the platform that match the
+   * criteria.
+   *
+   * The search of the certificates is filtered by state, so the platform
+   * answers the certificates in force, the certificates that were annulled,
+   * or every certificate.
+   */
+  async listCertificates(criteria: CertificateCriteria): Promise<readonly Certificate[]> {
+    const listing = await firstValueFrom(
+      this.http
+        .get<CertificateListResource>(`${this.baseUrl}/certificates`, {
+          params: this.certificateParams(criteria),
+        })
+        .pipe(catchError((error: HttpErrorResponse) => this.toFailure(error))),
+    );
+
+    return listing.items.map((item) => this.toCertificate(item));
+  }
+
+  /**
+   * certificateParams are the filters of the search of the certificates.
+   *
+   * The state is sent only when the search filters by it, so the platform
+   * lists every certificate when the filter is every certificate.
+   */
+  private certificateParams(criteria: CertificateCriteria): Record<string, string> {
+    return { ...this.pageParams(criteria), ...(criteria.status ? { status: criteria.status } : {}) };
+  }
+
+  /**
+   * pageParams are the pagination of a listing.
+   */
+  private pageParams(criteria: ListingCriteria): Record<string, string> {
+    const params: Record<string, string> = {};
+
+    if (criteria.limit !== undefined) {
+      params['limit'] = `${criteria.limit}`;
+    }
+    if (criteria.page !== undefined) {
+      params['page'] = `${criteria.page}`;
+    }
+
+    return params;
   }
 
   /**
