@@ -45,25 +45,6 @@
   font-size: 0.95rem;
 }
 
-.pending-count {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.45rem 0.9rem;
-  border-radius: 999px;
-  background: var(--mat-sys-tertiary-container);
-  color: var(--mat-sys-on-tertiary-container);
-  font-size: 0.8rem;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.pending-count mat-icon {
-  width: 1.05rem;
-  height: 1.05rem;
-  font-size: 1.05rem;
-}
-
 .certificate-tabs {
   display: flex;
   gap: 0.35rem;

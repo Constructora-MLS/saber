@@ -1,4 +1,7 @@
-<h2 mat-dialog-title>Certificado de {{ data.workerName }}</h2>
+<h2 mat-dialog-title>
+  {{ data.kind === 'preview' ? 'Vista previa del certificado de' : 'Certificado de' }}
+  {{ data.workerName }}
+</h2>
 
 <mat-dialog-content>
   @if (loading()) {
@@ -19,8 +22,10 @@
 
 <mat-dialog-actions align="end" class="viewer__actions">
   <button matButton type="button" (click)="close()">Cerrar</button>
-  <button matButton="filled" type="button" [disabled]="!documentUrl()" (click)="download()">
-    <mat-icon aria-hidden="true">download</mat-icon>
-    Descargar
-  </button>
+  @if (canDownload) {
+    <button matButton="filled" type="button" [disabled]="!documentUrl()" (click)="download()">
+      <mat-icon aria-hidden="true">download</mat-icon>
+      Descargar
+    </button>
+  }
 </mat-dialog-actions>

@@ -71,11 +71,8 @@ export class ListCertificatesQueryService {
 }
 
 /**
- * GetCertificateDraftQueryService returns the certificate that is about to
- * be issued for an assignment.
- *
- * The draft is null when the assignment is not in the queue: an assignment
- * whose labour period is still open does not receive a certificate.
+ * GetCertificateDraftQueryService returns the eligible assignment and its
+ * history for a review interface.
  */
 @Injectable({ providedIn: 'root' })
 export class GetCertificateDraftQueryService {

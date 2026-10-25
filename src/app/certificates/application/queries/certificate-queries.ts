@@ -32,11 +32,8 @@ export interface CertificateQueue {
 }
 
 /**
- * CertificateDraft is the certificate that is about to be issued.
- *
- * It carries the data of the worker and the assignment and the certificates
- * that the assignment already has, so the interfaces can show the
- * certificate before it exists.
+ * CertificateDraft is the eligible assignment and issuance history that a
+ * review interface may inspect before deciding whether to issue.
  */
 export interface CertificateDraft {
   /** The assignment that receives the certificate. */

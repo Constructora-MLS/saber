@@ -5,18 +5,19 @@
 import { Component, input, output } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TableState } from '../../../../shared/interfaces/components/table-state/table-state';
 import { formatCertificateDate } from '../certificate-date.format';
 
 /**
- * PendingCertificateCard is the presentation of an assignment that is
+ * PendingCertificateRow is the presentation of an assignment that is
  * waiting for a certificate.
  *
- * The card carries the data that the certificate will archive: the worker,
+ * The row carries the data that the certificate will archive: the worker,
  * the unit of work and the period of the labour.
  */
-export interface PendingCertificateCard {
+export interface PendingCertificateRow {
   /** The assignment that may receive a certificate. */
   readonly assignmentId: string;
   /** The name of the worker. */
@@ -45,7 +46,7 @@ export interface PendingCertificateCard {
  * API.
  */
 @Component({
-  imports: [MatButtonModule, MatIconModule, MatProgressSpinnerModule, TableState],
+  imports: [MatButtonModule, MatIconModule, MatMenuModule, MatProgressSpinnerModule, TableState],
   selector: 'app-certificate-queue',
   styleUrl: './certificate-queue.scss',
   templateUrl: './certificate-queue.html',
@@ -54,9 +55,11 @@ export class CertificateQueue {
   /** The caption of the queue, read by the assistive technologies. */
   readonly caption = input.required<string>();
   /** The assignments that are waiting for a certificate. */
-  readonly cards = input.required<readonly PendingCertificateCard[]>();
+  readonly rows = input.required<readonly PendingCertificateRow[]>();
   /** Whether the queue is waiting for the assignments. */
   readonly loading = input(false);
+  /** Whether a certificate is currently being issued. */
+  readonly issuing = input(false);
   /** The headline of the failure that prevented the consultation. */
   readonly errorTitle = input<string | null>(null);
   /** The detail of the failure that prevented the consultation. */
@@ -68,8 +71,10 @@ export class CertificateQueue {
   /** The emblem shown when the queue is empty. */
   readonly emptyIcon = input('task_alt');
 
-  /** The review of an assignment was requested. */
-  readonly reviewRequested = output<string>();
+  /** The PDF preview of an assignment was requested. */
+  readonly previewRequested = output<PendingCertificateRow>();
+  /** The issuance of an assignment was requested. */
+  readonly issueRequested = output<PendingCertificateRow>();
   /** The consultation of the queue was requested again. */
   readonly retryRequested = output<void>();
 

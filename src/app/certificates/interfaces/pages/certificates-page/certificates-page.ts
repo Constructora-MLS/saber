@@ -1,9 +1,9 @@
 // Package certificatespage orchestrates the certificates of the platform.
 //
 // The page is the frontend controller of the bounded context: it reads the
-// queue of the assignments through the use cases, it opens the page that
-// reviews and issues a certificate and it edits the content of the
-// certificate of every service. It never talks to the API directly.
+// queue of the assignments through the use cases, opens the PDF preview,
+// issues certificates and edits the content of every service. It never talks
+// to the API directly.
 // package certificatespage
 
 import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
@@ -17,7 +17,6 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { Router } from '@angular/router';
 import {
   GetCertificateFileQueryService,
   GetServiceTemplatePreviewQueryService,
@@ -27,6 +26,7 @@ import {
 } from '../../../application/query-services/certificate-query-services';
 import {
   AnnulCertificateCommandService,
+  IssueCertificateCommandService,
   RestoreServiceTemplateCommandService,
   SaveServiceTemplateCommandService,
 } from '../../../application/command-services/certificate-command-services';
@@ -46,11 +46,11 @@ import {
 } from '../../../domain/services/certificate-service-resolver';
 import {
   CertificateHistory,
-  IssuedCertificateCard,
+  IssuedCertificateRow,
 } from '../../components/certificate-history/certificate-history';
 import {
   CertificateQueue,
-  PendingCertificateCard,
+  PendingCertificateRow,
 } from '../../components/certificate-queue/certificate-queue';
 import { CertificateTemplateEditor } from '../../components/certificate-template-editor/certificate-template-editor';
 import { CertificateViewerDialog } from '../../components/certificate-viewer-dialog/certificate-viewer-dialog';
@@ -108,8 +108,8 @@ function normalize(value: string): string {
  *
  * The page shows the queue of the assignments that are waiting for a
  * certificate, the history of the certificates that were issued and the
- * editor of the content of every service. It reads all of them through the
- * use cases and it never talks to the API directly.
+ * editor of the content of every service. It reads and changes them through
+ * the use cases and it never talks to the API directly.
  */
 @Component({
   imports: [
@@ -131,7 +131,6 @@ function normalize(value: string): string {
   templateUrl: './certificates-page.html',
 })
 export class CertificatesPage implements OnInit {
-  private readonly router = inject(Router);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
 
@@ -142,6 +141,7 @@ export class CertificatesPage implements OnInit {
   private readonly saveServiceTemplate = inject(SaveServiceTemplateCommandService);
   private readonly restoreServiceTemplate = inject(RestoreServiceTemplateCommandService);
   private readonly annulCertificate = inject(AnnulCertificateCommandService);
+  private readonly issueCertificate = inject(IssueCertificateCommandService);
   private readonly services = inject(CERTIFICATE_SERVICE_RESOLVER);
   private readonly getPreview = inject(GetServiceTemplatePreviewQueryService);
   private readonly sanitizer = inject(DomSanitizer);
@@ -175,6 +175,8 @@ export class CertificatesPage implements OnInit {
 
   /** Whether the page is waiting for the answer of the platform. */
   protected readonly loading = signal(false);
+  /** Whether an assignment is currently being issued. */
+  protected readonly issuing = signal(false);
   /** The failure that prevented the consultation. */
   protected readonly loadFailure = signal<CertificateLoadFailure | null>(null);
 
@@ -207,7 +209,7 @@ export class CertificatesPage implements OnInit {
   protected readonly tabs: readonly CertificatesTabDefinition[] = [
     {
       id: 'pendientes',
-      label: 'Pendientes de emisión',
+      label: 'Pendientes',
       icon: 'pending_actions',
       title: 'Certificados',
       subtitle: 'Asignaciones cesadas que aún no tienen certificado.',
@@ -244,18 +246,15 @@ export class CertificatesPage implements OnInit {
    * An assignment that already has a certificate in force is not waiting
    * for one anymore: it is in the history.
    */
-  protected readonly pendingCards = computed<readonly PendingCertificateCard[]>(() => {
+  protected readonly pendingRows = computed<readonly PendingCertificateRow[]>(() => {
     const term = normalize(this.searchTerm());
     const serviceId = this.serviceFilter();
 
     return this.pendingItems()
       .filter((item) => !serviceId || item.assignment.serviceId === serviceId)
-      .map((item) => this.toPendingCard(item))
-      .filter((card) =>
-        this.matches(
-          [card.workerName, card.dni, card.position, card.workUnit, card.workUnitCode],
-          term,
-        ),
+      .map((item) => this.toPendingRow(item))
+      .filter((row) =>
+        this.matches([row.workerName, row.dni, row.position, row.workUnit, row.workUnitCode], term),
       );
   });
 
@@ -266,13 +265,13 @@ export class CertificatesPage implements OnInit {
    * applied by the platform: the listing holds every certificate that
    * matches it.
    */
-  protected readonly issuedCards = computed<readonly IssuedCertificateCard[]>(() => {
+  protected readonly issuedRows = computed<readonly IssuedCertificateRow[]>(() => {
     const term = normalize(this.searchTerm());
 
     return this.certificates()
-      .map((certificate) => this.toIssuedCard(certificate))
-      .filter((card) =>
-        this.matches([card.workerName, card.dni, card.workUnit, card.workUnitCode], term),
+      .map((certificate) => this.toIssuedRow(certificate))
+      .filter((row) =>
+        this.matches([row.workerName, row.dni, row.position, row.workUnit, row.workUnitCode], term),
       );
   });
 
@@ -304,11 +303,6 @@ export class CertificatesPage implements OnInit {
       .map(([id, name]) => ({ id, name }))
       .sort((left, right) => left.name.localeCompare(right.name, 'es'));
   });
-
-  /**
-   * The number of assignments that are waiting for a certificate.
-   */
-  protected readonly pendingCount = computed(() => this.pendingItems().length);
 
   /**
    * ngOnInit loads the queue of the certificates and the services of the
@@ -393,18 +387,48 @@ export class CertificatesPage implements OnInit {
   }
 
   /**
-   * review opens the page that reviews the certificate of an assignment.
+   * preview opens the PDF that the platform would archive for an assignment.
    */
-  protected review(assignmentId: string): void {
-    void this.router.navigate(['/certificates/assignment', assignmentId]);
+  protected preview(row: PendingCertificateRow): void {
+    this.dialog.open(CertificateViewerDialog, {
+      data: {
+        kind: 'preview',
+        assignmentId: row.assignmentId,
+        workerName: row.workerName,
+      },
+      width: '52rem',
+      maxWidth: '96vw',
+    });
+  }
+
+  /**
+   * issue asks the platform to render and archive the certificate without
+   * redirecting away from the queue.
+   */
+  protected async issue(row: PendingCertificateRow): Promise<void> {
+    if (this.issuing()) {
+      return;
+    }
+
+    this.issuing.set(true);
+
+    try {
+      await this.issueCertificate.execute({ assignmentId: row.assignmentId });
+      this.notify(`Certificado de ${row.workerName} emitido.`);
+      await this.reload();
+    } catch (error) {
+      this.notify(this.describe(error).message);
+    } finally {
+      this.issuing.set(false);
+    }
   }
 
   /**
    * view opens the document of an issued certificate.
    */
-  protected view(card: IssuedCertificateCard): void {
+  protected view(row: IssuedCertificateRow): void {
     this.dialog.open(CertificateViewerDialog, {
-      data: { certificateId: card.certificateId, workerName: card.workerName },
+      data: { kind: 'issued', certificateId: row.certificateId, workerName: row.workerName },
       width: '52rem',
       maxWidth: '96vw',
     });
@@ -414,13 +438,13 @@ export class CertificatesPage implements OnInit {
    * download asks the platform for the PDF of a certificate and hands it to
    * the browser.
    */
-  protected async download(card: IssuedCertificateCard): Promise<void> {
+  protected async download(row: IssuedCertificateRow): Promise<void> {
     try {
-      const file = await this.getFile.execute(card.certificateId);
+      const file = await this.getFile.execute(row.certificateId);
       const url = URL.createObjectURL(file);
       const anchor = document.createElement('a');
       anchor.href = url;
-      anchor.download = `Certificado - ${card.workerName}.pdf`;
+      anchor.download = `Certificado - ${row.workerName}.pdf`;
       anchor.click();
       URL.revokeObjectURL(url);
     } catch (error) {
@@ -435,10 +459,10 @@ export class CertificatesPage implements OnInit {
    * mistake: the history and the file of the issuance are kept and the
    * assignment may be deleted afterwards.
    */
-  protected annul(card: IssuedCertificateCard): void {
+  protected annul(row: IssuedCertificateRow): void {
     this.dialog
       .open(AnnulCertificateDialog, {
-        data: { workerName: card.workerName },
+        data: { workerName: row.workerName },
         width: '34rem',
         maxWidth: '92vw',
       })
@@ -448,7 +472,7 @@ export class CertificatesPage implements OnInit {
           return;
         }
 
-        void this.annulCertificate.execute({ certificateId: card.certificateId, reason });
+        void this.annulCertificate.execute({ certificateId: row.certificateId, reason });
         this.notify('Certificado anulado.');
         void this.reload();
       });
@@ -730,9 +754,9 @@ export class CertificatesPage implements OnInit {
   }
 
   /**
-   * toPendingCard presents an assignment of the queue.
+   * toPendingRow presents an assignment of the queue.
    */
-  private toPendingCard(item: CertificateQueueItem): PendingCertificateCard {
+  private toPendingRow(item: CertificateQueueItem): PendingCertificateRow {
     const snapshot = item.assignment.snapshot;
 
     return {
@@ -749,15 +773,16 @@ export class CertificatesPage implements OnInit {
   }
 
   /**
-   * toIssuedCard presents an issued certificate.
+   * toIssuedRow presents an issued certificate.
    */
-  private toIssuedCard(certificate: Certificate): IssuedCertificateCard {
+  private toIssuedRow(certificate: Certificate): IssuedCertificateRow {
     const snapshot = certificate.snapshot;
 
     return {
       certificateId: certificate.id.value,
       workerName: snapshot.fullName,
       dni: snapshot.dni,
+      position: snapshot.position,
       workUnit: snapshot.workUnit,
       workUnitCode: snapshot.workUnitCode,
       issuedAt: certificate.issuedAt,

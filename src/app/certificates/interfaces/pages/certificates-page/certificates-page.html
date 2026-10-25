@@ -5,13 +5,6 @@
       <h1 id="certificates-page-title" class="page-title">{{ activeTabDefinition().title }}</h1>
       <p class="page-subtitle">{{ activeTabDefinition().subtitle }}</p>
     </div>
-
-    @if (activeTab() === 'pendientes' && pendingCount() > 0) {
-      <span class="pending-count">
-        <mat-icon aria-hidden="true">pending_actions</mat-icon>
-        {{ pendingCount() }} pendientes
-      </span>
-    }
   </header>
 
   <nav class="certificate-tabs" aria-label="Vistas de Certificados">
@@ -136,10 +129,7 @@
         } @else {
           <mat-form-field appearance="outline" class="status-field">
             <mat-label>Estado</mat-label>
-            <mat-select
-              [ngModel]="statusFilter()"
-              (ngModelChange)="onStatusFilterChanged($event)"
-            >
+            <mat-select [ngModel]="statusFilter()" (ngModelChange)="onStatusFilterChanged($event)">
               @for (filter of statusFilters; track filter) {
                 <mat-option [value]="filter">{{ statusFilterLabel(filter) }}</mat-option>
               }
@@ -148,24 +138,29 @@
         }
       </div>
 
-      @if (loading()) {
-        <mat-progress-bar mode="indeterminate" aria-label="Cargando certificados" />
+      @if (loading() || issuing()) {
+        <mat-progress-bar
+          mode="indeterminate"
+          [attr.aria-label]="issuing() ? 'Emitiendo certificado' : 'Cargando certificados'"
+        />
       }
 
       @if (activeTab() === 'pendientes') {
         <app-certificate-queue
           caption="Asignaciones pendientes de certificado"
-          [cards]="pendingCards()"
+          [rows]="pendingRows()"
           [loading]="loading()"
+          [issuing]="issuing()"
           [errorTitle]="loadFailure()?.title ?? null"
           [errorMessage]="loadFailure()?.message ?? null"
-          (reviewRequested)="review($event)"
+          (previewRequested)="preview($event)"
+          (issueRequested)="issue($event)"
           (retryRequested)="retry()"
         />
       } @else {
         <app-certificate-history
           caption="Certificados emitidos"
-          [cards]="issuedCards()"
+          [rows]="issuedRows()"
           [loading]="loading()"
           [errorTitle]="loadFailure()?.title ?? null"
           [errorMessage]="loadFailure()?.message ?? null"

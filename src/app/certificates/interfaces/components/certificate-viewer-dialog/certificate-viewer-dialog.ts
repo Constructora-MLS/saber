@@ -10,23 +10,34 @@ import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { GetCertificateFileQueryService } from '../../../application/query-services/certificate-query-services';
+import {
+  GetCertificateFileQueryService,
+  GetCertificatePreviewQueryService,
+} from '../../../application/query-services/certificate-query-services';
 
 /**
- * CertificateViewerData is the certificate that the dialog shows.
+ * CertificateViewerData identifies the PDF that the dialog shows.
  */
-export interface CertificateViewerData {
-  /** The certificate that is shown. */
-  readonly certificateId: string;
-  /** The name of the worker, shown as the title of the dialog. */
-  readonly workerName: string;
-}
+export type CertificateViewerData =
+  | {
+      /** The archived certificate that is shown. */
+      readonly kind: 'issued';
+      readonly certificateId: string;
+      readonly workerName: string;
+    }
+  | {
+      /** The assignment whose certificate is previewed before issuance. */
+      readonly kind: 'preview';
+      readonly assignmentId: string;
+      readonly workerName: string;
+    };
 
 /**
- * CertificateViewerDialog shows the PDF of an issued certificate.
+ * CertificateViewerDialog shows either an archived certificate or the PDF
+ * preview of an eligible assignment.
  *
- * The component is presentational: it renders the document and it never
- * talks to the API by itself, it asks for the file through the use case.
+ * The component asks for the document through the matching application
+ * query service and never talks to the API directly.
  */
 @Component({
   imports: [MatButtonModule, MatDialogModule, MatIconModule, MatProgressSpinnerModule],
@@ -40,7 +51,11 @@ export class CertificateViewerDialog {
 
   private readonly dialogRef = inject<MatDialogRef<CertificateViewerDialog, void>>(MatDialogRef);
   private readonly getFile = inject(GetCertificateFileQueryService);
+  private readonly getPreview = inject(GetCertificatePreviewQueryService);
   private readonly sanitizer = inject(DomSanitizer);
+
+  /** Whether the document is an archived certificate that can be downloaded. */
+  protected readonly canDownload = this.data.kind === 'issued';
 
   /** The document of the certificate, as the browser shows it. */
   protected readonly documentUrl = signal<SafeResourceUrl | null>(null);
@@ -86,7 +101,10 @@ export class CertificateViewerDialog {
     this.failure.set(null);
 
     try {
-      const file = await this.getFile.execute(this.data.certificateId);
+      const file =
+        this.data.kind === 'preview'
+          ? await this.getPreview.execute(this.data.assignmentId)
+          : await this.getFile.execute(this.data.certificateId);
       this.fileUrl = URL.createObjectURL(file);
       // The document is a PDF that the platform itself archived, so the
       // browser may show it as a resource of the page.

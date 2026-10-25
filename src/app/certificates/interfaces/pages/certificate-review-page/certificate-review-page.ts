@@ -149,6 +149,7 @@ export class CertificateReviewPage {
   protected openCertificate(certificate: Certificate): void {
     this.dialog.open(CertificateViewerDialog, {
       data: {
+        kind: 'issued',
         certificateId: certificate.id.value,
         workerName: certificate.snapshot.fullName,
       },

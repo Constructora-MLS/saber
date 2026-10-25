@@ -31,8 +31,8 @@ export const routes: Routes = [
       ),
   },
   {
-    // The certificate is reviewed and issued from the assignment that
-    // receives it, so its address carries the assignment.
+    // The employee record can still open the certificate review flow with
+    // its assignment in the address bar.
     path: 'certificates/assignment/:assignmentId',
     title: 'Revisar certificado',
     loadComponent: () =>

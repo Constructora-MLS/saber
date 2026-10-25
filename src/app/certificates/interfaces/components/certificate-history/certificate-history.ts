@@ -12,19 +12,21 @@ import { certificateStatusLabel } from '../../../domain/model/value-objects/cert
 import { formatCertificateDate } from '../certificate-date.format';
 
 /**
- * IssuedCertificateCard is the presentation of an issued certificate.
+ * IssuedCertificateRow is the presentation of an issued certificate.
  *
- * The card carries the data that the certificate archived: the worker, the
+ * The row carries the data that the certificate archived: the worker, the
  * unit of work and the moment of the issuance. The identifier of the
- * certificate is internal, so it never reaches the card.
+ * certificate is internal, so it never reaches the table's visible columns.
  */
-export interface IssuedCertificateCard {
+export interface IssuedCertificateRow {
   /** The identifier of the certificate. */
   readonly certificateId: string;
   /** The name of the worker. */
   readonly workerName: string;
   /** The identity document of the worker. */
   readonly dni: string;
+  /** The position the worker performed. */
+  readonly position: string;
   /** The unit of work the worker was assigned to. */
   readonly workUnit: string;
   /** The code of the unit of work. */
@@ -54,7 +56,7 @@ export class CertificateHistory {
   /** The caption of the history, read by the assistive technologies. */
   readonly caption = input.required<string>();
   /** The certificates that were issued. */
-  readonly cards = input.required<readonly IssuedCertificateCard[]>();
+  readonly rows = input.required<readonly IssuedCertificateRow[]>();
   /** Whether the history is waiting for the certificates. */
   readonly loading = input(false);
   /** The headline of the failure that prevented the consultation. */
@@ -71,11 +73,11 @@ export class CertificateHistory {
   readonly emptyIcon = input('history');
 
   /** The visualization of a certificate was requested. */
-  readonly viewRequested = output<IssuedCertificateCard>();
+  readonly viewRequested = output<IssuedCertificateRow>();
   /** The download of a certificate was requested. */
-  readonly downloadRequested = output<IssuedCertificateCard>();
+  readonly downloadRequested = output<IssuedCertificateRow>();
   /** The annulment of a certificate was requested. */
-  readonly annulRequested = output<IssuedCertificateCard>();
+  readonly annulRequested = output<IssuedCertificateRow>();
   /** The consultation of the history was requested again. */
   readonly retryRequested = output<void>();
 
