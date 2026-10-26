@@ -31,6 +31,17 @@ export const routes: Routes = [
       ),
   },
   {
+    // The public address of a certificate: the QR of the document carries
+    // it, so a person that scans the code reads the trace of the
+    // certificate.
+    path: 'verificar/:code',
+    title: 'Verificación de certificado',
+    loadComponent: () =>
+      import(
+        './certificates/interfaces/pages/certificate-verification-page/certificate-verification-page'
+      ).then((module) => module.CertificateVerificationPage),
+  },
+  {
     path: 'catalog',
     title: 'Catálogos',
     loadComponent: () =>

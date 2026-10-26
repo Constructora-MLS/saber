@@ -1,0 +1,78 @@
+<section class="verification">
+  <header class="verification__header">
+    <h1 class="verification__title">Verificación de certificado</h1>
+    <p class="verification__subtitle">
+      Consulta si el certificado es auténtico y qué periodo de labor certifica.
+    </p>
+  </header>
+
+  @if (loading()) {
+    <div class="verification__loading" role="status">
+      <mat-spinner diameter="32" aria-hidden="true" />
+      <span>Consultando el certificado…</span>
+    </div>
+  } @else if (failure(); as message) {
+    <p class="verification__failure" role="alert">{{ message }}</p>
+  } @else if (verification(); as certificate) {
+    <article class="verification__card">
+      <div class="verification__code">
+        <span class="verification__code-label">Código</span>
+        <span class="verification__code-value mono">{{ certificate.code }}</span>
+      </div>
+
+      <dl class="verification__facts">
+        <div class="verification__fact">
+          <dt>Trabajador</dt>
+          <dd>{{ certificate.snapshot.fullName }}</dd>
+        </div>
+        <div class="verification__fact">
+          <dt>Documento de identidad</dt>
+          <dd class="mono">{{ certificate.snapshot.dni }}</dd>
+        </div>
+        <div class="verification__fact">
+          <dt>Cargo</dt>
+          <dd>{{ certificate.snapshot.position }}</dd>
+        </div>
+        <div class="verification__fact">
+          <dt>Unidad de trabajo</dt>
+          <dd>{{ certificate.snapshot.workUnit }}</dd>
+        </div>
+        <div class="verification__fact">
+          <dt>Periodo de labor</dt>
+          <dd>
+            {{ formatDate(certificate.snapshot.startDate) }} —
+            {{ formatDate(certificate.snapshot.endDate) }}
+          </dd>
+        </div>
+        <div class="verification__fact">
+          <dt>Emisión</dt>
+          <dd>
+            <time [attr.datetime]="certificate.issuedAt">{{
+              formatDate(certificate.issuedAt)
+            }}</time>
+          </dd>
+        </div>
+      </dl>
+
+      <p
+        class="verification__status"
+        [class.verification__status--annulled]="!certificate.isIssued"
+      >
+        <mat-icon aria-hidden="true">{{
+          certificate.isIssued ? 'verified' : 'gpp_bad'
+        }}</mat-icon>
+        <span>
+          @if (certificate.isIssued) {
+            Certificado emitido por CONSTRUCTORA MLS S.A.C. y vigente.
+          } @else {
+            Certificado anulado. El motivo: {{ certificate.annulmentReason }}
+          }
+        </span>
+      </p>
+    </article>
+  } @else {
+    <p class="verification__failure" role="alert">
+      No hay ningún certificado con ese código.
+    </p>
+  }
+</section>

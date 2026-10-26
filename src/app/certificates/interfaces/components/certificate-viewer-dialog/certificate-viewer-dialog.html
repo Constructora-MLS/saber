@@ -4,6 +4,12 @@
 </h2>
 
 <mat-dialog-content>
+  @if (certificateCode; as code) {
+    <p class="viewer__code">
+      <span class="viewer__code-label">Código del certificado</span>
+      <span class="viewer__code-value mono">{{ code }}</span>
+    </p>
+  }
   @if (loading()) {
     <div class="viewer__loading" role="status">
       <mat-spinner diameter="32" aria-hidden="true" />

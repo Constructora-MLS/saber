@@ -4,7 +4,7 @@
 // sees the certificate that the platform keeps.
 // package certificateverdialog
 
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, OnDestroy, signal } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -23,6 +23,8 @@ export type CertificateViewerData =
       /** The archived certificate that is shown. */
       readonly kind: 'issued';
       readonly certificateId: string;
+      /** The public code of the certificate. */
+      readonly certificateCode: string;
       readonly workerName: string;
     }
   | {
@@ -45,7 +47,7 @@ export type CertificateViewerData =
   styleUrl: './certificate-viewer-dialog.scss',
   templateUrl: './certificate-viewer-dialog.html',
 })
-export class CertificateViewerDialog {
+export class CertificateViewerDialog implements OnDestroy {
   /** The certificate that the dialog shows. */
   protected readonly data = inject<CertificateViewerData>(MAT_DIALOG_DATA);
 
@@ -57,11 +59,21 @@ export class CertificateViewerDialog {
   /** Whether the document is an archived certificate that can be downloaded. */
   protected readonly canDownload = this.data.kind === 'issued';
 
+  /**
+   * The public code of the certificate, when the document is an issued one.
+   *
+   * The code is the identity that the document prints, so the worker can
+   * read it and share it.
+   */
+  protected readonly certificateCode =
+    this.data.kind === 'issued' ? this.data.certificateCode : null;
+
   /** The document of the certificate, as the browser shows it. */
   protected readonly documentUrl = signal<SafeResourceUrl | null>(null);
 
   /** The address of the document, for the download. */
   private fileUrl: string | null = null;
+  private readonly request = new AbortController();
   /** Whether the dialog is waiting for the document. */
   protected readonly loading = signal(true);
   /** The failure that prevented the consultation. */
@@ -75,7 +87,21 @@ export class CertificateViewerDialog {
    * close closes the dialog.
    */
   protected close(): void {
+    this.dispose();
     this.dialogRef.close();
+  }
+
+  ngOnDestroy(): void {
+    this.dispose();
+  }
+
+  private dispose(): void {
+    this.request.abort();
+    if (this.fileUrl) {
+      URL.revokeObjectURL(this.fileUrl);
+      this.fileUrl = null;
+    }
+    this.documentUrl.set(null);
   }
 
   /**
@@ -103,16 +129,19 @@ export class CertificateViewerDialog {
     try {
       const file =
         this.data.kind === 'preview'
-          ? await this.getPreview.execute(this.data.assignmentId)
-          : await this.getFile.execute(this.data.certificateId);
+          ? await this.getPreview.execute(this.data.assignmentId, this.request.signal)
+          : await this.getFile.execute(this.data.certificateId, this.request.signal);
+      if (this.request.signal.aborted) return;
       this.fileUrl = URL.createObjectURL(file);
       // The document is a PDF that the platform itself archived, so the
       // browser may show it as a resource of the page.
       this.documentUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(this.fileUrl));
     } catch {
-      this.failure.set('No se pudo abrir el certificado. Inténtalo nuevamente.');
+      if (!this.request.signal.aborted) {
+        this.failure.set('No se pudo abrir el certificado. Inténtalo nuevamente.');
+      }
     } finally {
-      this.loading.set(false);
+      if (!this.request.signal.aborted) this.loading.set(false);
     }
   }
 }

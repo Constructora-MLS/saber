@@ -113,3 +113,50 @@ describe('paginación de certificados', () => {
     expect(page.items[0].snapshot.workUnit).toBe('Mejoramiento del puente La Molina');
   });
 });
+
+describe('verificación de certificados', () => {
+  function setup() {
+    const requests: string[] = [];
+    const injector = Injector.create({
+      providers: [
+        { provide: API_BASE_URL, useValue: '/api/v1' },
+        {
+          provide: HttpClient,
+          useValue: {
+            get(url: string) {
+              requests.push(url);
+              return of({
+                code: 'MLS-7K9D2Q8M5P',
+                status: 'ISSUED',
+                data: {
+                  'employee.firstName': 'Ana',
+                  'employee.lastName': 'López',
+                  'employee.dni': '12345678',
+                  'assignment.position': 'Operaria',
+                  'assignment.workUnit': 'Mejoramiento del puente La Molina',
+                  'assignment.workUnitCode': 'OB-021',
+                  'assignment.startDate': '2024-01-02',
+                  'assignment.endDate': '2026-10-16',
+                },
+                issuedAt: '2026-10-16T10:00:00Z',
+              });
+            },
+          },
+        },
+      ],
+    });
+    const gateway = runInInjectionContext(injector, () => new CertificateHttpGateway());
+    return { gateway, requests };
+  }
+
+  it('consulta el certificado por su código público', async () => {
+    const { gateway, requests } = setup();
+
+    const verification = await gateway.verifyCertificate('MLS-7K9D2Q8M5P');
+
+    expect(requests).toEqual(['/api/v1/certificates/verify/MLS-7K9D2Q8M5P']);
+    expect(verification.code).toBe('MLS-7K9D2Q8M5P');
+    expect(verification.isIssued).toBe(true);
+    expect(verification.snapshot.fullName).toBe('Ana López');
+  });
+});

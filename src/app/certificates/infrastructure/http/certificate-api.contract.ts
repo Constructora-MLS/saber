@@ -39,6 +39,8 @@ export interface CertificateSnapshotResource {
  */
 export interface CertificateResource {
   readonly id: string;
+  /** The public code of the certificate, the one that the document prints. */
+  readonly code: string;
   /** The assignment the certificate was issued for. */
   readonly assignmentId: string;
   /** The service whose template the certificate used. */
@@ -56,6 +58,21 @@ export interface CertificateResource {
   readonly annulmentReason?: string;
   /** The certificate that this one replaces, when it is a reissue. */
   readonly replacementOf?: string;
+}
+
+/**
+ * The public trace of an issued certificate.
+ *
+ * It carries what a person needs to know that the certificate is genuine.
+ * The identifiers of the record stay internal.
+ */
+export interface CertificateVerificationResource {
+  readonly code: string;
+  readonly status: CertificateStatusResource;
+  readonly data: CertificateSnapshotResource;
+  readonly issuedAt: string;
+  readonly annulledAt?: string;
+  readonly annulmentReason?: string;
 }
 
 /**

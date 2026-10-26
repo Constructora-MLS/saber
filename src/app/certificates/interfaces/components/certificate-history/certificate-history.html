@@ -8,6 +8,7 @@
     <thead>
       <tr>
         <th scope="col">Trabajador</th>
+        <th scope="col">Código</th>
         <th scope="col">Servicio</th>
         <th scope="col">Unidad de trabajo</th>
         <th scope="col">Cargo</th>
@@ -19,7 +20,7 @@
     <tbody>
       @if (loading() && rows().length === 0) {
         <tr class="table-message">
-          <td colspan="7">
+          <td colspan="8">
             <div class="history__loading" role="status">
               <mat-spinner diameter="28" aria-hidden="true" />
               <span>Cargando los certificados emitidos…</span>
@@ -28,7 +29,7 @@
         </tr>
       } @else if (rows().length === 0 && errorMessage() !== null) {
         <tr class="table-state">
-          <td colspan="7">
+          <td colspan="8">
             <app-table-state
               kind="error"
               [title]="errorTitle()"
@@ -41,7 +42,7 @@
         </tr>
       } @else if (rows().length === 0) {
         <tr class="table-state">
-          <td colspan="7">
+          <td colspan="8">
             <app-table-state
               kind="empty"
               [icon]="emptyIcon()"
@@ -60,6 +61,10 @@
                 <span class="mono">{{ row.dni }}</span>
               </span>
             </th>
+            <td>
+              <span class="cell-label" aria-hidden="true">Código</span>
+              <span class="cell-value mono">{{ row.certificateCode }}</span>
+            </td>
             <td>
               <span class="cell-label" aria-hidden="true">Servicio</span>
               @if (row.serviceName; as serviceName) {
@@ -106,6 +111,10 @@
                 <button mat-menu-item type="button" (click)="viewRequested.emit(row)">
                   <mat-icon aria-hidden="true">visibility</mat-icon>
                   <span>Visualizar</span>
+                </button>
+                <button mat-menu-item type="button" (click)="verifyRequested.emit(row)">
+                  <mat-icon aria-hidden="true">verified</mat-icon>
+                  <span>Verificar</span>
                 </button>
                 <button mat-menu-item type="button" (click)="downloadRequested.emit(row)">
                   <mat-icon aria-hidden="true">download</mat-icon>

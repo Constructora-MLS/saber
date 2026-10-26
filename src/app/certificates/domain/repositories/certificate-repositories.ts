@@ -4,6 +4,7 @@
 import { InjectionToken } from '@angular/core';
 import { Certificate } from '../model/aggregates/certificate';
 import { CertificateId } from '../model/value-objects/certificate-id';
+import { CertificateVerification } from '../model/value-objects/certificate-verification';
 import { CertificateSnapshot } from '../model/value-objects/certificate-snapshot';
 import { CertificateStatus } from '../model/value-objects/certificate-status';
 
@@ -105,6 +106,15 @@ export interface CertificateRepository {
   findCertificate(id: CertificateId): Promise<Certificate | null>;
 
   /**
+   * verifyCertificate returns the public trace of a certificate, when it
+   * exists.
+   *
+   * The verification reads the certificate by its public code, the identity
+   * that the document prints.
+   */
+  verifyCertificate(code: string): Promise<CertificateVerification | null>;
+
+  /**
    * listAssignmentCertificates returns the issuance history of an
    * assignment, the newest one first.
    */
@@ -134,19 +144,19 @@ export interface CertificateRepository {
   /**
    * downloadCertificateFile reads the PDF that the platform archived.
    */
-  downloadCertificateFile(id: CertificateId): Promise<Blob>;
+  downloadCertificateFile(id: CertificateId, signal?: AbortSignal): Promise<Blob>;
 
   /**
    * previewCertificate renders the certificate of an assignment without
    * archiving it.
    */
-  previewCertificate(assignmentId: string): Promise<Blob>;
+  previewCertificate(assignmentId: string, signal?: AbortSignal): Promise<Blob>;
 
   /**
    * previewServiceTemplate renders the certificate of a service with a
    * template that is not stored yet.
    */
-  previewServiceTemplate(serviceId: string, body: string): Promise<Blob>;
+  previewServiceTemplate(serviceId: string, body: string, signal?: AbortSignal): Promise<Blob>;
 }
 
 /** The token of the registry of the certificates. */

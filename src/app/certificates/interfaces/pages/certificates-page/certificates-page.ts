@@ -155,6 +155,8 @@ export class CertificatesPage implements OnInit {
 
   /** The pending preview of the editor is cancelled once, when the page goes away. */
   private previewTimer: ReturnType<typeof setTimeout> | null = null;
+  private previewRequest: AbortController | null = null;
+  private destroyed = false;
 
   /** The view of the certificates that is shown. */
   protected readonly activeTab = signal<CertificatesTab>('pendientes');
@@ -306,12 +308,10 @@ export class CertificatesPage implements OnInit {
     // The pending preview is cancelled once, when the page goes away: the
     // callback is not registered on every keystroke.
     this.destroyRef.onDestroy(() => {
+      this.destroyed = true;
       this.listingRequest++;
       if (this.searchTimer !== null) clearTimeout(this.searchTimer);
-      if (this.previewTimer !== null) {
-        clearTimeout(this.previewTimer);
-        this.previewTimer = null;
-      }
+      this.cancelEditorPreview();
       if (this.editorPreviewAddress) {
         URL.revokeObjectURL(this.editorPreviewAddress);
         this.editorPreviewAddress = null;
@@ -329,8 +329,11 @@ export class CertificatesPage implements OnInit {
     this.activeTab.set(tab);
 
     if (tab !== 'contenido') {
+      this.cancelEditorPreview();
+      this.setEditorPreview(null);
       return;
     }
+    if (this.templateLoading()) return;
 
     if (!this.selectedServiceId() && this.catalogServices().length > 0) {
       this.selectService(this.catalogServices()[0].id);
@@ -464,7 +467,12 @@ export class CertificatesPage implements OnInit {
    */
   protected view(row: IssuedCertificateRow): void {
     this.dialog.open(CertificateViewerDialog, {
-      data: { kind: 'issued', certificateId: row.certificateId, workerName: row.workerName },
+      data: {
+        kind: 'issued',
+        certificateId: row.certificateId,
+        certificateCode: row.certificateCode,
+        workerName: row.workerName,
+      },
       width: '52rem',
       maxWidth: '96vw',
     });
@@ -505,6 +513,16 @@ export class CertificatesPage implements OnInit {
     }
   }
 
+  /**
+   * verify opens the public trace of a certificate.
+   *
+   * The page is the answer of the platform to the QR of the document, so it
+   * opens in a new tab: the worker keeps the listing of the certificates.
+   */
+  protected verify(row: IssuedCertificateRow): void {
+    window.open('/verificar/' + row.certificateCode, '_blank', 'noopener');
+  }
+
   protected annul(row: IssuedCertificateRow): void {
     this.dialog
       .open(AnnulCertificateDialog, {
@@ -526,6 +544,9 @@ export class CertificatesPage implements OnInit {
    * selectService asks for the template of another service.
    */
   protected selectService(serviceId: string): void {
+    this.cancelEditorPreview();
+    this.setEditorPreview(null);
+    this.editorPreviewFailure.set(null);
     this.selectedServiceId.set(serviceId);
     void this.loadTemplate(serviceId);
   }
@@ -546,10 +567,17 @@ export class CertificatesPage implements OnInit {
    * The preview waits until the writing settles, so the platform renders
    * the document once and not on every keystroke.
    */
-  private schedulePreview(): void {
+  private cancelEditorPreview(): void {
     if (this.previewTimer !== null) {
       clearTimeout(this.previewTimer);
+      this.previewTimer = null;
     }
+    this.previewRequest?.abort();
+    this.previewRequest = null;
+  }
+
+  private schedulePreview(): void {
+    this.cancelEditorPreview();
 
     this.previewTimer = setTimeout(() => {
       this.previewTimer = null;
@@ -562,18 +590,25 @@ export class CertificatesPage implements OnInit {
    * written.
    */
   private async loadEditorPreview(): Promise<void> {
+    this.cancelEditorPreview();
+    if (this.destroyed || this.activeTab() !== 'contenido') return;
     const serviceId = this.selectedServiceId();
     if (!serviceId) {
       this.setEditorPreview(null);
       return;
     }
 
+    const request = new AbortController();
+    this.previewRequest = request;
     try {
-      const file = await this.getPreview.execute(serviceId, this.templateBody());
+      const file = await this.getPreview.execute(serviceId, this.templateBody(), request.signal);
+      if (request.signal.aborted) return;
       this.editorPreviewFailure.set(null);
       this.setEditorPreview(URL.createObjectURL(file));
     } catch (error) {
-      this.editorPreviewFailure.set(this.describe(error).message);
+      if (!request.signal.aborted) this.editorPreviewFailure.set(this.describe(error).message);
+    } finally {
+      if (this.previewRequest === request) this.previewRequest = null;
     }
   }
 
@@ -716,7 +751,6 @@ export class CertificatesPage implements OnInit {
       this.pendingTotalPages.set(queue.totalPages);
       this.historyTotalPages.set(history.totalPages);
       this.serviceNames.set(names);
-      if (this.activeTab() === 'contenido') await this.loadEditorPreview();
     } catch (error) {
       if (request === this.listingRequest) this.loadFailure.set(this.describe(error));
     } finally {
@@ -749,13 +783,17 @@ export class CertificatesPage implements OnInit {
 
     try {
       const template = await this.getTemplate.execute(serviceId);
+      if (this.destroyed || this.selectedServiceId() !== serviceId) return;
       this.templateBody.set(template.body);
       this.templateTokens.set(template.tokens);
       await this.loadEditorPreview();
     } catch (error) {
-      this.templateFailure.set(this.describe(error).message);
+      if (!this.destroyed && this.selectedServiceId() === serviceId) {
+        this.templateFailure.set(this.describe(error).message);
+      }
     } finally {
-      this.templateLoading.set(false);
+      if (!this.destroyed && this.selectedServiceId() === serviceId)
+        this.templateLoading.set(false);
     }
   }
 
@@ -803,6 +841,7 @@ export class CertificatesPage implements OnInit {
 
     return {
       certificateId: certificate.id.value,
+      certificateCode: certificate.code.value,
       workerName: snapshot.fullName,
       dni: snapshot.dni,
       position: snapshot.position,

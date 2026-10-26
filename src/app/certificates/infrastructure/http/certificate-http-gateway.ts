@@ -7,7 +7,17 @@
 
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { catchError, firstValueFrom, from, mergeMap, Observable, throwError } from 'rxjs';
+import {
+  catchError,
+  firstValueFrom,
+  from,
+  fromEvent,
+  mergeMap,
+  NEVER,
+  Observable,
+  takeUntil,
+  throwError,
+} from 'rxjs';
 import { API_BASE_URL } from '../../../api.config';
 import {
   AnnulCertificateRequest,
@@ -15,6 +25,7 @@ import {
   CertificateResource,
   CertificateSnapshotResource,
   CertificateStatusResource,
+  CertificateVerificationResource,
   EligibleAssignmentListResource,
   EligibleAssignmentResource,
   IssueCertificateRequest,
@@ -22,8 +33,10 @@ import {
 } from './certificate-api.contract';
 import { toCertificateApiError } from './certificate-api.error';
 import { Certificate } from '../../domain/model/aggregates/certificate';
+import { CertificateCode } from '../../domain/model/value-objects/certificate-code';
 import { CertificateId } from '../../domain/model/value-objects/certificate-id';
 import { CertificateSnapshot } from '../../domain/model/value-objects/certificate-snapshot';
+import { CertificateVerification } from '../../domain/model/value-objects/certificate-verification';
 import { CertificateStatus } from '../../domain/model/value-objects/certificate-status';
 import { SNAPSHOT_FIELD } from '../../domain/model/value-objects/certificate-snapshot';
 import {
@@ -79,6 +92,31 @@ export class CertificateHttpGateway implements CertificateRepository {
     );
 
     return { ...listing, items: listing.items.map((item) => this.toCertificate(item)) };
+  }
+
+  /**
+   * verifyCertificate returns the public trace of a certificate.
+   *
+   * The verification reads the certificate by its public code, the identity
+   * that the document prints and that the QR of the document carries.
+   */
+  async verifyCertificate(code: string): Promise<CertificateVerification> {
+    const resource = await firstValueFrom(
+      this.http
+        .get<CertificateVerificationResource>(
+          `${this.baseUrl}/certificates/verify/${encodeURIComponent(code)}`,
+        )
+        .pipe(catchError((error: HttpErrorResponse) => this.toFailure(error))),
+    );
+
+    return CertificateVerification.restore(
+      resource.code,
+      this.status(resource.status),
+      this.toSnapshot(resource.data),
+      resource.issuedAt,
+      resource.annulledAt ?? null,
+      resource.annulmentReason ?? null,
+    );
   }
 
   /**
@@ -235,11 +273,10 @@ export class CertificateHttpGateway implements CertificateRepository {
   /**
    * downloadCertificateFile reads the PDF that the platform archived.
    */
-  async downloadCertificateFile(id: CertificateId): Promise<Blob> {
-    return firstValueFrom(
-      this.http
-        .get(`${this.baseUrl}/certificates/${id.value}/file`, { responseType: 'blob' })
-        .pipe(catchError((error: HttpErrorResponse) => this.toFileFailure(error))),
+  async downloadCertificateFile(id: CertificateId, signal?: AbortSignal): Promise<Blob> {
+    return this.readFile(
+      this.http.get(`${this.baseUrl}/certificates/${id.value}/file`, { responseType: 'blob' }),
+      signal,
     );
   }
 
@@ -250,13 +287,12 @@ export class CertificateHttpGateway implements CertificateRepository {
    * The preview is the document that the platform would archive, so the
    * worker sees exactly the certificate that the issuance keeps.
    */
-  async previewCertificate(assignmentId: string): Promise<Blob> {
-    return firstValueFrom(
-      this.http
-        .get(`${this.baseUrl}/assignments/${assignmentId}/certificate-preview`, {
-          responseType: 'blob',
-        })
-        .pipe(catchError((error: HttpErrorResponse) => this.toFileFailure(error))),
+  async previewCertificate(assignmentId: string, signal?: AbortSignal): Promise<Blob> {
+    return this.readFile(
+      this.http.get(`${this.baseUrl}/assignments/${assignmentId}/certificate-preview`, {
+        responseType: 'blob',
+      }),
+      signal,
     );
   }
 
@@ -268,16 +304,35 @@ export class CertificateHttpGateway implements CertificateRepository {
    * that the text being written would produce. It does not need a labour
    * period: the platform renders the shape of the certificate.
    */
-  async previewServiceTemplate(serviceId: string, body: string): Promise<Blob> {
-    return firstValueFrom(
-      this.http
-        .post(
-          `${this.baseUrl}/services/${serviceId}/certificate-preview`,
-          { body },
-          { responseType: 'blob' },
-        )
-        .pipe(catchError((error: HttpErrorResponse) => this.toFileFailure(error))),
+  async previewServiceTemplate(
+    serviceId: string,
+    body: string,
+    signal?: AbortSignal,
+  ): Promise<Blob> {
+    return this.readFile(
+      this.http.post(
+        `${this.baseUrl}/services/${serviceId}/certificate-preview`,
+        { body },
+        { responseType: 'blob' },
+      ),
+      signal,
     );
+  }
+
+  /** Unsubscribing aborts Angular's HTTP request, including pending error-body reads. */
+  private async readFile(request: Observable<Blob>, signal?: AbortSignal): Promise<Blob> {
+    signal?.throwIfAborted();
+    try {
+      return await firstValueFrom(
+        request.pipe(
+          catchError((error: HttpErrorResponse) => this.toFileFailure(error)),
+          takeUntil(signal ? fromEvent(signal, 'abort') : NEVER),
+        ),
+      );
+    } catch (error) {
+      signal?.throwIfAborted();
+      throw error;
+    }
   }
 
   /**
@@ -335,6 +390,7 @@ export class CertificateHttpGateway implements CertificateRepository {
   private toCertificate(resource: CertificateResource): Certificate {
     return Certificate.restore(
       CertificateId.restore(resource.id),
+      CertificateCode.restore(resource.code),
       resource.assignmentId,
       resource.serviceId,
       this.status(resource.status),

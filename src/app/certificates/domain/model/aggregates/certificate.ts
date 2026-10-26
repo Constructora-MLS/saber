@@ -2,6 +2,7 @@
 // context.
 // package aggregates
 
+import { CertificateCode } from '../value-objects/certificate-code';
 import { CertificateId } from '../value-objects/certificate-id';
 import { CertificateSnapshot } from '../value-objects/certificate-snapshot';
 import { CertificateStatus } from '../value-objects/certificate-status';
@@ -17,6 +18,8 @@ import { CertificateStatus } from '../value-objects/certificate-status';
 export class Certificate {
   private constructor(
     readonly id: CertificateId,
+    /** The public code of the certificate. */
+    readonly code: CertificateCode,
     /** The assignment the certificate was issued for. */
     readonly assignmentId: string,
     /** The service whose template the certificate used. */
@@ -39,6 +42,7 @@ export class Certificate {
    */
   static restore(
     id: CertificateId,
+    code: CertificateCode,
     assignmentId: string,
     serviceId: string,
     status: CertificateStatus,
@@ -50,6 +54,7 @@ export class Certificate {
   ): Certificate {
     return new Certificate(
       id,
+      code,
       assignmentId,
       serviceId,
       status,

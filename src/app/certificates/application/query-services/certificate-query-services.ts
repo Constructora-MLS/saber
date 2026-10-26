@@ -70,8 +70,8 @@ export class ListCertificatesQueryService {
 export class GetCertificatePreviewQueryService {
   private readonly repository = inject(CERTIFICATE_REPOSITORY);
 
-  async execute(assignmentId: string): Promise<Blob> {
-    return this.repository.previewCertificate(assignmentId);
+  async execute(assignmentId: string, signal?: AbortSignal): Promise<Blob> {
+    return this.repository.previewCertificate(assignmentId, signal);
   }
 }
 
@@ -86,8 +86,8 @@ export class GetCertificatePreviewQueryService {
 export class GetServiceTemplatePreviewQueryService {
   private readonly repository = inject(CERTIFICATE_REPOSITORY);
 
-  async execute(serviceId: string, body: string): Promise<Blob> {
-    return this.repository.previewServiceTemplate(serviceId, body);
+  async execute(serviceId: string, body: string, signal?: AbortSignal): Promise<Blob> {
+    return this.repository.previewServiceTemplate(serviceId, body, signal);
   }
 }
 
@@ -110,8 +110,39 @@ export class GetServiceTemplateQueryService {
 @Injectable({ providedIn: 'root' })
 export class GetCertificateFileQueryService {
   private readonly repository = inject(CERTIFICATE_REPOSITORY);
+  // Archived PDFs are immutable. Keep only a small, in-memory LRU cache.
+  private readonly files = new Map<string, Blob>();
+  private cachedBytes = 0;
+  private readonly maxEntries = 5;
+  private readonly maxBytes = 10 * 1024 * 1024;
 
-  async execute(certificateId: string): Promise<Blob> {
-    return this.repository.downloadCertificateFile(CertificateId.restore(certificateId));
+  async execute(certificateId: string, signal?: AbortSignal): Promise<Blob> {
+    signal?.throwIfAborted();
+    const cached = this.files.get(certificateId);
+    if (cached) {
+      this.files.delete(certificateId);
+      this.files.set(certificateId, cached);
+      return cached;
+    }
+
+    const file = await this.repository.downloadCertificateFile(
+      CertificateId.restore(certificateId),
+      signal,
+    );
+    signal?.throwIfAborted();
+    if (file.size <= this.maxBytes) {
+      const previous = this.files.get(certificateId);
+      if (previous) this.cachedBytes -= previous.size;
+      this.files.delete(certificateId);
+      this.files.set(certificateId, file);
+      this.cachedBytes += file.size;
+      while (this.files.size > this.maxEntries || this.cachedBytes > this.maxBytes) {
+        const oldest = this.files.entries().next().value;
+        if (!oldest) break;
+        this.files.delete(oldest[0]);
+        this.cachedBytes -= oldest[1].size;
+      }
+    }
+    return file;
   }
 }

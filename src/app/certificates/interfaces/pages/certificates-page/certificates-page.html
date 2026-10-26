@@ -92,7 +92,7 @@
             {{
               activeTab() === 'pendientes'
                 ? 'Buscar por trabajador o DNI'
-                : 'Buscar por trabajador o DNI'
+                : 'Buscar por trabajador, DNI o código'
             }}
           </mat-label>
           <input
@@ -167,6 +167,7 @@
           (viewRequested)="view($event)"
           (downloadRequested)="download($event)"
           (annulRequested)="annul($event)"
+          (verifyRequested)="verify($event)"
           (retryRequested)="retry()"
         />
       }

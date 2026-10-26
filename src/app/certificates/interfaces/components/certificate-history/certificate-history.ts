@@ -21,6 +21,13 @@ import { formatCertificateDate } from '../certificate-date.format';
 export interface IssuedCertificateRow {
   /** The identifier of the certificate. */
   readonly certificateId: string;
+  /**
+   * The public code of the certificate.
+   *
+   * It is the identity that the document prints and that the QR of the
+   * document carries, so the worker can read it and share it.
+   */
+  readonly certificateCode: string;
   /** The name of the worker. */
   readonly workerName: string;
   /** The identity document of the worker. */
@@ -78,6 +85,8 @@ export class CertificateHistory {
   readonly downloadRequested = output<IssuedCertificateRow>();
   /** The annulment of a certificate was requested. */
   readonly annulRequested = output<IssuedCertificateRow>();
+  /** The verification of a certificate was requested. */
+  readonly verifyRequested = output<IssuedCertificateRow>();
   /** The consultation of the history was requested again. */
   readonly retryRequested = output<void>();
 
