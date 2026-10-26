@@ -11,11 +11,18 @@ import {
 } from '../../../application/query-services/verify-certificate-query-service';
 import { CertificateVerification } from '../../../domain/model/value-objects/certificate-verification';
 import { CertificateApiError } from '../../../infrastructure/http/certificate-api.error';
+import { CredentialHeader } from '../../components/credential-header/credential-header';
 import { formatCertificateDate } from '../../components/certificate-date.format';
 
 /** Public credential outside the HR shell. All reads use application services. */
 @Component({
-  imports: [MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatSnackBarModule],
+  imports: [
+    CredentialHeader,
+    MatButtonModule,
+    MatIconModule,
+    MatProgressSpinnerModule,
+    MatSnackBarModule,
+  ],
   selector: 'app-credential-page',
   styleUrl: './credential-page.scss',
   templateUrl: './credential-page.html',

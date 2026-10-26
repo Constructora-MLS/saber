@@ -4,7 +4,7 @@ export const routes: Routes = [
   {
     // A QR opens this route directly, outside the HR navigation shell.
     path: 'verify/:code',
-    title: 'Verificación de certificado',
+    title: 'Certificado de trabajo',
     loadComponent: () =>
       import('./certificates/interfaces/pages/credential-page/credential-page').then(
         (module) => module.CredentialPage,
