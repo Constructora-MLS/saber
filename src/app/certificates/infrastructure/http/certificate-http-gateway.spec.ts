@@ -64,4 +64,52 @@ describe('paginación de certificados', () => {
     await gateway.listCertificates({ search: '  ' });
     expect(requests[0].params).toEqual({ page: '1' });
   });
+
+  it('lleva el nombre archivado del servicio a los datos del certificado', async () => {
+    const injector = Injector.create({
+      providers: [
+        { provide: API_BASE_URL, useValue: '/api/v1' },
+        {
+          provide: HttpClient,
+          useValue: {
+            get() {
+              return of({
+                items: [
+                  {
+                    id: 'cert-1',
+                    assignmentId: 'asg-1',
+                    serviceId: 'svc-1',
+                    status: 'ISSUED',
+                    templateSnapshot: 'texto',
+                    dataSnapshot: {
+                      'employee.firstName': 'Ana',
+                      'employee.lastName': 'López',
+                      'employee.dni': '12345678',
+                      'assignment.position': 'Operaria',
+                      'assignment.service': 'Ejecución de obras civiles',
+                      'assignment.workUnit': 'Mejoramiento del puente La Molina',
+                      'assignment.workUnitCode': 'OB-021',
+                      'assignment.startDate': '2024-01-02',
+                      'assignment.endDate': '2026-10-16',
+                      issueDate: '2026-10-16',
+                    },
+                    issuedAt: '2026-10-16T10:00:00Z',
+                  },
+                ],
+                page: 1,
+                total: 1,
+                totalPages: 1,
+              });
+            },
+          },
+        },
+      ],
+    });
+    const gateway = runInInjectionContext(injector, () => new CertificateHttpGateway());
+
+    const page = await gateway.listCertificates({ page: 1 });
+
+    expect(page.items[0].snapshot.service).toBe('Ejecución de obras civiles');
+    expect(page.items[0].snapshot.workUnit).toBe('Mejoramiento del puente La Molina');
+  });
 });

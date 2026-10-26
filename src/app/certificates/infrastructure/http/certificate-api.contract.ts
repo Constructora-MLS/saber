@@ -22,6 +22,8 @@ export interface CertificateSnapshotResource {
   readonly 'employee.maternalSurname'?: string;
   readonly 'employee.dni': string;
   readonly 'assignment.position': string;
+  /** The name of the service that owns the unit of work, when it was archived. */
+  readonly 'assignment.service'?: string;
   readonly 'assignment.workUnit': string;
   readonly 'assignment.workUnitCode': string;
   readonly 'assignment.startDate': string;

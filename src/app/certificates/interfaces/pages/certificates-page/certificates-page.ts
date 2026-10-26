@@ -39,6 +39,7 @@ import {
   CertificateStatusFilter,
 } from '../../../domain/model/value-objects/certificate-status';
 import { CERTIFICATE_PAGE_SIZE } from '../../../domain/model/value-objects/listing';
+import { CertificateSnapshot } from '../../../domain/model/value-objects/certificate-snapshot';
 import { CertificateApiError } from '../../../infrastructure/http/certificate-api.error';
 import {
   CertificateServiceReference,
@@ -790,7 +791,7 @@ export class CertificatesPage implements OnInit {
       workUnitCode: snapshot.workUnitCode,
       startDate: snapshot.startDate,
       endDate: snapshot.endDate,
-      serviceName: this.serviceNames().get(item.assignment.serviceId) ?? null,
+      serviceName: this.serviceNameOf(snapshot, item.assignment.serviceId),
     };
   }
 
@@ -809,8 +810,19 @@ export class CertificatesPage implements OnInit {
       workUnitCode: snapshot.workUnitCode,
       issuedAt: certificate.issuedAt,
       status: certificate.status,
-      serviceName: this.serviceNames().get(certificate.serviceId) ?? null,
+      serviceName: this.serviceNameOf(snapshot, certificate.serviceId),
     };
+  }
+
+  /**
+   * serviceNameOf returns the name of the service of a certificate.
+   *
+   * The archived name is the one that the certificate wrote, so it comes
+   * first: the catalog only answers when the certificate was issued before
+   * the platform archived the name of the service.
+   */
+  private serviceNameOf(snapshot: CertificateSnapshot, serviceId: string): string | null {
+    return snapshot.service || this.serviceNames().get(serviceId) || null;
   }
 
   /**

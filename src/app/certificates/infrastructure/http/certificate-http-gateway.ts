@@ -358,6 +358,7 @@ export class CertificateHttpGateway implements CertificateRepository {
         [SNAPSHOT_FIELD.employeeMaternalSurname, resource['employee.maternalSurname'] ?? ''],
         [SNAPSHOT_FIELD.employeeDni, resource['employee.dni'] ?? ''],
         [SNAPSHOT_FIELD.assignmentPosition, resource['assignment.position'] ?? ''],
+        [SNAPSHOT_FIELD.assignmentService, resource['assignment.service'] ?? ''],
         [SNAPSHOT_FIELD.assignmentWorkUnit, resource['assignment.workUnit'] ?? ''],
         [SNAPSHOT_FIELD.assignmentWorkUnitCode, resource['assignment.workUnitCode'] ?? ''],
         [SNAPSHOT_FIELD.assignmentStartDate, resource['assignment.startDate'] ?? ''],

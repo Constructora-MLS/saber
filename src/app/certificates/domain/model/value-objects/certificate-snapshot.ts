@@ -15,6 +15,7 @@ export const SNAPSHOT_FIELD = {
   employeeMaternalSurname: 'employee.maternalSurname',
   employeeDni: 'employee.dni',
   assignmentPosition: 'assignment.position',
+  assignmentService: 'assignment.service',
   assignmentWorkUnit: 'assignment.workUnit',
   assignmentWorkUnitCode: 'assignment.workUnitCode',
   assignmentStartDate: 'assignment.startDate',
@@ -74,6 +75,17 @@ export class CertificateSnapshot {
   /** The position the worker performed. */
   get position(): string {
     return this.value(SNAPSHOT_FIELD.assignmentPosition);
+  }
+
+  /**
+   * The service that owned the unit of work when the certificate was
+   * issued.
+   *
+   * It is absent in the certificates that were issued before the platform
+   * archived the name of the service.
+   */
+  get service(): string {
+    return this.value(SNAPSHOT_FIELD.assignmentService);
   }
 
   /** The unit of work the worker was assigned to. */
