@@ -31,16 +31,6 @@ export const routes: Routes = [
       ),
   },
   {
-    // The employee record can still open the certificate review flow with
-    // its assignment in the address bar.
-    path: 'certificates/assignment/:assignmentId',
-    title: 'Revisar certificado',
-    loadComponent: () =>
-      import('./certificates/interfaces/pages/certificate-review-page/certificate-review-page').then(
-        (module) => module.CertificateReviewPage,
-      ),
-  },
-  {
     path: 'catalog',
     title: 'Catálogos',
     loadComponent: () =>

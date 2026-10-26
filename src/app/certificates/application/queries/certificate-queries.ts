@@ -32,19 +32,6 @@ export interface CertificateQueue {
 }
 
 /**
- * CertificateDraft is the eligible assignment and issuance history that a
- * review interface may inspect before deciding whether to issue.
- */
-export interface CertificateDraft {
-  /** The assignment that receives the certificate. */
-  readonly assignment: EligibleAssignment;
-  /** The name of the service, when the catalog answered. */
-  readonly serviceName: string | null;
-  /** The certificates that were already issued for the assignment. */
-  readonly certificates: readonly Certificate[];
-}
-
-/**
  * ListCertificatesQuery asks for the certificates of the platform.
  *
  * The state is the filter of the search: the certificates in force, the

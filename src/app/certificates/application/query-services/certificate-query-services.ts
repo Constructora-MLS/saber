@@ -4,19 +4,16 @@
 
 import { inject, Injectable } from '@angular/core';
 import {
-  CertificateDraft,
   CertificateQueue,
   ListCertificatesQuery,
 } from '../queries/certificate-queries';
 import { CertificateId } from '../../domain/model/value-objects/certificate-id';
 import {
   CERTIFICATE_REPOSITORY,
-  EligibleAssignment,
   ServiceTemplate,
 } from '../../domain/repositories/certificate-repositories';
 import { Certificate } from '../../domain/model/aggregates/certificate';
 import { CERTIFICATE_PAGE_SIZE } from '../../domain/model/value-objects/listing';
-import { CERTIFICATE_SERVICE_RESOLVER } from '../../domain/services/certificate-service-resolver';
 
 /**
  * ListCertificateQueueQueryService returns the queue of the assignments
@@ -67,38 +64,6 @@ export class ListCertificatesQueryService {
       limit: query.limit,
       page: query.page,
     });
-  }
-}
-
-/**
- * GetCertificateDraftQueryService returns the eligible assignment and its
- * history for a review interface.
- */
-@Injectable({ providedIn: 'root' })
-export class GetCertificateDraftQueryService {
-  private readonly repository = inject(CERTIFICATE_REPOSITORY);
-  private readonly services = inject(CERTIFICATE_SERVICE_RESOLVER);
-
-  async execute(assignmentId: string): Promise<CertificateDraft | null> {
-    const assignments = await this.repository.listEligibleAssignments({
-      limit: CERTIFICATE_PAGE_SIZE,
-    });
-    const assignment = assignments.find((item) => item.assignmentId === assignmentId);
-
-    if (!assignment) {
-      return null;
-    }
-
-    const [certificates, names] = await Promise.all([
-      this.repository.listAssignmentCertificates(assignment.assignmentId),
-      this.services.resolveServiceNames([assignment.serviceId]),
-    ]);
-
-    return {
-      assignment,
-      serviceName: names.get(assignment.serviceId) ?? null,
-      certificates,
-    };
   }
 }
 

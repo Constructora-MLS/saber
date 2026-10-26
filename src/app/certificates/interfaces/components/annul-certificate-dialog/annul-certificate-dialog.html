@@ -2,8 +2,7 @@
 
 <mat-dialog-content>
   <p class="dialog-description">
-    El certificado de {{ data.workerName }} dejará de estar en vigor. Su historial y su archivo se
-    conservan, y la asignación vuelve a poder eliminarse.
+    Se anulará el certificado de {{ data.workerName }}. El historial y el archivo se conservan.
   </p>
 
   <form class="dialog-form" id="annul-certificate-form" [formGroup]="form" (ngSubmit)="submit()">

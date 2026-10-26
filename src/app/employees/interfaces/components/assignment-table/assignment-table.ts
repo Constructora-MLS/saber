@@ -91,8 +91,6 @@ export class AssignmentTable {
   readonly ceaseRequested = output<AssignmentRow>();
   /** The deletion of an assignment was requested. */
   readonly deleteRequested = output<AssignmentRow>();
-  /** The certificate of an assignment was requested. */
-  readonly certificateRequested = output<AssignmentRow>();
   /** The consultation of the assignments was requested again. */
   readonly retryRequested = output<void>();
   /** The registration of an assignment was requested. */
@@ -121,15 +119,5 @@ export class AssignmentTable {
    */
   protected canCease(row: AssignmentRow): boolean {
     return row.status === 'VIGENTE';
-  }
-
-  /**
-   * canCertify reports whether the assignment may receive a certificate.
-   *
-   * A certificate archives a labour period, so only a closed period can
-   * receive one.
-   */
-  protected canCertify(row: AssignmentRow): boolean {
-    return row.status === 'RETIRADO';
   }
 }

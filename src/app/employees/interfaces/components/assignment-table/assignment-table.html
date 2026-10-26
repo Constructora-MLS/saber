@@ -106,15 +106,6 @@
                   <mat-icon aria-hidden="true">event_busy</mat-icon>
                   <span>Cesar</span>
                 </button>
-                <button
-                  mat-menu-item
-                  type="button"
-                  [disabled]="!canCertify(row)"
-                  (click)="certificateRequested.emit(row)"
-                >
-                  <mat-icon aria-hidden="true">description</mat-icon>
-                  <span>Emitir</span>
-                </button>
                 <button mat-menu-item type="button" (click)="deleteRequested.emit(row)">
                   <mat-icon aria-hidden="true">delete</mat-icon>
                   <span>Borrar</span>

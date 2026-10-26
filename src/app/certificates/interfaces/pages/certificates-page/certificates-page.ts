@@ -54,6 +54,8 @@ import {
 } from '../../components/certificate-queue/certificate-queue';
 import { CertificateTemplateEditor } from '../../components/certificate-template-editor/certificate-template-editor';
 import { CertificateViewerDialog } from '../../components/certificate-viewer-dialog/certificate-viewer-dialog';
+import { firstValueFrom } from 'rxjs';
+import { IssueCertificateDialog } from '../../components/issue-certificate-dialog/issue-certificate-dialog';
 import { RestoreTemplateDialog } from '../../components/restore-template-dialog/restore-template-dialog';
 import { AnnulCertificateDialog } from '../../components/annul-certificate-dialog/annul-certificate-dialog';
 
@@ -413,6 +415,20 @@ export class CertificatesPage implements OnInit {
     this.issuing.set(true);
 
     try {
+      const confirmed = await firstValueFrom(
+        this.dialog
+          .open<IssueCertificateDialog, { workerName: string }, boolean>(IssueCertificateDialog, {
+            data: { workerName: row.workerName },
+            width: '34rem',
+            maxWidth: '92vw',
+          })
+          .afterClosed(),
+      );
+
+      if (confirmed !== true) {
+        return;
+      }
+
       await this.issueCertificate.execute({ assignmentId: row.assignmentId });
       this.notify(`Certificado de ${row.workerName} emitido.`);
       await this.reload();

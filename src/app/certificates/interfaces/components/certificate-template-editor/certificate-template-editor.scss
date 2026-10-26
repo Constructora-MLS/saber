@@ -24,6 +24,10 @@
 }
 
 .editor__text textarea {
+  resize: vertical;
+  min-height: 4.5rem;
+  max-height: 18rem;
+  overflow-y: auto;
   font-family: 'Roboto Mono', ui-monospace, monospace;
   font-size: 0.85rem;
   line-height: 1.7;
