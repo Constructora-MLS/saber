@@ -341,6 +341,15 @@ export class CertificatesPage implements OnInit {
   protected activateTab(tab: CertificatesTab): void {
     this.activeTab.set(tab);
 
+    if (tab === 'emitidos') {
+      // The units of work of the filter are read once, so the selector
+      // offers them as soon as the history is shown.
+      if (this.workUnitOptions().length === 0) {
+        void this.searchWorkUnits('');
+      }
+      return;
+    }
+
     if (tab !== 'contenido') {
       this.cancelEditorPreview();
       this.setEditorPreview(null);
@@ -394,8 +403,8 @@ export class CertificatesPage implements OnInit {
   /**
    * searchWorkUnits reads the units of work that match the term.
    *
-   * The catalog is not read entirely: the selector asks only for the works
-   * that match what the worker writes.
+   * The catalog is not read entirely: the selector asks only for the units
+   * of work that match what the worker writes.
    */
   protected async searchWorkUnits(term: string): Promise<void> {
     this.loadingWorkUnits.set(true);
@@ -412,7 +421,7 @@ export class CertificatesPage implements OnInit {
       );
     } catch {
       this.workUnitOptions.set([]);
-      this.workUnitsError.set('No se pudieron leer las obras.');
+      this.workUnitsError.set('No se pudieron leer las unidades de trabajo.');
     } finally {
       this.loadingWorkUnits.set(false);
     }

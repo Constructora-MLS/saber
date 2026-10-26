@@ -27,6 +27,9 @@ class HistoryPage extends CertificatesPage {
   chooseWork(code: string) {
     this.onWorkUnitChanged(code);
   }
+  showHistory() {
+    this.activateTab('emitidos');
+  }
   get works() {
     return this.workUnitOptions();
   }
@@ -85,8 +88,8 @@ function setup() {
 
 afterEach(() => vi.restoreAllMocks());
 
-describe('filtro por obra del historial', () => {
-  it('ofrece solo las obras que el catálogo devuelve para el término', async () => {
+describe('filtro por unidad de trabajo del historial', () => {
+  it('ofrece solo las unidades de trabajo que el catálogo devuelve para el término', async () => {
     const { page, listWorkUnits } = setup();
 
     await page.searchWorks('puente');
@@ -98,7 +101,16 @@ describe('filtro por obra del historial', () => {
     ]);
   });
 
-  it('filtra el historial por el código de la obra elegida', async () => {
+  it('ofrece las unidades de trabajo al abrir el historial, sin esperar a que se escriba', async () => {
+    const { page, listWorkUnits } = setup();
+
+    page.showHistory();
+
+    await vi.waitFor(() => expect(page.works.length).toBeGreaterThan(0));
+    expect(listWorkUnits).toHaveBeenCalledWith('');
+  });
+
+  it('filtra el historial por el código de la unidad de trabajo elegida', async () => {
     const { page, listCertificates } = setup();
 
     page.chooseWork('OB-021');
@@ -108,7 +120,7 @@ describe('filtro por obra del historial', () => {
     expect(criteria.workUnitCode).toBe('OB-021');
   });
 
-  it('deja el historial sin filtro de obra cuando se limpia', async () => {
+  it('deja el historial sin filtro de unidad de trabajo cuando se limpia', async () => {
     const { page, listCertificates } = setup();
 
     page.chooseWork('OB-021');

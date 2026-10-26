@@ -87,7 +87,7 @@
       </header>
 
       <div class="filters">
-        <mat-form-field appearance="outline" class="search-field">
+        <mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic">
           <mat-label>
             {{
               activeTab() === 'pendientes'
@@ -117,7 +117,11 @@
         </mat-form-field>
 
         @if (activeTab() === 'pendientes') {
-          <mat-form-field appearance="outline" class="status-field">
+          <mat-form-field
+            appearance="outline"
+            class="status-field"
+            subscriptSizing="dynamic"
+          >
             <mat-label>Tipo de certificado</mat-label>
             <mat-select [ngModel]="serviceFilter()" (ngModelChange)="onServiceChanged($event)">
               <mat-option value="">Todos</mat-option>
@@ -129,11 +133,10 @@
         } @else {
           <app-catalog-search-select
             class="work-unit-field"
-            label="Obra"
-            placeholder="Buscar obra…"
-            requiredMessage="Elige una obra."
-            hint="Busca y elige la obra que certificó el trabajo."
-            emptyText="No hay obras que coincidan con la búsqueda."
+            label="Unidad de trabajo"
+            placeholder="Buscar unidad de trabajo…"
+            requiredMessage="Elige una unidad de trabajo."
+            emptyText="No hay unidades de trabajo que coincidan con la búsqueda."
             [options]="workUnitOptions()"
             [loading]="loadingWorkUnits()"
             [error]="workUnitsError()"
@@ -142,7 +145,11 @@
             (searched)="searchWorkUnits($event)"
             (chosen)="onWorkUnitChanged($event)"
           />
-          <mat-form-field appearance="outline" class="status-field">
+          <mat-form-field
+            appearance="outline"
+            class="status-field"
+            subscriptSizing="dynamic"
+          >
             <mat-label>Estado</mat-label>
             <mat-select [ngModel]="statusFilter()" (ngModelChange)="onStatusFilterChanged($event)">
               @for (filter of statusFilters; track filter) {
