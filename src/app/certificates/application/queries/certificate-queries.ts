@@ -4,32 +4,26 @@
 // answers it.
 // package queries
 
-import { Certificate } from '../../domain/model/aggregates/certificate';
 import { CertificateStatus } from '../../domain/model/value-objects/certificate-status';
-import { EligibleAssignment } from '../../domain/repositories/certificate-repositories';
+import {
+  ListingPage,
+  EligibleAssignment,
+} from '../../domain/repositories/certificate-repositories';
 
 /**
- * CertificateQueueItem is an assignment of the queue and the certificates
- * that were issued for it.
- *
- * The history of the assignment travels with it, so the interfaces know
- * which assignments are still waiting for a certificate without asking the
- * platform twice.
+ * CertificateQueueItem is an assignment still waiting for a certificate.
+ * Eligibility and issuance status are filtered by the platform before pagination.
  */
 export interface CertificateQueueItem {
   /** The assignment that may receive a certificate. */
   readonly assignment: EligibleAssignment;
-  /** The certificates that were issued for the assignment. */
-  readonly certificates: readonly Certificate[];
 }
 
 /**
  * CertificateQueue is the queue of the assignments that may receive a
  * certificate.
  */
-export interface CertificateQueue {
-  readonly items: readonly CertificateQueueItem[];
-}
+export type CertificateQueue = ListingPage<CertificateQueueItem>;
 
 /**
  * ListCertificatesQuery asks for the certificates of the platform.
@@ -38,6 +32,7 @@ export interface CertificateQueue {
  * certificates that were annulled, or every certificate.
  */
 export interface ListCertificatesQuery {
+  readonly search?: string;
   /**
    * The state the certificates are filtered by.
    *

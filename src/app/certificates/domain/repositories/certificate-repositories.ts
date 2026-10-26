@@ -47,7 +47,16 @@ export interface ServiceTemplate {
  * The platform answers a page of every listing, so the client asks for the
  * size of the page that it shows.
  */
+export interface ListingPage<T> {
+  readonly items: readonly T[];
+  readonly page: number;
+  readonly total: number;
+  readonly totalPages: number;
+}
+
 export interface ListingCriteria {
+  readonly search?: string;
+  readonly serviceId?: string;
   /** The size of the page. */
   readonly limit?: number;
   /** The number of the requested page, starting at one. */
@@ -74,7 +83,7 @@ export interface CertificateRepository {
    * listEligibleAssignments returns the assignments whose labour period is
    * closed and that may receive a certificate.
    */
-  listEligibleAssignments(criteria?: ListingCriteria): Promise<readonly EligibleAssignment[]>;
+  listEligibleAssignments(criteria?: ListingCriteria): Promise<ListingPage<EligibleAssignment>>;
 
   /**
    * listCertificates returns the certificates of the platform that match the
@@ -83,7 +92,7 @@ export interface CertificateRepository {
    * The search of the certificates is filtered by state: the certificates in
    * force, the certificates that were annulled, or every certificate.
    */
-  listCertificates(criteria: CertificateCriteria): Promise<readonly Certificate[]>;
+  listCertificates(criteria: CertificateCriteria): Promise<ListingPage<Certificate>>;
 
   /**
    * issueCertificate issues the certificate of an eligible assignment.

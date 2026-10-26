@@ -170,6 +170,16 @@
           (retryRequested)="retry()"
         />
       }
+      @if (totalPages() > 1) {
+        <div class="panel-footer">
+          <app-paginator
+            [page]="page()"
+            [totalPages]="totalPages()"
+            label="certificados"
+            (pageRequested)="goToPage($event)"
+          />
+        </div>
+      }
     </section>
   }
 </section>

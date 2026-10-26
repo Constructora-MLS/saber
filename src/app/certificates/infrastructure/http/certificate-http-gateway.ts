@@ -31,6 +31,7 @@ import {
   CertificateRepository,
   EligibleAssignment,
   ListingCriteria,
+  ListingPage,
   ServiceTemplate,
 } from '../../domain/repositories/certificate-repositories';
 
@@ -48,7 +49,7 @@ export class CertificateHttpGateway implements CertificateRepository {
    */
   async listEligibleAssignments(
     criteria: ListingCriteria = {},
-  ): Promise<readonly EligibleAssignment[]> {
+  ): Promise<ListingPage<EligibleAssignment>> {
     const queue = await firstValueFrom(
       this.http
         .get<EligibleAssignmentListResource>(`${this.baseUrl}/certificates/eligible-assignments`, {
@@ -57,7 +58,7 @@ export class CertificateHttpGateway implements CertificateRepository {
         .pipe(catchError((error: HttpErrorResponse) => this.toFailure(error))),
     );
 
-    return queue.items.map((item) => this.toEligibleAssignment(item));
+    return { ...queue, items: queue.items.map((item) => this.toEligibleAssignment(item)) };
   }
 
   /**
@@ -68,7 +69,7 @@ export class CertificateHttpGateway implements CertificateRepository {
    * answers the certificates in force, the certificates that were annulled,
    * or every certificate.
    */
-  async listCertificates(criteria: CertificateCriteria): Promise<readonly Certificate[]> {
+  async listCertificates(criteria: CertificateCriteria): Promise<ListingPage<Certificate>> {
     const listing = await firstValueFrom(
       this.http
         .get<CertificateListResource>(`${this.baseUrl}/certificates`, {
@@ -77,7 +78,7 @@ export class CertificateHttpGateway implements CertificateRepository {
         .pipe(catchError((error: HttpErrorResponse) => this.toFailure(error))),
     );
 
-    return listing.items.map((item) => this.toCertificate(item));
+    return { ...listing, items: listing.items.map((item) => this.toCertificate(item)) };
   }
 
   /**
@@ -87,14 +88,19 @@ export class CertificateHttpGateway implements CertificateRepository {
    * lists every certificate when the filter is every certificate.
    */
   private certificateParams(criteria: CertificateCriteria): Record<string, string> {
-    return { ...this.pageParams(criteria), ...(criteria.status ? { status: criteria.status } : {}) };
+    return {
+      ...this.pageParams(criteria),
+      ...(criteria.status ? { status: criteria.status } : {}),
+    };
   }
 
   /**
    * pageParams are the pagination of a listing.
    */
   private pageParams(criteria: ListingCriteria): Record<string, string> {
-    const params: Record<string, string> = {};
+    const params: Record<string, string> = { page: `${criteria.page ?? 1}` };
+    if (criteria.search?.trim()) params['q'] = criteria.search.trim();
+    if (criteria.serviceId) params['serviceId'] = criteria.serviceId;
 
     if (criteria.limit !== undefined) {
       params['limit'] = `${criteria.limit}`;

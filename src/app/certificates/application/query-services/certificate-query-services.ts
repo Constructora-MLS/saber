@@ -3,14 +3,13 @@
 // package queryservices
 
 import { inject, Injectable } from '@angular/core';
-import {
-  CertificateQueue,
-  ListCertificatesQuery,
-} from '../queries/certificate-queries';
+import { CertificateQueue, ListCertificatesQuery } from '../queries/certificate-queries';
 import { CertificateId } from '../../domain/model/value-objects/certificate-id';
 import {
   CERTIFICATE_REPOSITORY,
   ServiceTemplate,
+  ListingCriteria,
+  ListingPage,
 } from '../../domain/repositories/certificate-repositories';
 import { Certificate } from '../../domain/model/aggregates/certificate';
 import { CERTIFICATE_PAGE_SIZE } from '../../domain/model/value-objects/listing';
@@ -19,30 +18,22 @@ import { CERTIFICATE_PAGE_SIZE } from '../../domain/model/value-objects/listing'
  * ListCertificateQueueQueryService returns the queue of the assignments
  * that may receive a certificate.
  *
- * The queue carries the history of every assignment, because the platform
- * publishes the history of an assignment and not the list of the
- * certificates of the platform: an assignment that already has a
- * certificate is not waiting for one anymore.
+ * The platform excludes assignments with an issuance in force before
+ * pagination, so the client preserves its page totals without extra history requests.
  */
 @Injectable({ providedIn: 'root' })
 export class ListCertificateQueueQueryService {
   private readonly repository = inject(CERTIFICATE_REPOSITORY);
 
-  async execute(): Promise<CertificateQueue> {
-    const assignments = await this.repository.listEligibleAssignments({
+  async execute(criteria: ListingCriteria = {}): Promise<CertificateQueue> {
+    const result = await this.repository.listEligibleAssignments({
+      ...criteria,
       limit: CERTIFICATE_PAGE_SIZE,
     });
-    const histories = await Promise.all(
-      assignments.map((assignment) =>
-        this.repository.listAssignmentCertificates(assignment.assignmentId),
-      ),
-    );
-
+    // The backend excludes assignments with an issuance in force before pagination.
     return {
-      items: assignments.map((assignment, index) => ({
-        assignment,
-        certificates: histories[index] ?? [],
-      })),
+      ...result,
+      items: result.items.map((assignment) => ({ assignment })),
     };
   }
 }
@@ -58,8 +49,9 @@ export class ListCertificateQueueQueryService {
 export class ListCertificatesQueryService {
   private readonly repository = inject(CERTIFICATE_REPOSITORY);
 
-  async execute(query: ListCertificatesQuery): Promise<readonly Certificate[]> {
+  async execute(query: ListCertificatesQuery): Promise<ListingPage<Certificate>> {
     return this.repository.listCertificates({
+      search: query.search,
       status: query.status,
       limit: query.limit,
       page: query.page,

@@ -90,6 +90,13 @@
   box-shadow: 0 3px 12px rgb(22 73 61 / 6%);
 }
 
+.panel-footer {
+  display: flex;
+  justify-content: center;
+  padding: 1rem 1.35rem;
+  border-top: 1px solid var(--rrhh-divider);
+}
+
 .panel-header {
   display: flex;
   align-items: center;

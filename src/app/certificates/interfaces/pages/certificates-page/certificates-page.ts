@@ -55,6 +55,7 @@ import {
 import { CertificateTemplateEditor } from '../../components/certificate-template-editor/certificate-template-editor';
 import { CertificateViewerDialog } from '../../components/certificate-viewer-dialog/certificate-viewer-dialog';
 import { firstValueFrom } from 'rxjs';
+import { Paginator } from '../../../../shared/interfaces/components/paginator/paginator';
 import { IssueCertificateDialog } from '../../components/issue-certificate-dialog/issue-certificate-dialog';
 import { RestoreTemplateDialog } from '../../components/restore-template-dialog/restore-template-dialog';
 import { AnnulCertificateDialog } from '../../components/annul-certificate-dialog/annul-certificate-dialog';
@@ -95,17 +96,6 @@ interface CertificatesTabDefinition {
 const PREVIEW_DELAY = 400;
 
 /**
- * normalize writes a text so that two writings of the same term are the
- * same one.
- *
- * The search of the queue is a search of the platform, so it does not
- * depend on the accents nor on the case of what the worker writes.
- */
-function normalize(value: string): string {
-  return value.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
-}
-
-/**
  * CertificatesPage orchestrates the certificates of the platform.
  *
  * The page shows the queue of the assignments that are waiting for a
@@ -115,6 +105,7 @@ function normalize(value: string): string {
  */
 @Component({
   imports: [
+    Paginator,
     CertificateHistory,
     CertificateQueue,
     CertificateTemplateEditor,
@@ -134,6 +125,18 @@ function normalize(value: string): string {
 })
 export class CertificatesPage implements OnInit {
   private readonly dialog = inject(MatDialog);
+  private listingRequest = 0;
+  private searchTimer: ReturnType<typeof setTimeout> | null = null;
+  protected readonly pendingPage = signal(1);
+  protected readonly historyPage = signal(1);
+  protected readonly pendingTotalPages = signal(0);
+  protected readonly historyTotalPages = signal(0);
+  protected readonly page = computed(() =>
+    this.activeTab() === 'pendientes' ? this.pendingPage() : this.historyPage(),
+  );
+  protected readonly totalPages = computed(() =>
+    this.activeTab() === 'pendientes' ? this.pendingTotalPages() : this.historyTotalPages(),
+  );
   private readonly snackBar = inject(MatSnackBar);
 
   private readonly listQueue = inject(ListCertificateQueueQueryService);
@@ -248,17 +251,9 @@ export class CertificatesPage implements OnInit {
    * An assignment that already has a certificate in force is not waiting
    * for one anymore: it is in the history.
    */
-  protected readonly pendingRows = computed<readonly PendingCertificateRow[]>(() => {
-    const term = normalize(this.searchTerm());
-    const serviceId = this.serviceFilter();
-
-    return this.pendingItems()
-      .filter((item) => !serviceId || item.assignment.serviceId === serviceId)
-      .map((item) => this.toPendingRow(item))
-      .filter((row) =>
-        this.matches([row.workerName, row.dni, row.position, row.workUnit, row.workUnitCode], term),
-      );
-  });
+  protected readonly pendingRows = computed<readonly PendingCertificateRow[]>(() =>
+    this.queue().map((item) => this.toPendingRow(item)),
+  );
 
   /**
    * The certificates that the search shows.
@@ -267,15 +262,9 @@ export class CertificatesPage implements OnInit {
    * applied by the platform: the listing holds every certificate that
    * matches it.
    */
-  protected readonly issuedRows = computed<readonly IssuedCertificateRow[]>(() => {
-    const term = normalize(this.searchTerm());
-
-    return this.certificates()
-      .map((certificate) => this.toIssuedRow(certificate))
-      .filter((row) =>
-        this.matches([row.workerName, row.dni, row.position, row.workUnit, row.workUnitCode], term),
-      );
-  });
+  protected readonly issuedRows = computed<readonly IssuedCertificateRow[]>(() =>
+    this.certificates().map((certificate) => this.toIssuedRow(certificate)),
+  );
 
   /**
    * The filters of the search of the certificates.
@@ -301,6 +290,8 @@ export class CertificatesPage implements OnInit {
       options.set(serviceId, names.get(serviceId) ?? 'Sin nombre');
     }
 
+    for (const service of this.catalogServices()) options.set(service.id, service.name);
+
     return [...options.entries()]
       .map(([id, name]) => ({ id, name }))
       .sort((left, right) => left.name.localeCompare(right.name, 'es'));
@@ -314,6 +305,8 @@ export class CertificatesPage implements OnInit {
     // The pending preview is cancelled once, when the page goes away: the
     // callback is not registered on every keystroke.
     this.destroyRef.onDestroy(() => {
+      this.listingRequest++;
+      if (this.searchTimer !== null) clearTimeout(this.searchTimer);
       if (this.previewTimer !== null) {
         clearTimeout(this.previewTimer);
         this.previewTimer = null;
@@ -351,6 +344,15 @@ export class CertificatesPage implements OnInit {
    */
   protected onSearchChanged(value: string): void {
     this.searchTerm.set(value);
+    this.pendingPage.set(1);
+    this.historyPage.set(1);
+    // Invalidate in-flight results immediately, before the debounce finishes.
+    this.listingRequest++;
+    if (this.searchTimer !== null) clearTimeout(this.searchTimer);
+    this.searchTimer = setTimeout(() => {
+      this.searchTimer = null;
+      void this.reload();
+    }, 300);
   }
 
   /**
@@ -360,7 +362,7 @@ export class CertificatesPage implements OnInit {
     if (this.searchTerm().length === 0) {
       return;
     }
-    this.searchTerm.set('');
+    this.onSearchChanged('');
   }
 
   /**
@@ -368,6 +370,8 @@ export class CertificatesPage implements OnInit {
    */
   protected onServiceChanged(serviceId: string): void {
     this.serviceFilter.set(serviceId);
+    this.pendingPage.set(1);
+    void this.reload();
   }
 
   /**
@@ -378,12 +382,27 @@ export class CertificatesPage implements OnInit {
    */
   protected onStatusFilterChanged(filter: CertificateStatusFilter): void {
     this.statusFilter.set(filter);
-    void this.loadCertificates();
+    this.historyPage.set(1);
+    void this.reload();
   }
 
   /**
    * retry consults the queue again.
    */
+  protected goToPage(page: number): void {
+    if (
+      this.loading() ||
+      this.issuing() ||
+      page < 1 ||
+      page > this.totalPages() ||
+      page === this.page()
+    )
+      return;
+    if (this.activeTab() === 'pendientes') this.pendingPage.set(page);
+    else this.historyPage.set(page);
+    void this.reload();
+  }
+
   protected retry(): void {
     void this.reload();
   }
@@ -475,6 +494,16 @@ export class CertificatesPage implements OnInit {
    * mistake: the history and the file of the issuance are kept and the
    * assignment may be deleted afterwards.
    */
+  private async applyAnnulment(certificateId: string, reason: string): Promise<void> {
+    try {
+      await this.annulCertificate.execute({ certificateId, reason });
+      this.notify('Certificado anulado.');
+      await this.reload();
+    } catch (error) {
+      this.notify(this.describe(error).message);
+    }
+  }
+
   protected annul(row: IssuedCertificateRow): void {
     this.dialog
       .open(AnnulCertificateDialog, {
@@ -488,9 +517,7 @@ export class CertificatesPage implements OnInit {
           return;
         }
 
-        void this.annulCertificate.execute({ certificateId: row.certificateId, reason });
-        this.notify('Certificado anulado.');
-        void this.reload();
+        void this.applyAnnulment(row.certificateId, reason);
       });
   }
 
@@ -648,59 +675,51 @@ export class CertificatesPage implements OnInit {
    * was just issued is in the listing without reloading the browser.
    */
   private async reload(): Promise<void> {
+    const request = ++this.listingRequest;
     this.loading.set(true);
     this.loadFailure.set(null);
 
     try {
-      const queue = await this.listQueue.execute();
-      this.queue.set(queue.items);
+      const [queue, history] = await Promise.all([
+        this.listQueue.execute({
+          page: this.pendingPage(),
+          search: this.searchTerm(),
+          serviceId: this.serviceFilter(),
+        }),
+        this.listCertificates.execute({
+          page: this.historyPage(),
+          search: this.searchTerm(),
+          status: certificateStatusOf(this.statusFilter()),
+          limit: CERTIFICATE_PAGE_SIZE,
+        }),
+      ]);
+      if (request !== this.listingRequest) return;
 
-      const names = await this.resolveServiceNames(
-        queue.items.map((item) => item.assignment.serviceId),
-      );
-      this.serviceNames.set(names);
-
-      await this.loadCertificates();
-
-      // The preview of the editor renders the document with the data of a
-      // real assignment of the service, so it waits for the queue.
-      if (this.activeTab() === 'contenido') {
-        await this.loadEditorPreview();
+      // An issuance or annulment can remove the last row of the current page.
+      const pendingPage = Math.max(1, Math.min(this.pendingPage(), queue.totalPages));
+      const historyPage = Math.max(1, Math.min(this.historyPage(), history.totalPages));
+      if (pendingPage !== this.pendingPage() || historyPage !== this.historyPage()) {
+        this.pendingPage.set(pendingPage);
+        this.historyPage.set(historyPage);
+        await this.reload();
+        return;
       }
+
+      const names = await this.resolveServiceNames([
+        ...queue.items.map((item) => item.assignment.serviceId),
+        ...history.items.map((certificate) => certificate.serviceId),
+      ]);
+      if (request !== this.listingRequest) return;
+      this.queue.set(queue.items);
+      this.certificates.set(history.items);
+      this.pendingTotalPages.set(queue.totalPages);
+      this.historyTotalPages.set(history.totalPages);
+      this.serviceNames.set(names);
+      if (this.activeTab() === 'contenido') await this.loadEditorPreview();
     } catch (error) {
-      this.loadFailure.set(this.describe(error));
+      if (request === this.listingRequest) this.loadFailure.set(this.describe(error));
     } finally {
-      this.loading.set(false);
-    }
-  }
-
-  /**
-   * loadCertificates reads the certificates of the search.
-   *
-   * The state is the filter of the search, so the platform answers the
-   * certificates that match it.
-   */
-  private async loadCertificates(): Promise<void> {
-    this.loading.set(true);
-    this.loadFailure.set(null);
-
-    try {
-      const certificates = await this.listCertificates.execute({
-        status: certificateStatusOf(this.statusFilter()),
-        limit: CERTIFICATE_PAGE_SIZE,
-      });
-      this.certificates.set(certificates);
-
-      // The certificates may belong to services that are not in the queue,
-      // so their names are resolved with the ones of the queue.
-      const names = await this.resolveServiceNames(
-        certificates.map((certificate) => certificate.serviceId),
-      );
-      this.serviceNames.set(new Map([...this.serviceNames(), ...names]));
-    } catch (error) {
-      this.loadFailure.set(this.describe(error));
-    } finally {
-      this.loading.set(false);
+      if (request === this.listingRequest) this.loading.set(false);
     }
   }
 
@@ -757,19 +776,6 @@ export class CertificatesPage implements OnInit {
   }
 
   /**
-   * pendingItems are the assignments of the queue that are waiting for a
-   * certificate.
-   *
-   * An assignment that already has a certificate in force is not waiting
-   * for one anymore: it is in the history.
-   */
-  private pendingItems(): readonly CertificateQueueItem[] {
-    return this.queue().filter(
-      (item) => !item.certificates.some((certificate) => certificate.isIssued),
-    );
-  }
-
-  /**
    * toPendingRow presents an assignment of the queue.
    */
   private toPendingRow(item: CertificateQueueItem): PendingCertificateRow {
@@ -805,17 +811,6 @@ export class CertificatesPage implements OnInit {
       status: certificate.status,
       serviceName: this.serviceNames().get(certificate.serviceId) ?? null,
     };
-  }
-
-  /**
-   * matches reports whether a record matches the term of the search.
-   */
-  private matches(values: readonly string[], term: string): boolean {
-    if (term.length === 0) {
-      return true;
-    }
-
-    return normalize(values.join(' ')).includes(term);
   }
 
   /**

@@ -59,10 +59,12 @@ export interface CertificateResource {
 /**
  * A page of certificates.
  *
- * The listing is served by keyset pagination, so the page carries the
- * cursor of the next one.
+ * Numbered requests include the total and page count.
  */
 export interface CertificateListResource {
+  readonly page: number;
+  readonly total: number;
+  readonly totalPages: number;
   readonly items: readonly CertificateResource[];
   /** The cursor of the next page, when there is one. */
   readonly nextCursor?: string;
@@ -82,6 +84,9 @@ export interface EligibleAssignmentResource {
  * A page of the assignments that may receive a certificate.
  */
 export interface EligibleAssignmentListResource {
+  readonly page: number;
+  readonly total: number;
+  readonly totalPages: number;
   readonly items: readonly EligibleAssignmentResource[];
   /** The cursor of the next page, when there is one. */
   readonly nextCursor?: string;
