@@ -13,6 +13,7 @@ Starter de aplicación creado con Angular 22, Angular Material y una capa visual
 
 ```bash
 bun install
+cp .env.template .env
 bun run start
 ```
 
@@ -52,6 +53,25 @@ Trabajo**, **Cargos** y **Regímenes**. Cada vista lista los registros del catá
 diálogo que los registra contra la API real (`POST /api/v1/services`, `/work-units`,
 `/positions`, `/regimes`).
 
-Las llamadas salen por el proxy de desarrollo (`proxy.conf.json`), que reenvía `/api` y
-`/health` al backend Go en `http://localhost:8081`. La URL base se puede sobrescribir con el
-token `API_BASE_URL` (`src/app/api.config.ts`).
+## Variables de entorno
+
+Copia `.env.template` a `.env` y configura `API_PROXY_TARGET` con la dirección del backend.
+`proxy.conf.cjs` carga esa variable mediante **dotenv** y reenvía las llamadas de `/api/**`.
+La ruta `/api/v1` permanece en `src/app/api.config.ts`.
+
+Las variables del entorno tienen prioridad sobre `.env`. El archivo `.env` se excluye
+de Git; `.env.template` sí se versiona. No se generan archivos ni se incorporan las
+variables del proxy al navegador. Reinicia el servidor de desarrollo tras cambiar `.env`.
+
+El proxy de Angular solo se usa en desarrollo. En producción, configura el proxy
+equivalente para `/api` en tu servidor web.
+
+### Verificación de certificados
+
+El QR abre la página de Saber `/verificar/MLS-…`, que consulta a Akame en
+`/api/v1/certificates/verify/MLS-…`. En el `.env` de **Akame**, configura
+`PUBLIC_BASE_URL` con la dirección pública de **Saber** (local: `http://localhost:4200`).
+No confundas esta dirección con `API_PROXY_TARGET`, que apunta al backend.
+En producción, el servidor web debe servir `index.html` al abrir directamente
+`/verificar/:code` y reenviar `/api/**` a Akame. Los PDF ya archivados conservan
+la URL que tenían al emitirse.
