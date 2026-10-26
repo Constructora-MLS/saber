@@ -1,6 +1,20 @@
-// Package queries holds the queries of the Catalog bounded context.
+// Package queries holds the technical limits of the searches that the
+// selectors of the catalogs perform.
 //
-// A query requests information without changing the state of the context.
+// The limits are not owned by a bounded context: they mirror the boundaries
+// of the platform, so the selectors of every context offer the same
+// behaviour without depending on each other.
+// package queries
+
+/**
+ * CATALOG_SELECTOR_PAGE_SIZE is the number of records that a selector
+ * offers.
+ *
+ * The platform caps the page at a hundred records, and a selector offers
+ * twenty of them: the worker looks for a record among the ones that match
+ * the term, never among the whole catalog.
+ */
+export const CATALOG_SELECTOR_PAGE_SIZE = 20;
 
 /**
  * The boundaries of the search of a listing.

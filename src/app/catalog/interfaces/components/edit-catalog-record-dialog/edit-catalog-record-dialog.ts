@@ -17,7 +17,7 @@ import {
   UpdateServiceCommandService,
   UpdateWorkUnitCommandService,
 } from '../../../application/command-services/catalog-command-services';
-import { normalizeCatalogSearch } from '../../../application/queries/catalog-search';
+import { normalizeCatalogSearch } from '../../../../shared/application/queries/catalog-search';
 import { ListServicesQueryService } from '../../../application/query-services/catalog-query-services';
 import { Position } from '../../../domain/model/aggregates/position';
 import { Regime } from '../../../domain/model/aggregates/regime';

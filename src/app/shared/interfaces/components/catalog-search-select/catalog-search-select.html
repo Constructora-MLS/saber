@@ -24,12 +24,23 @@
       </mat-option>
     }
   </mat-autocomplete>
+  @if (clearable() && query() && !disabled()) {
+    <button
+      matIconButton
+      matSuffix
+      type="button"
+      [attr.aria-label]="'Limpiar ' + label()"
+      (click)="clear()"
+    >
+      <mat-icon aria-hidden="true">close</mat-icon>
+    </button>
+  }
   @if (loading()) {
     <mat-spinner matSuffix diameter="18" aria-label="Buscando registros" />
   }
   @if (error(); as message) {
     <mat-error>{{ message }}</mat-error>
-  } @else if (touched() && !selected()) {
+  } @else if (required() && touched() && !selected()) {
     <mat-error>{{ requiredMessage() }}</mat-error>
   } @else if (!loading() && options().length === 0) {
     <mat-hint>{{ emptyText() }}</mat-hint>

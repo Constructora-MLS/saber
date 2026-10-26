@@ -68,6 +68,7 @@ export interface ListingCriteria {
  * CertificateCriteria are the filters of the search of the certificates.
  */
 export interface CertificateCriteria extends ListingCriteria {
+  readonly workUnitCode?: string;
   /**
    * The state the certificates are filtered by.
    *
@@ -145,6 +146,9 @@ export interface CertificateRepository {
    * downloadCertificateFile reads the PDF that the platform archived.
    */
   downloadCertificateFile(id: CertificateId, signal?: AbortSignal): Promise<Blob>;
+
+  /** Public PDF access by code. The backend rejects missing/annulled records. */
+  downloadPublicCertificateFile(code: string, signal?: AbortSignal): Promise<Blob>;
 
   /**
    * previewCertificate renders the certificate of an assignment without

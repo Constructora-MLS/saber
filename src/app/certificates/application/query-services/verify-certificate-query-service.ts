@@ -5,6 +5,7 @@
 import { inject, Injectable } from '@angular/core';
 import { CERTIFICATE_REPOSITORY } from '../../domain/repositories/certificate-repositories';
 import { CertificateVerification } from '../../domain/model/value-objects/certificate-verification';
+import { CertificateCode } from '../../domain/model/value-objects/certificate-code';
 
 /**
  * VerifyCertificateQueryService returns the public trace of a certificate.
@@ -20,5 +21,18 @@ export class VerifyCertificateQueryService {
 
   async execute(code: string): Promise<CertificateVerification | null> {
     return this.repository.verifyCertificate(code);
+  }
+}
+
+/** Reads a public certificate's PDF; every call checks its current state. */
+@Injectable({ providedIn: 'root' })
+export class GetPublicCertificateFileQueryService {
+  private readonly repository = inject(CERTIFICATE_REPOSITORY);
+
+  execute(code: string, signal?: AbortSignal): Promise<Blob> {
+    return this.repository.downloadPublicCertificateFile(
+      CertificateCode.create(code).value,
+      signal,
+    );
   }
 }

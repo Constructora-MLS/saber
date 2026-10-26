@@ -10,6 +10,11 @@ import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { API_BASE_URL } from '../../../api.config';
 import {
+  CATALOG_SELECTOR_PAGE_SIZE,
+  normalizeCatalogSearch,
+} from '../../../shared/application/queries/catalog-search';
+import {
+  CertificateWorkUnitReference,
   CertificateServiceReference,
   CertificateServiceResolver,
 } from '../../domain/services/certificate-service-resolver';
@@ -50,6 +55,19 @@ const SERVICE_PAGE_SIZE = 100;
 export class CatalogServiceAcl implements CertificateServiceResolver {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = inject(API_BASE_URL);
+
+  async listWorkUnits(search?: string): Promise<readonly CertificateWorkUnitReference[]> {
+    let params = new HttpParams().set('limit', CATALOG_SELECTOR_PAGE_SIZE).set('page', 1);
+    const term = normalizeCatalogSearch(search);
+    if (term) params = params.set('search', term);
+    // Do not filter by ACTIVE: historical certificates may refer to inactive works.
+    const page = await firstValueFrom(
+      this.http.get<{
+        readonly items: readonly { readonly code: string; readonly name: string }[];
+      }>(`${this.baseUrl}/work-units`, { params }),
+    );
+    return page.items.map(({ code, name }) => ({ code, name }));
+  }
 
   /**
    * resolveServiceNames returns the name of every given service.

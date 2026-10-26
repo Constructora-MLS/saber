@@ -19,6 +19,7 @@ import {
 } from '../../../application/command-services/certificate-command-services';
 import { CERTIFICATE_SERVICE_RESOLVER } from '../../../domain/services/certificate-service-resolver';
 import { CertificatesPage } from './certificates-page';
+import { IssuedCertificateRow } from '../../components/certificate-history/certificate-history';
 
 class EditorPage extends CertificatesPage {
   showEditor() {
@@ -36,9 +37,17 @@ class EditorPage extends CertificatesPage {
   get url() {
     return this.editorPreviewUrl();
   }
+  viewCertificate(row: IssuedCertificateRow) {
+    this.view(row);
+  }
+  downloadCertificate(row: IssuedCertificateRow) {
+    return this.download(row);
+  }
 }
 
 function setup() {
+  const open = vi.fn();
+  const getFile = vi.fn();
   const requests: { signal: AbortSignal; resolve: (file: Blob) => void; body: string }[] = [];
   const preview = vi.fn(
     (_service: string, body: string, signal: AbortSignal) =>
@@ -58,6 +67,8 @@ function setup() {
         RestoreServiceTemplateCommandService,
         SaveServiceTemplateCommandService,
       ].map((provide) => ({ provide, useValue: {} })),
+      { provide: MatDialog, useValue: { open } },
+      { provide: GetCertificateFileQueryService, useValue: { execute: getFile } },
       { provide: DomSanitizer, useValue: { bypassSecurityTrustResourceUrl: (url: string) => url } },
       { provide: ListCertificateQueueQueryService, useValue: { execute: async () => emptyPage } },
       { provide: ListCertificatesQueryService, useValue: { execute: async () => emptyPage } },
@@ -77,7 +88,7 @@ function setup() {
   });
   const page = runInInjectionContext(injector, () => new EditorPage());
   page.ngOnInit();
-  return { page, preview, requests, destroy: () => injector.destroy() };
+  return { page, preview, requests, open, getFile, destroy: () => injector.destroy() };
 }
 
 async function flush() {
@@ -87,6 +98,29 @@ async function flush() {
 afterEach(() => {
   vi.useRealTimers();
   vi.restoreAllMocks();
+});
+
+describe('acceso al PDF anulado', () => {
+  it('no abre el visor ni pide el archivo aunque se invoque la acción directamente', async () => {
+    const { page, open, getFile, destroy } = setup();
+    const row: IssuedCertificateRow = {
+      certificateId: 'internal',
+      certificateCode: 'MLS-7K9D2Q8M5P',
+      workerName: 'Ana López',
+      dni: '12345678',
+      position: 'Operaria',
+      workUnit: 'Obra',
+      workUnitCode: 'OB-1',
+      issuedAt: '2026-10-16T12:00:00Z',
+      status: 'ANNULLED',
+      serviceName: 'Servicio',
+    };
+    page.viewCertificate(row);
+    await page.downloadCertificate(row);
+    expect(open).not.toHaveBeenCalled();
+    expect(getFile).not.toHaveBeenCalled();
+    destroy();
+  });
 });
 
 describe('vista previa del editor', () => {

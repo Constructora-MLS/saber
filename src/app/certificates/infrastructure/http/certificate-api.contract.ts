@@ -66,13 +66,31 @@ export interface CertificateResource {
  * It carries what a person needs to know that the certificate is genuine.
  * The identifiers of the record stay internal.
  */
+/**
+ * The data of a public verification.
+ *
+ * It is the archived data without the identity document of the worker: the
+ * public trace never publishes it.
+ */
+export interface PublicCertificateSnapshotResource {
+  readonly 'employee.firstName': string;
+  readonly 'employee.lastName': string;
+  readonly 'employee.paternalSurname'?: string;
+  readonly 'employee.maternalSurname'?: string;
+  readonly 'assignment.position': string;
+  readonly 'assignment.service'?: string;
+  readonly 'assignment.workUnit': string;
+  readonly 'assignment.workUnitCode': string;
+  readonly 'assignment.startDate': string;
+  readonly 'assignment.endDate': string;
+  readonly issueDate?: string;
+}
+
 export interface CertificateVerificationResource {
   readonly code: string;
-  readonly status: CertificateStatusResource;
-  readonly data: CertificateSnapshotResource;
+  readonly status: 'ISSUED';
+  readonly data: PublicCertificateSnapshotResource;
   readonly issuedAt: string;
-  readonly annulledAt?: string;
-  readonly annulmentReason?: string;
 }
 
 /**

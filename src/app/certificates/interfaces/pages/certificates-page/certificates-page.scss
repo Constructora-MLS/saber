@@ -195,6 +195,10 @@
   flex: 0 1 13rem;
 }
 
+.work-unit-field {
+  flex: 0 1 20rem;
+}
+
 @media (max-width: 40rem) {
   .panel-header,
   .panel-content {
@@ -206,7 +210,8 @@
   }
 
   .search-field,
-  .status-field {
+  .status-field,
+  .work-unit-field {
     flex: 1 1 100%;
     max-width: none;
   }

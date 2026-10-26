@@ -1,7 +1,7 @@
 import '@angular/compiler';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injector, runInInjectionContext } from '@angular/core';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { describe, expect, it } from 'vitest';
 import { API_BASE_URL } from '../../../api.config';
 import { CertificateHttpGateway } from './certificate-http-gateway';
@@ -65,6 +65,14 @@ describe('paginación de certificados', () => {
     expect(requests[0].params).toEqual({ page: '1' });
   });
 
+  it('filtra el historial por obra y omite el filtro cuando no hay obra', async () => {
+    const { gateway, requests } = setup();
+    await gateway.listCertificates({ page: 1, workUnitCode: 'OB-021' });
+    expect(requests[0].params).toEqual({ page: '1', workUnitCode: 'OB-021' });
+    await gateway.listCertificates({ page: 1, workUnitCode: '' });
+    expect(requests[1].params).toEqual({ page: '1' });
+  });
+
   it('lleva el nombre archivado del servicio a los datos del certificado', async () => {
     const injector = Injector.create({
       providers: [
@@ -114,6 +122,30 @@ describe('paginación de certificados', () => {
   });
 });
 
+describe('PDF público', () => {
+  it('pide el archivo por código sin usar un UUID', async () => {
+    const requests: string[] = [];
+    const pdf = new Blob(['%PDF-public']);
+    const injector = Injector.create({
+      providers: [
+        { provide: API_BASE_URL, useValue: '/api/v1' },
+        {
+          provide: HttpClient,
+          useValue: {
+            get: (url: string) => {
+              requests.push(url);
+              return of(pdf);
+            },
+          },
+        },
+      ],
+    });
+    const gateway = runInInjectionContext(injector, () => new CertificateHttpGateway());
+    expect(await gateway.downloadPublicCertificateFile('MLS-7K9D2Q8M5P')).toBe(pdf);
+    expect(requests).toEqual(['/api/v1/certificates/verify/MLS-7K9D2Q8M5P/file']);
+  });
+});
+
 describe('verificación de certificados', () => {
   function setup() {
     const requests: string[] = [];
@@ -131,7 +163,6 @@ describe('verificación de certificados', () => {
                 data: {
                   'employee.firstName': 'Ana',
                   'employee.lastName': 'López',
-                  'employee.dni': '12345678',
                   'assignment.position': 'Operaria',
                   'assignment.workUnit': 'Mejoramiento del puente La Molina',
                   'assignment.workUnitCode': 'OB-021',
@@ -155,8 +186,43 @@ describe('verificación de certificados', () => {
     const verification = await gateway.verifyCertificate('MLS-7K9D2Q8M5P');
 
     expect(requests).toEqual(['/api/v1/certificates/verify/MLS-7K9D2Q8M5P']);
-    expect(verification.code).toBe('MLS-7K9D2Q8M5P');
-    expect(verification.isIssued).toBe(true);
-    expect(verification.snapshot.fullName).toBe('Ana López');
+    expect(verification?.code).toBe('MLS-7K9D2Q8M5P');
+    expect(verification?.isIssued).toBe(true);
+    expect(verification?.snapshot.fullName).toBe('Ana López');
+    expect(verification).not.toHaveProperty('annulledAt');
+    expect(verification).not.toHaveProperty('annulmentReason');
   });
+
+  it('no publica el documento de identidad en la verificación pública', async () => {
+    const { gateway } = setup();
+
+    const verification = await gateway.verifyCertificate('MLS-7K9D2Q8M5P');
+
+    expect(verification?.snapshot.dni).toBe('');
+    expect(verification?.snapshot.fields.has('employee.dni')).toBe(false);
+  });
+
+  for (const status of [404, 500]) {
+    it(`traduce HTTP ${status} sin revelar auditoría`, async () => {
+      const injector = Injector.create({
+        providers: [
+          { provide: API_BASE_URL, useValue: '/api/v1' },
+          {
+            provide: HttpClient,
+            useValue: {
+              get: () => throwError(() => new HttpErrorResponse({ status })),
+            },
+          },
+        ],
+      });
+      const gateway = runInInjectionContext(injector, () => new CertificateHttpGateway());
+      if (status === 404) {
+        expect(await gateway.verifyCertificate('MLS-7K9D2Q8M5P')).toBeNull();
+      } else {
+        await expect(gateway.verifyCertificate('MLS-7K9D2Q8M5P')).rejects.toMatchObject({
+          status: 500,
+        });
+      }
+    });
+  }
 });

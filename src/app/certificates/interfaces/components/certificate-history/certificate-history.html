@@ -108,7 +108,12 @@
                 <mat-icon aria-hidden="true">more_vert</mat-icon>
               </button>
               <mat-menu #rowMenu="matMenu" xPosition="before">
-                <button mat-menu-item type="button" (click)="viewRequested.emit(row)">
+                <button
+                  mat-menu-item
+                  type="button"
+                  [disabled]="row.status !== 'ISSUED'"
+                  (click)="viewRequested.emit(row)"
+                >
                   <mat-icon aria-hidden="true">visibility</mat-icon>
                   <span>Visualizar</span>
                 </button>
@@ -116,7 +121,12 @@
                   <mat-icon aria-hidden="true">verified</mat-icon>
                   <span>Verificar</span>
                 </button>
-                <button mat-menu-item type="button" (click)="downloadRequested.emit(row)">
+                <button
+                  mat-menu-item
+                  type="button"
+                  [disabled]="row.status !== 'ISSUED'"
+                  (click)="downloadRequested.emit(row)"
+                >
                   <mat-icon aria-hidden="true">download</mat-icon>
                   <span>Descargar</span>
                 </button>

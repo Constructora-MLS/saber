@@ -25,10 +25,6 @@ export class CertificateVerification {
     readonly snapshot: CertificateSnapshot,
     /** The moment of the issuance, in the RFC 3339 format. */
     readonly issuedAt: string,
-    /** The moment of the annulment, when the certificate was annulled. */
-    readonly annulledAt: string | null,
-    /** The reason of the annulment, when the certificate was annulled. */
-    readonly annulmentReason: string | null,
   ) {}
 
   /**
@@ -39,17 +35,8 @@ export class CertificateVerification {
     status: CertificateStatus,
     snapshot: CertificateSnapshot,
     issuedAt: string,
-    annulledAt: string | null,
-    annulmentReason: string | null,
   ): CertificateVerification {
-    return new CertificateVerification(
-      code,
-      status,
-      snapshot,
-      issuedAt,
-      annulledAt,
-      annulmentReason,
-    );
+    return new CertificateVerification(code, status, snapshot, issuedAt);
   }
 
   /**

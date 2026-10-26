@@ -57,6 +57,10 @@ import { CertificateTemplateEditor } from '../../components/certificate-template
 import { CertificateViewerDialog } from '../../components/certificate-viewer-dialog/certificate-viewer-dialog';
 import { firstValueFrom } from 'rxjs';
 import { Paginator } from '../../../../shared/interfaces/components/paginator/paginator';
+import {
+  CatalogOption,
+  CatalogSearchSelect,
+} from '../../../../shared/interfaces/components/catalog-search-select/catalog-search-select';
 import { IssueCertificateDialog } from '../../components/issue-certificate-dialog/issue-certificate-dialog';
 import { RestoreTemplateDialog } from '../../components/restore-template-dialog/restore-template-dialog';
 import { AnnulCertificateDialog } from '../../components/annul-certificate-dialog/annul-certificate-dialog';
@@ -106,6 +110,7 @@ const PREVIEW_DELAY = 400;
  */
 @Component({
   imports: [
+    CatalogSearchSelect,
     Paginator,
     CertificateHistory,
     CertificateQueue,
@@ -172,6 +177,14 @@ export class CertificatesPage implements OnInit {
    * looks for the certificate that certifies the labour period.
    */
   protected readonly statusFilter = signal<CertificateStatusFilter>('ISSUED');
+  /** The unit of work that the history is filtered by. */
+  protected readonly workUnitFilter = signal('');
+  /** The units of work that the filter offers. */
+  protected readonly workUnitOptions = signal<readonly CatalogOption[]>([]);
+  /** Whether the catalog is answering the search of units of work. */
+  protected readonly loadingWorkUnits = signal(false);
+  /** The failure that prevented the search of units of work. */
+  protected readonly workUnitsError = signal<string | null>(null);
 
   /** The certificates of the platform that the search shows. */
   protected readonly certificates = signal<readonly Certificate[]>([]);
@@ -379,6 +392,42 @@ export class CertificatesPage implements OnInit {
   }
 
   /**
+   * searchWorkUnits reads the units of work that match the term.
+   *
+   * The catalog is not read entirely: the selector asks only for the works
+   * that match what the worker writes.
+   */
+  protected async searchWorkUnits(term: string): Promise<void> {
+    this.loadingWorkUnits.set(true);
+    this.workUnitsError.set(null);
+
+    try {
+      const workUnits = await this.services.listWorkUnits(term);
+      this.workUnitOptions.set(
+        workUnits.map((workUnit) => ({
+          id: workUnit.code,
+          label: workUnit.name,
+          detail: workUnit.code,
+        })),
+      );
+    } catch {
+      this.workUnitOptions.set([]);
+      this.workUnitsError.set('No se pudieron leer las obras.');
+    } finally {
+      this.loadingWorkUnits.set(false);
+    }
+  }
+
+  /**
+   * onWorkUnitChanged filters the history by unit of work.
+   */
+  protected onWorkUnitChanged(code: string): void {
+    this.workUnitFilter.set(code);
+    this.historyPage.set(1);
+    void this.reload();
+  }
+
+  /**
    * onStatusFilterChanged filters the search of the certificates by state.
    *
    * The filter is applied by the platform, so the search asks again for the
@@ -466,6 +515,7 @@ export class CertificatesPage implements OnInit {
    * view opens the document of an issued certificate.
    */
   protected view(row: IssuedCertificateRow): void {
+    if (row.status !== 'ISSUED') return;
     this.dialog.open(CertificateViewerDialog, {
       data: {
         kind: 'issued',
@@ -483,6 +533,7 @@ export class CertificatesPage implements OnInit {
    * the browser.
    */
   protected async download(row: IssuedCertificateRow): Promise<void> {
+    if (row.status !== 'ISSUED') return;
     try {
       const file = await this.getFile.execute(row.certificateId);
       const url = URL.createObjectURL(file);
@@ -520,7 +571,7 @@ export class CertificatesPage implements OnInit {
    * opens in a new tab: the worker keeps the listing of the certificates.
    */
   protected verify(row: IssuedCertificateRow): void {
-    window.open('/verificar/' + row.certificateCode, '_blank', 'noopener');
+    window.open('/verify/' + encodeURIComponent(row.certificateCode), '_blank', 'noopener');
   }
 
   protected annul(row: IssuedCertificateRow): void {
@@ -725,6 +776,7 @@ export class CertificatesPage implements OnInit {
         this.listCertificates.execute({
           page: this.historyPage(),
           search: this.searchTerm(),
+          workUnitCode: this.workUnitFilter(),
           status: certificateStatusOf(this.statusFilter()),
           limit: CERTIFICATE_PAGE_SIZE,
         }),

@@ -32,6 +32,7 @@ export type CertificateQueue = ListingPage<CertificateQueueItem>;
  * certificates that were annulled, or every certificate.
  */
 export interface ListCertificatesQuery {
+  readonly workUnitCode?: string;
   readonly search?: string;
   /**
    * The state the certificates are filtered by.

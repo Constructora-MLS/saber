@@ -25,7 +25,7 @@ describe('cancelación HTTP de PDFs', () => {
     return { gateway, unsubscribe, subscribe };
   }
 
-  it.each(['file', 'assignment', 'template'] as const)(
+  it.each(['file', 'public', 'assignment', 'template'] as const)(
     'desuscribe la petición %s al cancelar',
     async (kind) => {
       const { gateway, unsubscribe, subscribe } = setup();
@@ -33,9 +33,11 @@ describe('cancelación HTTP de PDFs', () => {
       const result =
         kind === 'file'
           ? gateway.downloadCertificateFile(CertificateId.restore('id'), controller.signal)
-          : kind === 'assignment'
-            ? gateway.previewCertificate('id', controller.signal)
-            : gateway.previewServiceTemplate('id', 'body', controller.signal);
+          : kind === 'public'
+            ? gateway.downloadPublicCertificateFile('MLS-7K9D2Q8M5P', controller.signal)
+            : kind === 'assignment'
+              ? gateway.previewCertificate('id', controller.signal)
+              : gateway.previewServiceTemplate('id', 'body', controller.signal);
       const rejection = expect(result).rejects.toMatchObject({ name: 'AbortError' });
       expect(subscribe).toHaveBeenCalledOnce();
       controller.abort();

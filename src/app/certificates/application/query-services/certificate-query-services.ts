@@ -51,6 +51,7 @@ export class ListCertificatesQueryService {
 
   async execute(query: ListCertificatesQuery): Promise<ListingPage<Certificate>> {
     return this.repository.listCertificates({
+      workUnitCode: query.workUnitCode,
       search: query.search,
       status: query.status,
       limit: query.limit,

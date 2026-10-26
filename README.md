@@ -68,10 +68,25 @@ equivalente para `/api` en tu servidor web.
 
 ### Verificación de certificados
 
-El QR abre la página de Saber `/verificar/MLS-…`, que consulta a Akame en
+El QR abre la página de Saber `/verify/MLS-…`, que consulta a Akame en
 `/api/v1/certificates/verify/MLS-…`. En el `.env` de **Akame**, configura
 `PUBLIC_BASE_URL` con la dirección pública de **Saber** (local: `http://localhost:4200`).
 No confundas esta dirección con `API_PROXY_TARGET`, que apunta al backend.
 En producción, el servidor web debe servir `index.html` al abrir directamente
-`/verificar/:code` y reenviar `/api/**` a Akame. Los PDF ya archivados conservan
-la URL que tenían al emitirse.
+`/verify/:code` y reenviar `/api/**` a Akame. Los PDF ya archivados conservan
+la URL que tenían al emitirse; `/verificar/:code` redirige a `/verify/:code` para
+mantener los QR anteriores.
+
+La ruta pública carga `CredentialPage` (`certificates/interfaces/pages/credential-page`)
+sin el layout ni el sidebar de RR. HH. Un código ausente o anulado muestra el
+mismo mensaje de certificado inexistente; la respuesta pública no contiene motivo
+ni fecha de anulación. La fecha y el motivo se conservan en el backend para
+auditoría, sin columnas adicionales en el frontend. El historial muestra el estado
+y bloquea Visualizar/Descargar para los anulados. La API también bloquea el acceso al PDF,
+aunque se invoque la URL directamente.
+
+Para los vigentes, `CredentialPage` muestra el PDF y permite descargarlo o
+compartir el enlace público (menú nativo del dispositivo o copia al portapapeles).
+El PDF se consulta por código en `/api/v1/certificates/verify/:code/file`, sin UUID;
+cada descarga vuelve a comprobar la vigencia. La anulación sigue solicitando
+un motivo obligatorio, reservado a la auditoría interna.

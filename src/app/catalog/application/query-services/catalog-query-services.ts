@@ -6,7 +6,7 @@
 // package queryservices
 
 import { inject, Injectable } from '@angular/core';
-import { normalizeCatalogSearch } from '../queries/catalog-search';
+import { normalizeCatalogSearch } from '../../../shared/application/queries/catalog-search';
 import {
   ListPositionsQuery,
   ListRegimesQuery,

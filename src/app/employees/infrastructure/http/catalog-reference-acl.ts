@@ -9,7 +9,10 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { API_BASE_URL } from '../../../api.config';
-import { normalizeCatalogSearch } from '../../application/queries/catalog-search';
+import {
+  normalizeCatalogSearch,
+  CATALOG_SELECTOR_PAGE_SIZE as CATALOG_PAGE_SIZE,
+} from '../../../shared/application/queries/catalog-search';
 import {
   CatalogAvailability,
   CatalogReferenceResolver,
@@ -54,15 +57,6 @@ interface PositionResource {
   readonly name: string;
   readonly status: 'ACTIVE' | 'INACTIVE';
 }
-
-/**
- * The size of the page that a selector shows.
- *
- * The platform caps the page at a hundred records, and a selector offers
- * twenty of them: the worker looks for a record among the ones that match
- * the term, never among the whole catalog.
- */
-const CATALOG_PAGE_SIZE = 20;
 
 /**
  * The highest number of identifiers that a resolution asks for at once.

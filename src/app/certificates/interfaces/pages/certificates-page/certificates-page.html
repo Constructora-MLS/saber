@@ -127,6 +127,21 @@
             </mat-select>
           </mat-form-field>
         } @else {
+          <app-catalog-search-select
+            class="work-unit-field"
+            label="Obra"
+            placeholder="Buscar obra…"
+            requiredMessage="Elige una obra."
+            hint="Busca y elige la obra que certificó el trabajo."
+            emptyText="No hay obras que coincidan con la búsqueda."
+            [options]="workUnitOptions()"
+            [loading]="loadingWorkUnits()"
+            [error]="workUnitsError()"
+            [required]="false"
+            [clearable]="true"
+            (searched)="searchWorkUnits($event)"
+            (chosen)="onWorkUnitChanged($event)"
+          />
           <mat-form-field appearance="outline" class="status-field">
             <mat-label>Estado</mat-label>
             <mat-select [ngModel]="statusFilter()" (ngModelChange)="onStatusFilterChanged($event)">

@@ -24,6 +24,8 @@ import {
 } from '@angular/material/autocomplete';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput, MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 /**
@@ -59,7 +61,14 @@ export interface CatalogOption {
  * the record.
  */
 @Component({
-  imports: [MatAutocompleteModule, MatFormFieldModule, MatInputModule, MatProgressSpinnerModule],
+  imports: [
+    MatAutocompleteModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatProgressSpinnerModule,
+    MatButtonModule,
+    MatIconModule,
+  ],
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
@@ -77,7 +86,9 @@ export class CatalogSearchSelect implements ControlValueAccessor {
   /** The placeholder of the field. */
   readonly placeholder = input('');
   /** The message shown when the record was not chosen. */
-  readonly requiredMessage = input.required<string>();
+  readonly requiredMessage = input('');
+  readonly required = input(true);
+  readonly clearable = input(false);
   /** The supporting text of the field. */
   readonly hint = input('');
   /** The message shown when no record matches the term. */
@@ -105,11 +116,13 @@ export class CatalogSearchSelect implements ControlValueAccessor {
    * published to the input: the field paints the failure of the selection.
    */
   protected readonly invalid = computed(
-    () => this.error() !== null || (this.touched() && !this.selected()),
+    () => this.error() !== null || (this.required() && this.touched() && !this.selected()),
   );
 
   /** The term that the platform must look for. */
   readonly searched = output<string>();
+  /** The identifier of the chosen record, empty when the choice was dropped. */
+  readonly chosen = output<string>();
 
   private readonly destroyRef = inject(DestroyRef);
   private readonly input = viewChild(MatInput);
@@ -179,7 +192,7 @@ export class CatalogSearchSelect implements ControlValueAccessor {
     // The term no longer names the chosen record, so the choice is
     // dropped and the worker has to pick one again.
     const option = this.options().find((item) => item.id === this.selected());
-    if (option && term !== option.label) {
+    if (this.selected() && (!option || term !== option.label)) {
       this.clearSelection();
     }
 
@@ -199,11 +212,21 @@ export class CatalogSearchSelect implements ControlValueAccessor {
     this.write(label);
     this.onChange(id);
     this.onTouched();
+    this.chosen.emit(id);
   }
 
   /**
    * onBlur publishes that the field was used.
    */
+  protected clear(): void {
+    this.clearTimer();
+    this.query.set('');
+    this.write('');
+    this.clearSelection();
+    this.onTouched();
+    this.searched.emit('');
+  }
+
   protected onBlur(): void {
     this.touched.set(true);
     this.onTouched();
@@ -244,6 +267,7 @@ export class CatalogSearchSelect implements ControlValueAccessor {
   private clearSelection(): void {
     this.selected.set('');
     this.onChange('');
+    this.chosen.emit('');
   }
 
   /**

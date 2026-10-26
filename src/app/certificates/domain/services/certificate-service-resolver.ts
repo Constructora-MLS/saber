@@ -26,7 +26,15 @@ export interface CertificateServiceReference {
  * The services belong to the Catalog bounded context, so this context asks
  * for them through this port and keeps only their names.
  */
+export interface CertificateWorkUnitReference {
+  /** Unique, immutable code also preserved in the certificate snapshot. */
+  readonly code: string;
+  readonly name: string;
+}
+
 export interface CertificateServiceResolver {
+  /** A bounded search of works, including inactive ones needed by historical records. */
+  listWorkUnits(search?: string): Promise<readonly CertificateWorkUnitReference[]>;
   /**
    * resolveServiceNames returns the name of every given service.
    */

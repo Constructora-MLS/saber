@@ -70,11 +70,13 @@ export class AnnulCertificateDialog {
    * submit answers with the reason of the annulment.
    */
   protected submit(): void {
+    const reason = this.form.getRawValue().reason.trim();
+    if (!reason) this.form.controls.reason.setErrors({ required: true });
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
 
-    this.dialogRef.close(this.form.getRawValue().reason.trim());
+    this.dialogRef.close(reason);
   }
 }

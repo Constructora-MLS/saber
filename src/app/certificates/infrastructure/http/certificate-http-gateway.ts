@@ -15,6 +15,7 @@ import {
   mergeMap,
   NEVER,
   Observable,
+  of,
   takeUntil,
   throwError,
 } from 'rxjs';
@@ -29,6 +30,7 @@ import {
   EligibleAssignmentListResource,
   EligibleAssignmentResource,
   IssueCertificateRequest,
+  PublicCertificateSnapshotResource,
   ServiceTemplateResource,
 } from './certificate-api.contract';
 import { toCertificateApiError } from './certificate-api.error';
@@ -100,22 +102,25 @@ export class CertificateHttpGateway implements CertificateRepository {
    * The verification reads the certificate by its public code, the identity
    * that the document prints and that the QR of the document carries.
    */
-  async verifyCertificate(code: string): Promise<CertificateVerification> {
+  async verifyCertificate(code: string): Promise<CertificateVerification | null> {
     const resource = await firstValueFrom(
       this.http
         .get<CertificateVerificationResource>(
           `${this.baseUrl}/certificates/verify/${encodeURIComponent(code)}`,
         )
-        .pipe(catchError((error: HttpErrorResponse) => this.toFailure(error))),
+        .pipe(
+          catchError((error: HttpErrorResponse) =>
+            error.status === 404 ? of(null) : this.toFailure(error),
+          ),
+        ),
     );
+    if (!resource) return null;
 
     return CertificateVerification.restore(
       resource.code,
       this.status(resource.status),
-      this.toSnapshot(resource.data),
+      this.toPublicSnapshot(resource.data),
       resource.issuedAt,
-      resource.annulledAt ?? null,
-      resource.annulmentReason ?? null,
     );
   }
 
@@ -129,6 +134,7 @@ export class CertificateHttpGateway implements CertificateRepository {
     return {
       ...this.pageParams(criteria),
       ...(criteria.status ? { status: criteria.status } : {}),
+      ...(criteria.workUnitCode ? { workUnitCode: criteria.workUnitCode } : {}),
     };
   }
 
@@ -280,6 +286,16 @@ export class CertificateHttpGateway implements CertificateRepository {
     );
   }
 
+  /** Reads a current public PDF without exposing an internal identifier. */
+  async downloadPublicCertificateFile(code: string, signal?: AbortSignal): Promise<Blob> {
+    return this.readFile(
+      this.http.get(`${this.baseUrl}/certificates/verify/${encodeURIComponent(code)}/file`, {
+        responseType: 'blob',
+      }),
+      signal,
+    );
+  }
+
   /**
    * previewCertificate renders the certificate of an assignment without
    * archiving it.
@@ -413,6 +429,30 @@ export class CertificateHttpGateway implements CertificateRepository {
         [SNAPSHOT_FIELD.employeePaternalSurname, resource['employee.paternalSurname'] ?? ''],
         [SNAPSHOT_FIELD.employeeMaternalSurname, resource['employee.maternalSurname'] ?? ''],
         [SNAPSHOT_FIELD.employeeDni, resource['employee.dni'] ?? ''],
+        [SNAPSHOT_FIELD.assignmentPosition, resource['assignment.position'] ?? ''],
+        [SNAPSHOT_FIELD.assignmentService, resource['assignment.service'] ?? ''],
+        [SNAPSHOT_FIELD.assignmentWorkUnit, resource['assignment.workUnit'] ?? ''],
+        [SNAPSHOT_FIELD.assignmentWorkUnitCode, resource['assignment.workUnitCode'] ?? ''],
+        [SNAPSHOT_FIELD.assignmentStartDate, resource['assignment.startDate'] ?? ''],
+        [SNAPSHOT_FIELD.assignmentEndDate, resource['assignment.endDate'] ?? ''],
+        [SNAPSHOT_FIELD.issueDate, resource['issueDate'] ?? ''],
+      ]),
+    );
+  }
+
+  /**
+   * toPublicSnapshot rebuilds the data of a public verification.
+   *
+   * The public trace never carries the identity document of the worker, so
+   * the snapshot is built without it.
+   */
+  private toPublicSnapshot(resource: PublicCertificateSnapshotResource): CertificateSnapshot {
+    return CertificateSnapshot.restore(
+      new Map<string, string>([
+        [SNAPSHOT_FIELD.employeeFirstName, resource['employee.firstName'] ?? ''],
+        [SNAPSHOT_FIELD.employeeLastName, resource['employee.lastName'] ?? ''],
+        [SNAPSHOT_FIELD.employeePaternalSurname, resource['employee.paternalSurname'] ?? ''],
+        [SNAPSHOT_FIELD.employeeMaternalSurname, resource['employee.maternalSurname'] ?? ''],
         [SNAPSHOT_FIELD.assignmentPosition, resource['assignment.position'] ?? ''],
         [SNAPSHOT_FIELD.assignmentService, resource['assignment.service'] ?? ''],
         [SNAPSHOT_FIELD.assignmentWorkUnit, resource['assignment.workUnit'] ?? ''],

@@ -11,7 +11,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { CreateWorkUnitCommandService } from '../../../application/command-services/catalog-command-services';
 import { CreateWorkUnitCommand } from '../../../application/commands/catalog-commands';
-import { normalizeCatalogSearch } from '../../../application/queries/catalog-search';
+import { normalizeCatalogSearch } from '../../../../shared/application/queries/catalog-search';
 import { ListServicesQueryService } from '../../../application/query-services/catalog-query-services';
 import { Service } from '../../../domain/model/aggregates/service';
 import { CatalogValidationError } from '../../../domain/model/errors/catalog-errors';
