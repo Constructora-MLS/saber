@@ -1,0 +1,52 @@
+// Shared presentation of the dialogs that register a record of a catalog.
+
+.dialog-description {
+  margin: 0 0 1rem;
+  color: var(--app-text-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.dialog-error {
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 0.75rem;
+  border-left: 3px solid var(--mat-sys-error);
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+  font-size: 0.85rem;
+}
+
+.dialog-form {
+  display: grid;
+  gap: 0.25rem;
+  padding-top: 0.25rem;
+}
+
+.dialog-actions {
+  // Material already separates the actions of a dialog by 8px, so the
+  // actions are not separated twice.
+  gap: 0;
+}
+
+.dialog-actions .danger-action {
+  --mat-button-filled-container-color: var(--mat-sys-error);
+  --mat-button-filled-label-text-color: var(--mat-sys-on-error);
+  --mat-button-filled-state-layer-color: var(--mat-sys-on-error);
+}
+
+.dialog-hint {
+  margin: 0;
+  color: var(--app-text-muted);
+  font-size: 0.78rem;
+}
+
+/* The description grows with the text, but never more than the dialog can
+   hold: the actions of the dialog are always reachable and the form never
+   pushes the content out of the screen. */
+.dialog-form textarea {
+  resize: vertical;
+  min-height: 4.5rem;
+  max-height: 11rem;
+  overflow-y: auto;
+}

@@ -1,0 +1,12 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+/* The field of the platform is an inline flex box, so it shrinks to its
+   content and leaves the space of the line below it. The selector fills the
+   width of its host and stands on the same line as the other fields. */
+mat-form-field {
+  display: block;
+  width: 100%;
+}

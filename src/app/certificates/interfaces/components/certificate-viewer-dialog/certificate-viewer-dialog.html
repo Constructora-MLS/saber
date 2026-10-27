@@ -1,0 +1,37 @@
+<h2 mat-dialog-title>
+  {{ data.kind === 'preview' ? 'Vista previa del certificado de' : 'Certificado de' }}
+  {{ data.workerName }}
+</h2>
+
+<mat-dialog-content>
+  @if (certificateCode; as code) {
+    <p class="viewer__code">
+      <span class="viewer__code-label">Código del certificado</span>
+      <span class="viewer__code-value mono">{{ code }}</span>
+    </p>
+  }
+  @if (loading()) {
+    <div class="viewer__loading" role="status">
+      <mat-spinner diameter="32" aria-hidden="true" />
+      <span>Abriendo el certificado…</span>
+    </div>
+  } @else if (failure(); as message) {
+    <p class="viewer__failure" role="alert">{{ message }}</p>
+  } @else {
+    <iframe
+      class="viewer__document"
+      [src]="documentUrl()"
+      title="Documento del certificado de trabajo"
+    ></iframe>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="viewer__actions">
+  <button matButton type="button" (click)="close()">Cerrar</button>
+  @if (canDownload) {
+    <button matButton="filled" type="button" [disabled]="!documentUrl()" (click)="download()">
+      <mat-icon aria-hidden="true">download</mat-icon>
+      Descargar
+    </button>
+  }
+</mat-dialog-actions>

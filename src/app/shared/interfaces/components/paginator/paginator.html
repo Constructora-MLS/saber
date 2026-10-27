@@ -1,0 +1,39 @@
+<nav class="paginator" aria-label="Paginación del listado">
+  <button
+    matButton="tonal"
+    type="button"
+    class="paginator__step"
+    [disabled]="page() <= 1"
+    (click)="goTo(page() - 1)"
+  >
+    <mat-icon aria-hidden="true">chevron_left</mat-icon>
+    Anterior
+  </button>
+
+  @for (item of pages(); track $index) {
+    @if (item.number === null) {
+      <span class="paginator__gap" aria-hidden="true">…</span>
+    } @else {
+      <button
+        type="button"
+        class="paginator__page"
+        [class.paginator__page--current]="item.current"
+        [attr.aria-current]="item.current ? 'page' : null"
+        (click)="goTo(item.number)"
+      >
+        {{ item.number }}
+      </button>
+    }
+  }
+
+  <button
+    matButton="tonal"
+    type="button"
+    class="paginator__step"
+    [disabled]="page() >= totalPages()"
+    (click)="goTo(page() + 1)"
+  >
+    Siguiente
+    <mat-icon aria-hidden="true">chevron_right</mat-icon>
+  </button>
+</nav>

@@ -1,0 +1,154 @@
+<div class="table-scroll">
+  <table class="history-table">
+    <caption class="sr-only">
+      {{
+        caption()
+      }}
+    </caption>
+    <thead>
+      <tr>
+        <th scope="col">Trabajador</th>
+        <th scope="col">Código</th>
+        <th scope="col">Servicio</th>
+        <th scope="col">Unidad de trabajo</th>
+        <th scope="col">Cargo</th>
+        <th scope="col">Emisión</th>
+        <th scope="col">Estado</th>
+        <th scope="col" class="cell-actions">Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      @if (loading() && rows().length === 0) {
+        <tr class="table-message">
+          <td colspan="8">
+            <div class="history__loading" role="status">
+              <mat-spinner diameter="28" aria-hidden="true" />
+              <span>Cargando los certificados emitidos…</span>
+            </div>
+          </td>
+        </tr>
+      } @else if (rows().length === 0 && errorMessage() !== null) {
+        <tr class="table-state">
+          <td colspan="8">
+            <app-table-state
+              kind="error"
+              [title]="errorTitle()"
+              [message]="errorMessage()"
+              actionLabel="Reintentar"
+              actionIcon="refresh"
+              (actionRequested)="retryRequested.emit()"
+            />
+          </td>
+        </tr>
+      } @else if (rows().length === 0) {
+        <tr class="table-state">
+          <td colspan="8">
+            <app-table-state
+              kind="empty"
+              [icon]="emptyIcon()"
+              [title]="emptyTitle()"
+              [message]="emptyMessage()"
+            />
+          </td>
+        </tr>
+      } @else {
+        @for (row of rows(); track row.certificateId) {
+          <tr>
+            <th scope="row" class="cell-worker">
+              <span class="worker-name">{{ row.workerName }}</span>
+              <span class="worker-document">
+                <span class="cell-label" aria-hidden="true">DNI</span>
+                <span class="mono">{{ row.dni }}</span>
+              </span>
+            </th>
+            <td>
+              <span class="cell-label" aria-hidden="true">Código</span>
+              <span class="cell-value mono">{{ row.certificateCode }}</span>
+            </td>
+            <td>
+              <span class="cell-label" aria-hidden="true">Servicio</span>
+              @if (row.serviceName; as serviceName) {
+                <span class="cell-value reference-badge">{{ serviceName }}</span>
+              } @else {
+                <span class="cell-value">—</span>
+              }
+            </td>
+            <td>
+              <span class="cell-label" aria-hidden="true">Unidad de trabajo</span>
+              <span class="cell-value">
+                <span class="cell-unit-name">{{ row.workUnit }}</span>
+                @if (row.workUnitCode) {
+                  <span class="cell-unit-meta mono">{{ row.workUnitCode }}</span>
+                }
+              </span>
+            </td>
+            <td>
+              <span class="cell-label" aria-hidden="true">Cargo</span>
+              <span class="cell-value reference-badge">{{ row.position }}</span>
+            </td>
+            <td>
+              <span class="cell-label" aria-hidden="true">Emisión</span>
+              <time class="cell-value" [attr.datetime]="row.issuedAt">{{
+                formatDate(row.issuedAt)
+              }}</time>
+            </td>
+            <td>
+              <span class="cell-label" aria-hidden="true">Estado</span>
+              <span class="cell-value status-badge" [class.is-annulled]="row.status === 'ANNULLED'">
+                {{ statusLabel(row.status) }}
+              </span>
+            </td>
+            <td class="cell-actions">
+              <button
+                matIconButton
+                type="button"
+                [matMenuTriggerFor]="rowMenu"
+                [attr.aria-label]="'Acciones del certificado de ' + row.workerName"
+              >
+                <mat-icon aria-hidden="true">more_vert</mat-icon>
+              </button>
+              <mat-menu #rowMenu="matMenu" xPosition="before">
+                <button
+                  mat-menu-item
+                  type="button"
+                  [disabled]="!certificateIsInForce(row.status)"
+                  (click)="viewRequested.emit(row)"
+                >
+                  <mat-icon aria-hidden="true">visibility</mat-icon>
+                  <span>Visualizar</span>
+                </button>
+                <button
+                  mat-menu-item
+                  type="button"
+                  [disabled]="!certificateIsInForce(row.status)"
+                  (click)="verifyRequested.emit(row)"
+                >
+                  <mat-icon aria-hidden="true">verified</mat-icon>
+                  <span>Verificar</span>
+                </button>
+                <button
+                  mat-menu-item
+                  type="button"
+                  [disabled]="!certificateIsInForce(row.status)"
+                  (click)="downloadRequested.emit(row)"
+                >
+                  <mat-icon aria-hidden="true">download</mat-icon>
+                  <span>Descargar</span>
+                </button>
+                <button
+                  mat-menu-item
+                  type="button"
+                  [disabled]="!certificateIsInForce(row.status)"
+                  (click)="annulRequested.emit(row)"
+                >
+                  <mat-icon aria-hidden="true">block</mat-icon>
+                  <span>Anular</span>
+                </button>
+              </mat-menu>
+            </td>
+          </tr>
+        }
+      }
+    </tbody>
+  </table>
+</div>

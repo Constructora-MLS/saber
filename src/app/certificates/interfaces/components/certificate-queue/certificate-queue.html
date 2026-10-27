@@ -1,0 +1,119 @@
+<div class="table-scroll">
+  <table class="queue-table">
+    <caption class="sr-only">
+      {{
+        caption()
+      }}
+    </caption>
+    <thead>
+      <tr>
+        <th scope="col">Trabajador</th>
+        <th scope="col">Servicio</th>
+        <th scope="col">Unidad de trabajo</th>
+        <th scope="col">Cargo</th>
+        <th scope="col">Cese</th>
+        <th scope="col" class="cell-actions">Acción</th>
+      </tr>
+    </thead>
+    <tbody>
+      @if (loading() && rows().length === 0) {
+        <tr class="table-message">
+          <td colspan="6">
+            <div class="queue__loading" role="status">
+              <mat-spinner diameter="28" aria-hidden="true" />
+              <span>Cargando la cola de emisión…</span>
+            </div>
+          </td>
+        </tr>
+      } @else if (rows().length === 0 && errorMessage() !== null) {
+        <tr class="table-state">
+          <td colspan="6">
+            <app-table-state
+              kind="error"
+              [title]="errorTitle()"
+              [message]="errorMessage()"
+              actionLabel="Reintentar"
+              actionIcon="refresh"
+              (actionRequested)="retryRequested.emit()"
+            />
+          </td>
+        </tr>
+      } @else if (rows().length === 0) {
+        <tr class="table-state">
+          <td colspan="6">
+            <app-table-state
+              kind="empty"
+              [icon]="emptyIcon()"
+              [title]="emptyTitle()"
+              [message]="emptyMessage()"
+            />
+          </td>
+        </tr>
+      } @else {
+        @for (row of rows(); track row.assignmentId) {
+          <tr>
+            <th scope="row" class="cell-worker">
+              <span class="worker-name">{{ row.workerName }}</span>
+              <span class="worker-document">
+                <span class="cell-label" aria-hidden="true">DNI</span>
+                <span class="mono">{{ row.dni }}</span>
+              </span>
+            </th>
+            <td>
+              <span class="cell-label" aria-hidden="true">Servicio</span>
+              @if (row.serviceName; as serviceName) {
+                <span class="cell-value reference-badge">{{ serviceName }}</span>
+              } @else {
+                <span class="cell-value">—</span>
+              }
+            </td>
+            <td>
+              <span class="cell-label" aria-hidden="true">Unidad de trabajo</span>
+              <span class="cell-value">
+                <span class="cell-unit-name">{{ row.workUnit }}</span>
+                @if (row.workUnitCode) {
+                  <span class="cell-unit-meta mono">{{ row.workUnitCode }}</span>
+                }
+              </span>
+            </td>
+            <td>
+              <span class="cell-label" aria-hidden="true">Cargo</span>
+              <span class="cell-value reference-badge">{{ row.position }}</span>
+            </td>
+            <td>
+              <span class="cell-label" aria-hidden="true">Cese</span>
+              <time class="cell-value" [attr.datetime]="row.endDate">{{
+                formatDate(row.endDate)
+              }}</time>
+            </td>
+            <td class="cell-actions">
+              <button
+                matIconButton
+                type="button"
+                [matMenuTriggerFor]="rowMenu"
+                [attr.aria-label]="'Acciones del certificado de ' + row.workerName"
+              >
+                <mat-icon aria-hidden="true">more_vert</mat-icon>
+              </button>
+              <mat-menu #rowMenu="matMenu" xPosition="before">
+                <button mat-menu-item type="button" (click)="previewRequested.emit(row)">
+                  <mat-icon aria-hidden="true">visibility</mat-icon>
+                  <span>Revisar</span>
+                </button>
+                <button
+                  mat-menu-item
+                  type="button"
+                  [disabled]="issuing()"
+                  (click)="issueRequested.emit(row)"
+                >
+                  <mat-icon aria-hidden="true">file_export</mat-icon>
+                  <span>Emitir</span>
+                </button>
+              </mat-menu>
+            </td>
+          </tr>
+        }
+      }
+    </tbody>
+  </table>
+</div>

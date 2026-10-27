@@ -1,0 +1,26 @@
+<p class="app-switcher-title">APLICACIONES</p>
+
+@for (application of applications(); track application.label) {
+  <button
+    type="button"
+    role="menuitem"
+    class="app-option"
+    [class.is-active]="application.status === 'active'"
+    [class.is-soon]="application.status === 'soon'"
+    [attr.aria-disabled]="application.status === 'soon'"
+    (click)="applicationSelected.emit(application)"
+  >
+    <mat-icon aria-hidden="true">{{ application.icon }}</mat-icon>
+    <span class="app-option-label">{{ application.label }}</span>
+
+    @if (application.status === 'active') {
+      <mat-icon class="app-option-state" aria-hidden="true">check</mat-icon>
+    } @else {
+      <span class="app-option-soon">Próximamente</span>
+    }
+  </button>
+
+  @if (application.dividerAfter) {
+    <hr class="app-divider" />
+  }
+}

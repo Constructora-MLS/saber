@@ -1,0 +1,71 @@
+<section class="editor" aria-label="Editor del contenido del certificado">
+  <div class="editor__body">
+    <mat-form-field appearance="outline" class="editor__service">
+      <mat-label>Servicio</mat-label>
+      <mat-select [ngModel]="serviceId()" (ngModelChange)="selectService($event)">
+        @for (service of services(); track service.id) {
+          <mat-option [value]="service.id">{{ service.name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <div class="editor__variables">
+      <p class="editor__variables-label">Variables disponibles</p>
+      <div class="editor__chips">
+        @for (token of tokens(); track token) {
+          <button type="button" class="editor__chip" (click)="insertToken(token)">
+            {{ token }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <mat-form-field appearance="outline" class="editor__text" subscriptSizing="dynamic">
+      <mat-label>Texto del certificado</mat-label>
+      <textarea
+        #editor
+        matInput
+        rows="12"
+        spellcheck="false"
+        [maxLength]="bodyMaxLength"
+        [ngModel]="body()"
+        (ngModelChange)="onBodyChanged($event)"
+      ></textarea>
+      @if (bodyTooLong()) {
+        <mat-error>
+          El texto del certificado no puede superar los {{ bodyMaxLength }} caracteres.
+        </mat-error>
+      }
+      <mat-hint align="end" appFieldCounter [value]="bodyLength()" [max]="bodyMaxLength" />
+    </mat-form-field>
+
+    @if (failure(); as message) {
+      <p class="editor__failure" role="alert">{{ message }}</p>
+    }
+  </div>
+
+  @if (loading()) {
+    <mat-progress-bar mode="indeterminate" aria-label="Cargando la plantilla" />
+  }
+
+  <footer class="editor__footer">
+    <button
+      matButton="outlined"
+      type="button"
+      [disabled]="saving() || loading() || !serviceId()"
+      (click)="restoreRequested.emit()"
+    >
+      <mat-icon aria-hidden="true">restart_alt</mat-icon>
+      Restablecer
+    </button>
+    <button
+      matButton="filled"
+      type="button"
+      [disabled]="saving() || loading() || !serviceId()"
+      (click)="saveRequested.emit()"
+    >
+      <mat-icon aria-hidden="true">save</mat-icon>
+      {{ saving() ? 'Guardando…' : 'Guardar contenido' }}
+    </button>
+  </footer>
+</section>

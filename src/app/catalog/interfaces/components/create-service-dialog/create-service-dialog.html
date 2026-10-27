@@ -1,0 +1,68 @@
+<h2 mat-dialog-title>Registrar Servicio</h2>
+
+<mat-dialog-content>
+  <p class="dialog-description">
+    El servicio agrupa las obras y los expedientes que comparten el mismo contrato. Las unidades de
+    trabajo se registran después, dentro de un servicio.
+  </p>
+
+  @if (errorMessage(); as message) {
+    <p class="dialog-error" role="alert">{{ message }}</p>
+  }
+
+  <form class="dialog-form" id="catalog-service-form" [formGroup]="form" (ngSubmit)="submit()">
+    <mat-form-field appearance="outline">
+      <mat-label>Nombre del servicio</mat-label>
+      <input
+        matInput
+        formControlName="name"
+        [maxLength]="nameMaxLength"
+        required
+        autocomplete="off"
+      />
+      @if (form.controls.name.hasError('required')) {
+        <mat-error>El nombre es obligatorio.</mat-error>
+      }
+      @if (form.controls.name.hasError('minlength')) {
+        <mat-error>El nombre debe tener al menos {{ nameMinLength }} caracteres.</mat-error>
+      }
+      @if (form.controls.name.hasError('maxlength')) {
+        <mat-error>El nombre no puede superar los {{ nameMaxLength }} caracteres.</mat-error>
+      }
+      <mat-hint align="end" appFieldCounter [control]="form.controls.name" [max]="nameMaxLength" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Descripción (opcional)</mat-label>
+      <textarea
+        matInput
+        formControlName="description"
+        rows="3"
+        [maxLength]="descriptionMaxLength"
+      ></textarea>
+      @if (form.controls.description.hasError('maxlength')) {
+        <mat-error>
+          La descripción no puede superar los {{ descriptionMaxLength }} caracteres.
+        </mat-error>
+      }
+      <mat-hint
+        align="end"
+        appFieldCounter
+        [control]="form.controls.description"
+        [max]="descriptionMaxLength"
+      />
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="dialog-actions">
+  <button matButton type="button" (click)="cancel()">Cancelar</button>
+  <button
+    matButton="filled"
+    type="submit"
+    form="catalog-service-form"
+    [disabled]="submitting() || form.invalid"
+  >
+    {{ submitting() ? 'Registrando…' : 'Registrar Servicio' }}
+  </button>
+</mat-dialog-actions>
