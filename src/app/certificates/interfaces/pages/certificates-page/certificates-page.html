@@ -136,7 +136,7 @@
             label="Unidad de trabajo"
             placeholder="Buscar unidad de trabajo…"
             requiredMessage="Elige una unidad de trabajo."
-            emptyText="No hay unidades de trabajo que coincidan con la búsqueda."
+            [showEmptyText]="false"
             [options]="workUnitOptions()"
             [loading]="loadingWorkUnits()"
             [error]="workUnitsError()"
