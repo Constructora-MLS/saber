@@ -1,0 +1,43 @@
+<h2 mat-dialog-title>Anular certificado</h2>
+
+<mat-dialog-content>
+  <p class="dialog-description">
+    Se anulará el certificado de {{ data.workerName }}. El historial y el archivo se conservan.
+  </p>
+
+  <form class="dialog-form" id="annul-certificate-form" [formGroup]="form" (ngSubmit)="submit()">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Motivo de la anulación</mat-label>
+      <textarea
+        matInput
+        rows="3"
+        formControlName="reason"
+        placeholder="El certificado se emitió por error…"
+        [maxLength]="reasonMaxLength"
+        required
+      ></textarea>
+      @if (form.controls.reason.hasError('required')) {
+        <mat-error>El motivo de la anulación es obligatorio.</mat-error>
+      }
+      @if (form.controls.reason.hasError('maxlength')) {
+        <mat-error>
+          El motivo de la anulación no puede superar los {{ reasonMaxLength }} caracteres.
+        </mat-error>
+      }
+      <mat-hint
+        align="end"
+        appFieldCounter
+        [control]="form.controls.reason"
+        [max]="reasonMaxLength"
+      />
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="dialog-actions">
+  <button matButton type="button" (click)="cancel()">Cancelar</button>
+  <button matButton="filled" type="submit" form="annul-certificate-form" [disabled]="form.invalid">
+    <mat-icon aria-hidden="true">block</mat-icon>
+    Anular certificado
+  </button>
+</mat-dialog-actions>

@@ -1,0 +1,25 @@
+<header class="summary">
+  <div class="summary__identity">
+    <p class="summary__eyebrow">{{ eyebrow() }}</p>
+    <h1 class="summary__name" [id]="headingId()">{{ name() }}</h1>
+    <p class="summary__document">
+      {{ documentLabel() }}
+      <span class="summary__document-value">{{ documentValue() }}</span>
+    </p>
+
+    @if (facts().length > 0) {
+      <dl class="summary__facts">
+        @for (fact of facts(); track fact.label) {
+          <div class="summary__fact">
+            <dt class="summary__fact-label">{{ fact.label }}</dt>
+            <dd class="summary__fact-value">{{ fact.value }}</dd>
+          </div>
+        }
+      </dl>
+    }
+  </div>
+
+  <div class="summary__actions">
+    <ng-content />
+  </div>
+</header>

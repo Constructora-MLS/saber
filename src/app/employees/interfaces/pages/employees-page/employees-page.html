@@ -1,0 +1,78 @@
+<section class="page" aria-labelledby="employees-page-title">
+  <header class="page-header">
+    <div class="page-heading">
+      <p class="eyebrow">Recursos Humanos · Personal</p>
+      <h1 id="employees-page-title" class="page-title">Lista de empleados</h1>
+      <p class="page-subtitle">Busca a los trabajadores registrados.</p>
+    </div>
+
+    <button matButton="filled" type="button" class="create-button" (click)="openCreateDialog()">
+      <mat-icon aria-hidden="true">person_add</mat-icon>
+      Registrar Trabajador
+    </button>
+  </header>
+
+  <section class="panel" aria-labelledby="employees-panel-title">
+    <header class="panel-header">
+      <div>
+        <h2 id="employees-panel-title">Trabajadores</h2>
+        <p class="panel-hint">Los más recientes primero.</p>
+      </div>
+    </header>
+
+    <div class="filters">
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>Buscar por nombre o DNI</mat-label>
+        <input
+          matInput
+          type="search"
+          autocomplete="off"
+          placeholder="Buscar por nombre o DNI…"
+          [ngModel]="searchTerm()"
+          (ngModelChange)="onSearchChanged($event)"
+        />
+        @if (searchTerm()) {
+          <button
+            matIconButton
+            matSuffix
+            type="button"
+            aria-label="Limpiar la búsqueda"
+            (click)="clearSearch()"
+          >
+            <mat-icon aria-hidden="true">close</mat-icon>
+          </button>
+        }
+      </mat-form-field>
+    </div>
+
+    @if (loading()) {
+      <mat-progress-bar mode="indeterminate" aria-label="Cargando trabajadores" />
+    }
+
+    <app-employee-table
+      caption="Trabajadores"
+      [rows]="rows()"
+      [loading]="loading()"
+      [errorTitle]="loadFailure()?.title ?? null"
+      [errorMessage]="loadFailure()?.message ?? null"
+      [emptyTitle]="emptyTitle()"
+      [emptyMessage]="emptyMessage()"
+      [emptyIcon]="emptyIcon()"
+      [emptyActionLabel]="searchTerm().trim() ? null : 'Registrar trabajador'"
+      (retryRequested)="retry()"
+      (createRequested)="openCreateDialog()"
+      (editRequested)="openEditDialog($event)"
+      (deleteRequested)="openDeleteDialog($event)"
+    />
+
+    @if (totalPages() > 1) {
+      <div class="panel-footer">
+        <app-paginator
+          [page]="page()"
+          [totalPages]="totalPages()"
+          (pageRequested)="goToPage($event)"
+        />
+      </div>
+    }
+  </section>
+</section>

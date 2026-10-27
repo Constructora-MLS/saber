@@ -1,0 +1,131 @@
+// Shared presentation of the dialogs of the assignments of the platform.
+
+.dialog-description {
+  margin: 0 0 1rem;
+  color: var(--app-text-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.dialog-error {
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 0.75rem;
+  border-left: 3px solid var(--mat-sys-error);
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+  font-size: 0.85rem;
+}
+
+.dialog-form {
+  display: grid;
+  gap: 0.25rem;
+  padding-top: 0.25rem;
+}
+
+.dialog-actions {
+  // Material already separates the actions of a dialog by 8px, so the
+  // actions are not separated twice.
+  gap: 0;
+}
+
+.dialog-actions .danger-action {
+  --mat-button-filled-container-color: var(--mat-sys-error);
+  --mat-button-filled-label-text-color: var(--mat-sys-on-error);
+  --mat-button-filled-state-layer-color: var(--mat-sys-on-error);
+}
+
+/* The unit of work and the cargo are picked instead of written, so they
+   share a row of their own. On a narrow screen the fields fall into a
+   single column. */
+.dialog-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 0.75rem 1rem;
+}
+
+.dialog-fields .field-wide {
+  grid-column: 1 / -1;
+}
+
+/* The context of the operation names the worker that the assignment
+   belongs to, so the dialog never acts on an unnamed worker. */
+.dialog-context {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid var(--rrhh-divider);
+}
+
+.dialog-context-label {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.dialog-context-detail {
+  margin: 0.25rem 0 0;
+  color: var(--app-text-muted);
+  font-size: 0.8rem;
+}
+
+.dialog-context-state {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+/* The worker and the assignment that the dialog acts on are shown apart
+   from the fields, so the worker knows what is being changed. */
+.dialog-person {
+  margin: 0 0 0.9rem;
+}
+
+.dialog-person-name {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.dialog-person-detail {
+  margin: 0.25rem 0 0;
+  color: var(--app-text-muted);
+  font-size: 0.8rem;
+}
+
+/* The record of the assignment is shown apart from the fields, so the
+   worker knows what is being changed. */
+.dialog-record {
+  margin: 0 0 0.9rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--rrhh-divider);
+  border-radius: 0.9rem;
+  background: var(--mat-sys-surface-container-low);
+}
+
+.dialog-record-title {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.dialog-record-detail {
+  margin: 0.25rem 0 0;
+  color: var(--app-text-muted);
+  font-size: 0.8rem;
+}
+
+@media (max-width: 40rem) {
+  .dialog-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -1,0 +1,120 @@
+/*
+ * Material Design 3 Expressive.
+ *
+ * The state is composed with the color roles of the system, so it follows
+ * the theme of the platform in light and in dark. The emblem uses the shape
+ * morphing of the expressive language: a large container with one expanded
+ * corner, and the transitions follow the emphasized easing of the identity.
+ */
+:host {
+  display: block;
+}
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 2.75rem 1.5rem;
+  text-align: center;
+}
+
+.state__emblem {
+  display: grid;
+  place-items: center;
+  width: 4.75rem;
+  height: 4.75rem;
+  border-radius: 1.75rem 1.75rem 1.75rem 0.65rem;
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface-variant);
+  transition:
+    transform var(--app-motion-duration-medium) var(--app-motion-easing-emphasized-decelerate),
+    background-color var(--app-motion-duration-short) var(--app-motion-easing-emphasized);
+}
+
+.state__emblem mat-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  font-size: 2.5rem;
+  line-height: 2.5rem;
+}
+
+.state--error .state__emblem {
+  border-radius: 1.75rem 1.75rem 0.65rem 1.75rem;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+
+.state__text {
+  display: grid;
+  gap: 0.35rem;
+  max-width: 44ch;
+}
+
+.state__title {
+  margin: 0;
+  color: var(--mat-sys-on-surface);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.state__message {
+  margin: 0;
+  color: var(--app-text-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.state__action {
+  margin-top: 0.35rem;
+}
+
+.state--error .state__action {
+  --mat-button-filled-container-color: var(--mat-sys-error-container);
+  --mat-button-filled-label-text-color: var(--mat-sys-on-error-container);
+  --mat-button-filled-hover-state-layer-color: var(--mat-sys-on-error-container);
+}
+
+/* The compact state is shown next to the records of a table, so it reads as
+   a strip of the table and not as a page of its own. */
+.state--compact {
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 0.9rem 1.1rem;
+  padding: 1.1rem 1.35rem;
+  text-align: left;
+}
+
+.state--compact .state__emblem {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 1rem 1rem 1rem 0.4rem;
+}
+
+.state--compact .state__emblem mat-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  font-size: 1.5rem;
+  line-height: 1.5rem;
+}
+
+.state--compact .state__text {
+  flex: 1 1 18rem;
+  max-width: none;
+}
+
+.state--compact .state__action {
+  margin-top: 0;
+}
+
+@media (max-width: 40rem) {
+  .state {
+    padding: 2rem 1rem;
+  }
+
+  .state--compact {
+    padding: 1rem;
+  }
+}

@@ -1,0 +1,7 @@
+<div class="app-shell" [class.is-collapsed]="isSidebarCollapsed()">
+  <app-rrhh-sidebar (collapsedChange)="onSidebarCollapsedChange($event)" />
+
+  <main class="app-content">
+    <router-outlet />
+  </main>
+</div>

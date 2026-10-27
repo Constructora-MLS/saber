@@ -1,0 +1,120 @@
+<div class="table-scroll">
+  <table class="assignment-table">
+    <caption class="sr-only">
+      {{
+        caption()
+      }}
+    </caption>
+    <thead>
+      <tr>
+        <th scope="col">Unidad de trabajo</th>
+        <th scope="col">Cargo</th>
+        <th scope="col">Período</th>
+        <th scope="col">Estado</th>
+        <th scope="col" class="cell-actions">Acción</th>
+      </tr>
+    </thead>
+    <tbody>
+      @if (loading() && rows().length === 0) {
+        <tr class="table-message">
+          <td colspan="5">
+            <div class="table-loading" role="status">
+              <mat-spinner diameter="28" aria-hidden="true" />
+              <span>Cargando asignaciones…</span>
+            </div>
+          </td>
+        </tr>
+      } @else if (rows().length === 0 && errorMessage() !== null) {
+        <tr class="table-state">
+          <td colspan="5">
+            <app-table-state
+              kind="error"
+              [title]="errorTitle()"
+              [message]="errorMessage()"
+              actionLabel="Reintentar"
+              actionIcon="refresh"
+              (actionRequested)="retryRequested.emit()"
+            />
+          </td>
+        </tr>
+      } @else if (rows().length === 0) {
+        <tr class="table-state">
+          <td colspan="5">
+            <app-table-state
+              kind="empty"
+              [icon]="emptyIcon()"
+              [title]="emptyTitle()"
+              [message]="emptyMessage()"
+              [actionLabel]="emptyActionLabel()"
+              actionIcon="add"
+              (actionRequested)="createRequested.emit()"
+            />
+          </td>
+        </tr>
+      } @else {
+        @for (row of rows(); track row.id) {
+          <tr>
+            <th scope="row" class="cell-unit">
+              <span class="cell-label" aria-hidden="true">Unidad de trabajo</span>
+              <span class="cell-unit-name">{{ row.workUnitName }}</span>
+              @if (row.workUnitService || row.workUnitCode) {
+                <span class="cell-unit-meta">
+                  {{ row.workUnitService ?? '—' }} ·
+                  <span class="cell-code">{{ row.workUnitCode ?? '—' }}</span>
+                </span>
+              }
+            </th>
+            <td>
+              <span class="cell-label" aria-hidden="true">Cargo</span>
+              <span class="cell-position">{{ row.positionName }}</span>
+            </td>
+            <td>
+              <span class="cell-label" aria-hidden="true">Período</span>
+              <app-assignment-period [startDate]="row.startDate" [endDate]="row.endDate" />
+            </td>
+            <td>
+              <span class="cell-label" aria-hidden="true">Estado</span>
+              <span class="status-badge" [class.is-active]="row.status === 'VIGENTE'">
+                {{ statusLabel(row.status) }}
+              </span>
+            </td>
+            <td class="cell-actions">
+              <button
+                matIconButton
+                type="button"
+                [matMenuTriggerFor]="rowMenu"
+                [attr.aria-label]="'Acciones de la asignación en ' + row.workUnitName"
+              >
+                <mat-icon aria-hidden="true">more_vert</mat-icon>
+              </button>
+              <mat-menu #rowMenu="matMenu" xPosition="before">
+                <button
+                  mat-menu-item
+                  type="button"
+                  [disabled]="!canEdit(row)"
+                  (click)="editRequested.emit(row)"
+                >
+                  <mat-icon aria-hidden="true">edit</mat-icon>
+                  <span>Editar</span>
+                </button>
+                <button
+                  mat-menu-item
+                  type="button"
+                  [disabled]="!canCease(row)"
+                  (click)="ceaseRequested.emit(row)"
+                >
+                  <mat-icon aria-hidden="true">event_busy</mat-icon>
+                  <span>Cesar</span>
+                </button>
+                <button mat-menu-item type="button" (click)="deleteRequested.emit(row)">
+                  <mat-icon aria-hidden="true">delete</mat-icon>
+                  <span>Borrar</span>
+                </button>
+              </mat-menu>
+            </td>
+          </tr>
+        }
+      }
+    </tbody>
+  </table>
+</div>

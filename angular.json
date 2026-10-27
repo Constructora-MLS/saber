@@ -32,7 +32,7 @@
             ],
             "styles": [
               "@fontsource-variable/roboto-flex/wght.css",
-              "@fontsource/material-icons/latin.css",
+              "@fontsource/material-symbols-rounded/latin-400.css",
               "src/styles.scss"
             ]
           },
@@ -70,10 +70,10 @@
               "buildTarget": "saber:build:development"
             }
           },
-          "defaultConfiguration": "development"
-        },
-        "test": {
-          "builder": "@angular/build:unit-test"
+          "defaultConfiguration": "development",
+          "options": {
+            "proxyConfig": "proxy.conf.cjs"
+          }
         }
       }
     }

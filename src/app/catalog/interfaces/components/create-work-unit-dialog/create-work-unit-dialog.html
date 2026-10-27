@@ -1,0 +1,111 @@
+<h2 mat-dialog-title>Registrar Unidad de Trabajo</h2>
+
+<mat-dialog-content>
+  <p class="dialog-description">
+    La unidad de trabajo es una obra o un expediente. El código la identifica en las asignaciones y
+    en los certificados, no se repite y lo asigna la plataforma al registrarla.
+  </p>
+
+  @if (errorMessage(); as message) {
+    <p class="dialog-error" role="alert">{{ message }}</p>
+  }
+
+  @if (servicesError(); as message) {
+    <p class="dialog-error" role="alert">{{ message }}</p>
+  }
+
+  <form class="dialog-form" id="catalog-work-unit-form" [formGroup]="form" (ngSubmit)="submit()">
+    <mat-form-field appearance="outline">
+      <mat-label>Nombre</mat-label>
+      <input
+        matInput
+        formControlName="name"
+        [maxLength]="nameMaxLength"
+        required
+        autocomplete="off"
+      />
+      @if (form.controls.name.hasError('required')) {
+        <mat-error>El nombre es obligatorio.</mat-error>
+      }
+      @if (form.controls.name.hasError('minlength')) {
+        <mat-error>El nombre debe tener al menos {{ nameMinLength }} caracteres.</mat-error>
+      }
+      @if (form.controls.name.hasError('maxlength')) {
+        <mat-error>El nombre no puede superar los {{ nameMaxLength }} caracteres.</mat-error>
+      }
+      <mat-hint align="end" appFieldCounter [control]="form.controls.name" [max]="nameMaxLength" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Servicio</mat-label>
+      <input
+        matInput
+        formControlName="serviceQuery"
+        [matAutocomplete]="serviceAuto"
+        (input)="onQueryChanged($event)"
+        placeholder="Escriba el nombre del servicio"
+        autocomplete="off"
+      />
+      <mat-autocomplete #serviceAuto="matAutocomplete" (optionSelected)="selectService($event)">
+        @for (service of services(); track service.id) {
+          <mat-option [value]="service.id">{{ service.name.value }}</mat-option>
+        }
+      </mat-autocomplete>
+      @if (loadingServices()) {
+        <mat-spinner matSuffix diameter="18"></mat-spinner>
+      }
+      @if (form.controls.serviceId.hasError('required')) {
+        <mat-error>La unidad de trabajo pertenece a un servicio activo.</mat-error>
+      }
+      @if (servicesError(); as message) {
+        <mat-error>{{ message }}</mat-error>
+      }
+      @if (!loadingServices() && services().length === 0) {
+        <mat-hint>No hay servicios activos que coincidan con la búsqueda.</mat-hint>
+      }
+    </mat-form-field>
+
+    <!-- The identifier of the chosen service. It is never shown. -->
+    <input type="hidden" formControlName="serviceId" />
+
+    <mat-form-field appearance="outline">
+      <mat-label>Descripción (opcional)</mat-label>
+      <textarea
+        matInput
+        formControlName="description"
+        rows="3"
+        [maxLength]="descriptionMaxLength"
+      ></textarea>
+      @if (form.controls.description.hasError('maxlength')) {
+        <mat-error>
+          La descripción no puede superar los {{ descriptionMaxLength }} caracteres.
+        </mat-error>
+      }
+      <mat-hint
+        align="end"
+        appFieldCounter
+        [control]="form.controls.description"
+        [max]="descriptionMaxLength"
+      />
+    </mat-form-field>
+
+    @if (!loadingServices() && services().length === 0 && queryTerm().length === 0) {
+      <p class="dialog-hint">
+        Todavía no hay servicios activos registrados. Registra un servicio antes de crear unidades
+        de trabajo.
+      </p>
+    }
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="dialog-actions">
+  <button matButton type="button" (click)="cancel()">Cancelar</button>
+  <button
+    matButton="filled"
+    type="submit"
+    form="catalog-work-unit-form"
+    [disabled]="submitting() || form.invalid"
+  >
+    {{ submitting() ? 'Registrando…' : 'Registrar Unidad de Trabajo' }}
+  </button>
+</mat-dialog-actions>
