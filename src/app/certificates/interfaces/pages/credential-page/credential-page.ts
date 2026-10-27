@@ -76,7 +76,7 @@ export class CredentialPage implements OnInit, OnDestroy {
     } catch {
       if (!this.request.signal.aborted) {
         this.failure.set(
-          'No se pudo consultar el certificado. Revisa el código e inténtalo de nuevo.',
+          'No se pudo consultar el certificado. Inténtalo de nuevo.',
         );
       }
     } finally {
