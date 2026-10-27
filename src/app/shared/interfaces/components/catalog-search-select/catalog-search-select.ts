@@ -93,6 +93,8 @@ export class CatalogSearchSelect implements ControlValueAccessor {
   readonly hint = input('');
   /** The message shown when no record matches the term. */
   readonly emptyText = input('No hay registros que coincidan con la búsqueda.');
+  /** Whether the empty-search message is shown. */
+  readonly showEmptyText = input(true);
   /** The options that the selector offers. */
   readonly options = input<readonly CatalogOption[]>([]);
   /** Whether the selector waits for the answer of the platform. */
