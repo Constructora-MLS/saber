@@ -111,20 +111,25 @@
                 <button
                   mat-menu-item
                   type="button"
-                  [disabled]="row.status !== 'ISSUED'"
+                  [disabled]="!certificateIsInForce(row.status)"
                   (click)="viewRequested.emit(row)"
                 >
                   <mat-icon aria-hidden="true">visibility</mat-icon>
                   <span>Visualizar</span>
                 </button>
-                <button mat-menu-item type="button" (click)="verifyRequested.emit(row)">
+                <button
+                  mat-menu-item
+                  type="button"
+                  [disabled]="!certificateIsInForce(row.status)"
+                  (click)="verifyRequested.emit(row)"
+                >
                   <mat-icon aria-hidden="true">verified</mat-icon>
                   <span>Verificar</span>
                 </button>
                 <button
                   mat-menu-item
                   type="button"
-                  [disabled]="row.status !== 'ISSUED'"
+                  [disabled]="!certificateIsInForce(row.status)"
                   (click)="downloadRequested.emit(row)"
                 >
                   <mat-icon aria-hidden="true">download</mat-icon>
@@ -133,7 +138,7 @@
                 <button
                   mat-menu-item
                   type="button"
-                  [disabled]="row.status !== 'ISSUED'"
+                  [disabled]="!certificateIsInForce(row.status)"
                   (click)="annulRequested.emit(row)"
                 >
                   <mat-icon aria-hidden="true">block</mat-icon>

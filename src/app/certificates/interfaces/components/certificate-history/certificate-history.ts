@@ -8,6 +8,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TableState } from '../../../../shared/interfaces/components/table-state/table-state';
 import { CertificateStatus } from '../../../domain/model/value-objects/certificate-status';
+import { certificateIsInForce } from '../../../domain/model/value-objects/certificate-status';
 import { certificateStatusLabel } from '../../../domain/model/value-objects/certificate-status';
 import { formatCertificateDate } from '../certificate-date.format';
 
@@ -78,6 +79,16 @@ export class CertificateHistory {
   );
   /** The emblem shown when the history is empty. */
   readonly emptyIcon = input('history');
+
+  /**
+   * certificateIsInForce reports whether a certificate is still in force.
+   *
+   * The actions of the row are only offered for a certificate in force: an
+   * annulled certificate keeps its record and its document as audit
+   * evidence, and the public verification of an annulled certificate is the
+   * same answer as the one of a certificate that does not exist.
+   */
+  protected readonly certificateIsInForce = certificateIsInForce;
 
   /** The visualization of a certificate was requested. */
   readonly viewRequested = output<IssuedCertificateRow>();

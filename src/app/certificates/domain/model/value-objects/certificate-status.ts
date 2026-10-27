@@ -46,6 +46,19 @@ export function certificateStatusLabel(status: CertificateStatus): string {
 }
 
 /**
+ * certificateIsInForce reports whether a certificate is still in force.
+ *
+ * Only a certificate in force can be viewed, downloaded, verified or
+ * annulled: the platform keeps the record and the document of an annulled
+ * certificate as audit evidence, and the public verification answers the
+ * same 404 for an annulled certificate and for a missing one, so the
+ * verification of an annulled certificate would be a dead end.
+ */
+export function certificateIsInForce(status: CertificateStatus): boolean {
+  return status === 'ISSUED';
+}
+
+/**
  * certificateStatusFilterLabel returns the label of a filter of the search.
  */
 export function certificateStatusFilterLabel(filter: CertificateStatusFilter): string {

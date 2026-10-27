@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   CERTIFICATE_STATUS_FILTER,
+  certificateIsInForce,
   certificateStatusFilterLabel,
   certificateStatusLabel,
   certificateStatusOf,
@@ -32,6 +33,16 @@ describe('certificateStatusOf', () => {
 
   it('no manda estado cuando el search muestra todos los certificados', () => {
     expect(certificateStatusOf('ALL')).toBeUndefined();
+  });
+});
+
+describe('certificateIsInForce', () => {
+  it('dice que un certificado emitido sigue en vigor', () => {
+    expect(certificateIsInForce('ISSUED')).toBe(true);
+  });
+
+  it('dice que un certificado anulado ya no está en vigor', () => {
+    expect(certificateIsInForce('ANNULLED')).toBe(false);
   });
 });
 
