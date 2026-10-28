@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { normalizeCatalogSearch } from './catalog-search';
+import { CATALOG_SEARCH_MAX_LENGTH } from './catalog-search';
 
 describe('normalizeCatalogSearch', () => {
   it('descarta el término que la plataforma rechazaría', () => {
@@ -10,5 +11,10 @@ describe('normalizeCatalogSearch', () => {
 
   it('conserva el término que la plataforma acepta', () => {
     expect(normalizeCatalogSearch(' obra ')).toBe('obra');
+  });
+
+  it('acepta el máximo y descarta términos que lo superan', () => {
+    expect(normalizeCatalogSearch('a'.repeat(CATALOG_SEARCH_MAX_LENGTH))).toHaveLength(CATALOG_SEARCH_MAX_LENGTH);
+    expect(normalizeCatalogSearch('a'.repeat(CATALOG_SEARCH_MAX_LENGTH + 1))).toHaveLength(CATALOG_SEARCH_MAX_LENGTH);
   });
 });

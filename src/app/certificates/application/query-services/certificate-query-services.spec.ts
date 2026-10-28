@@ -1,10 +1,8 @@
 import '@angular/compiler';
 import { Injector, runInInjectionContext } from '@angular/core';
 import { describe, expect, it } from 'vitest';
-import {
-  CERTIFICATE_REPOSITORY,
-  ListingCriteria,
-} from '../../domain/repositories/certificate-repositories';
+import { ListingCriteria } from '../queries/certificate-queries';
+import { CertificateGateway } from '../../infrastructure/gateways/certificate.gateway';
 import {
   ListCertificateQueueQueryService,
   ListCertificatesQueryService,
@@ -17,7 +15,7 @@ describe('listados paginados de certificados', () => {
     const injector = Injector.create({
       providers: [
         {
-          provide: CERTIFICATE_REPOSITORY,
+          provide: CertificateGateway,
           useValue: {
             async listEligibleAssignments(criteria: ListingCriteria) {
               received = criteria;
@@ -42,7 +40,7 @@ describe('listados paginados de certificados', () => {
     const injector = Injector.create({
       providers: [
         {
-          provide: CERTIFICATE_REPOSITORY,
+          provide: CertificateGateway,
           useValue: {
             async listCertificates(criteria: unknown) {
               received = criteria;

@@ -6,6 +6,37 @@
 import { FilterableCatalogStatus } from '../../domain/model/value-objects/catalog-status';
 
 /**
+ * CatalogPage is a page of a listing.
+ */
+export interface CatalogPage<T> {
+  /** The records of the page. It is never empty by contract. */
+  readonly items: readonly T[];
+  /** The number of the page, starting at one. */
+  readonly page: number;
+  /** The number of pages of the listing. */
+  readonly totalPages: number;
+  /** The number of records that match the query. */
+  readonly total: number;
+}
+
+/**
+ * CatalogCriteria are the filters shared by every listing of the context.
+ */
+export interface CatalogCriteria {
+  readonly search?: string;
+  readonly status?: FilterableCatalogStatus;
+  readonly limit?: number;
+  readonly page?: number;
+}
+
+/**
+ * WorkUnitCriteria are the filters of the listing of the work units.
+ */
+export interface WorkUnitCriteria extends CatalogCriteria {
+  readonly serviceId?: string;
+}
+
+/**
  * ListServicesQuery asks for a page of the services.
  */
 export interface ListServicesQuery {

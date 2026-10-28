@@ -1,7 +1,7 @@
 import '@angular/compiler';
 import { Injector, runInInjectionContext } from '@angular/core';
 import { describe, expect, it, vi } from 'vitest';
-import { CERTIFICATE_REPOSITORY } from '../../domain/repositories/certificate-repositories';
+import { CertificateGateway } from '../../infrastructure/gateways/certificate.gateway';
 import {
   GetCertificateFileQueryService,
   GetCertificatePreviewQueryService,
@@ -14,7 +14,7 @@ function setup(download = vi.fn(async () => new Blob(['PDF']))) {
   const injector = Injector.create({
     providers: [
       {
-        provide: CERTIFICATE_REPOSITORY,
+        provide: CertificateGateway,
         useValue: {
           downloadCertificateFile: download,
           previewCertificate: preview,

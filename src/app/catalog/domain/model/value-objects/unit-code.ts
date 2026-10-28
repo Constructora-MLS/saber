@@ -10,48 +10,34 @@ import { CatalogValidationError } from '../errors/catalog-errors';
  */
 export const UNIT_CODE_PATTERN = /^[0-9A-HJKMNP-TV-Z]{3}-[0-9A-HJKMNP-TV-Z]{3}$/;
 
-/**
- * UnitCode is the code of a work unit.
- *
- * The code is unique across the work units and it identifies the unit in
- * the assignments and in the certificates.
- */
-export class UnitCode {
-  private constructor(private readonly text: string) {}
+/** UnitCode is the validated code of a work unit. */
+export type UnitCode = string & { readonly __unitCode: unique symbol };
 
-  /**
-   * create validates and builds a work unit code.
-   *
-   * The code is drawn by the platform, so it always has the shape of a
-   * drawn code: three symbols of the alphabet, a dash and three more. The
-   * value is not uppercased, because the platform never draws a lowercase
-   * code and the database keeps the shape as an invariant.
-   */
-  static create(raw: string): UnitCode {
-    const trimmed = raw.trim();
-    if (trimmed.length === 0) {
-      throw new CatalogValidationError('code', 'El código es obligatorio.');
-    }
-    if (!UNIT_CODE_PATTERN.test(trimmed)) {
-      throw new CatalogValidationError(
-        'code',
-        'El código debe tener tres símbolos, un guion y tres símbolos más.',
-      );
-    }
-    return new UnitCode(trimmed);
+/** parseUnitCode validates and normalizes a platform-generated code. */
+export function parseUnitCode(raw: string): UnitCode {
+  const trimmed = raw.trim();
+  if (trimmed.length === 0) {
+    throw new CatalogValidationError('code', 'El código es obligatorio.');
   }
-
-  /**
-   * restore rebuilds a code from its stored value.
-   */
-  static restore(value: string): UnitCode {
-    return new UnitCode(value);
+  if (!UNIT_CODE_PATTERN.test(trimmed)) {
+    throw new CatalogValidationError(
+      'code',
+      'El código debe tener tres símbolos, un guion y tres símbolos más.',
+    );
   }
-
-  /**
-   * value returns the code as it was stored.
-   */
-  get value(): string {
-    return this.text;
-  }
+  return trimmed as UnitCode;
 }
+
+/** restoreUnitCode trusts a value returned by the backend. */
+export function restoreUnitCode(value: string): UnitCode {
+  return value as UnitCode;
+}
+
+/**
+ * UnitCode keeps the established factory call sites while exposing a
+ * primitive branded type rather than a wrapper class.
+ */
+export const UnitCode = {
+  create: parseUnitCode,
+  restore: restoreUnitCode,
+} as const;

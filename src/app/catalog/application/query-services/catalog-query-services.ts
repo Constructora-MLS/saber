@@ -1,42 +1,26 @@
-// Package queryservices holds the use cases that read the state of the
-// Catalog bounded context.
-//
-// The listings are served by page number, so the worker reaches any page of
-// the listing with a single request.
-// package queryservices
-
 import { inject, Injectable } from '@angular/core';
 import { normalizeCatalogSearch } from '../../../shared/application/queries/catalog-search';
 import {
+  CatalogCriteria,
+  CatalogPage,
   ListPositionsQuery,
   ListRegimesQuery,
   ListServicesQuery,
   ListWorkUnitsQuery,
-} from '../queries/catalog-queries';
-import {
-  CatalogCriteria,
-  CatalogPage,
-  POSITION_REPOSITORY,
-  REGIME_REPOSITORY,
-  SERVICE_REPOSITORY,
-  WORK_UNIT_REPOSITORY,
   WorkUnitCriteria,
-} from '../../domain/repositories/catalog-repositories';
+} from '../queries/catalog-queries';
+import { CatalogGateway } from '../../infrastructure/gateways/catalog.gateway';
 import { Position } from '../../domain/model/aggregates/position';
 import { Regime } from '../../domain/model/aggregates/regime';
 import { Service } from '../../domain/model/aggregates/service';
 import { WorkUnit } from '../../domain/model/aggregates/work-unit';
 
-/**
- * ListServicesQueryService returns the page of the services that matches the
- * query.
- */
 @Injectable({ providedIn: 'root' })
 export class ListServicesQueryService {
-  private readonly repository = inject(SERVICE_REPOSITORY);
+  private readonly gateway = inject(CatalogGateway);
 
   async execute(query: ListServicesQuery): Promise<CatalogPage<Service>> {
-    return this.repository.listServices(this.criteria(query));
+    return this.gateway.listServices(this.criteria(query));
   }
 
   private criteria(query: ListServicesQuery): CatalogCriteria {
@@ -53,16 +37,12 @@ export class ListServicesQueryService {
   }
 }
 
-/**
- * ListPositionsQueryService returns the page of the positions that matches
- * the query.
- */
 @Injectable({ providedIn: 'root' })
 export class ListPositionsQueryService {
-  private readonly repository = inject(POSITION_REPOSITORY);
+  private readonly gateway = inject(CatalogGateway);
 
   async execute(query: ListPositionsQuery): Promise<CatalogPage<Position>> {
-    return this.repository.listPositions({
+    return this.gateway.listPositions({
       search: this.search(query.search),
       status: query.status,
       limit: query.limit,
@@ -75,16 +55,12 @@ export class ListPositionsQueryService {
   }
 }
 
-/**
- * ListRegimesQueryService returns the page of the regimes that matches the
- * query.
- */
 @Injectable({ providedIn: 'root' })
 export class ListRegimeQueryService {
-  private readonly repository = inject(REGIME_REPOSITORY);
+  private readonly gateway = inject(CatalogGateway);
 
   async execute(query: ListRegimesQuery): Promise<CatalogPage<Regime>> {
-    return this.repository.listRegimes({
+    return this.gateway.listRegimes({
       search: this.search(query.search),
       status: query.status,
       limit: query.limit,
@@ -97,13 +73,9 @@ export class ListRegimeQueryService {
   }
 }
 
-/**
- * ListWorkUnitsQueryService returns the page of the work units that matches
- * the query.
- */
 @Injectable({ providedIn: 'root' })
 export class ListWorkUnitsQueryService {
-  private readonly repository = inject(WORK_UNIT_REPOSITORY);
+  private readonly gateway = inject(CatalogGateway);
 
   async execute(query: ListWorkUnitsQuery): Promise<CatalogPage<WorkUnit>> {
     const serviceId = query.serviceId?.trim();
@@ -115,7 +87,7 @@ export class ListWorkUnitsQueryService {
       ...(serviceId ? { serviceId } : {}),
     };
 
-    return this.repository.listWorkUnits(criteria);
+    return this.gateway.listWorkUnits(criteria);
   }
 
   private search(raw: string | undefined): string | undefined {
