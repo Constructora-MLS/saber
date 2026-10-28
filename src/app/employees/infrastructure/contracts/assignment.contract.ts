@@ -83,21 +83,9 @@ export interface CeaseAssignmentRequest {
 }
 
 /**
- * The invalid field of a failed request.
+ * The invalid field of a failed request and the RFC 9457 representation of
+ * a failure of the API are the envelope of the platform: they are declared
+ * once, in the shared module, and re-exported here for the consumers of this
+ * contract.
  */
-export interface FieldErrorResource {
-  readonly field?: string;
-  readonly message?: string;
-}
-
-/**
- * The RFC 9457 representation of a failure of the API.
- */
-export interface ProblemResource {
-  readonly type?: string;
-  readonly title?: string;
-  readonly status?: number;
-  readonly detail?: string;
-  readonly code?: string;
-  readonly errors?: readonly FieldErrorResource[];
-}
+export type { FieldErrorResource, ProblemResource } from '../../../shared/infrastructure/http/problem';

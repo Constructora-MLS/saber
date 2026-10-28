@@ -2,7 +2,15 @@
 // bounded context.
 // package http
 
-import { FieldErrorResource, ProblemResource } from '../contracts/assignment.contract';
+import {
+  ApiError,
+  FALLBACK_ERROR_DETAIL,
+  FieldErrorResource,
+  parseProblem,
+  UNEXPECTED_ERROR_CODE,
+  UNEXPECTED_ERROR_DETAIL,
+  UNKNOWN_ERROR_CODE,
+} from '../../../shared/infrastructure/http/problem';
 
 /**
  * AssignmentApiError is the failure of a call to the API of the Assignments
@@ -12,24 +20,15 @@ import { FieldErrorResource, ProblemResource } from '../contracts/assignment.con
  * details, but the message that the interfaces show is the detail published
  * by the platform.
  */
-export class AssignmentApiError extends Error {
+export class AssignmentApiError extends ApiError {
   constructor(
-    readonly status: number,
-    readonly code: string,
-    readonly detail: string,
-    readonly fieldErrors: readonly FieldErrorResource[] = [],
+    status: number,
+    code: string,
+    detail: string,
+    fieldErrors: readonly FieldErrorResource[] = [],
   ) {
-    super(detail);
+    super(status, code, detail, fieldErrors);
     this.name = 'AssignmentApiError';
-  }
-
-  /**
-   * messageOfField returns the message published for a field, when the
-   * platform rejected that field.
-   */
-  messageOfField(field: string): string | null {
-    const match = this.fieldErrors.find((error) => error.field === field);
-    return match?.message ?? null;
   }
 }
 
@@ -41,38 +40,16 @@ export class AssignmentApiError extends Error {
  * as an unexpected failure, without leaking the payload.
  */
 export function toAssignmentApiError(status: number, body: unknown): AssignmentApiError {
-  const problem = asProblem(body);
+  const problem = parseProblem(body);
 
   if (!problem) {
-    return new AssignmentApiError(
-      status,
-      'unexpected_error',
-      'No se pudo completar la operación. Inténtalo nuevamente.',
-    );
+    return new AssignmentApiError(status, UNEXPECTED_ERROR_CODE, UNEXPECTED_ERROR_DETAIL);
   }
 
   return new AssignmentApiError(
     status,
-    problem.code ?? 'unknown_error',
-    problem.detail ?? problem.title ?? 'No se pudo completar la operación.',
+    problem.code ?? UNKNOWN_ERROR_CODE,
+    problem.detail ?? problem.title ?? FALLBACK_ERROR_DETAIL,
     problem.errors ?? [],
   );
-}
-
-/**
- * asProblem reads the problem details of a failed response.
- */
-function asProblem(body: unknown): ProblemResource | null {
-  if (typeof body !== 'object' || body === null) {
-    return null;
-  }
-  const candidate = body as ProblemResource;
-  if (
-    typeof candidate.title !== 'string' &&
-    typeof candidate.detail !== 'string' &&
-    typeof candidate.code !== 'string'
-  ) {
-    return null;
-  }
-  return candidate;
 }

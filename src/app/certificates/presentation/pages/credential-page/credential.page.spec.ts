@@ -9,7 +9,7 @@ import {
   VerifyCertificateQueryService,
 } from '../../../application/query-services/verify-certificate-query-service';
 import { CertificateVerification } from '../../../domain/model/value-objects/certificate-verification';
-import { CertificateSnapshot } from '../../../domain/model/value-objects/certificate-snapshot';
+import { restoreCertificateSnapshot } from '../../../domain/model/value-objects/certificate-snapshot';
 import { CertificateApiError } from '../../../infrastructure/errors/certificate-api.error';
 import { CredentialPage } from './credential.page';
 
@@ -37,7 +37,7 @@ class Page extends CredentialPage {
 const certificate = CertificateVerification.restore(
   'MLS-7K9D2Q8M5P',
   'ISSUED',
-  CertificateSnapshot.restore(new Map()),
+  restoreCertificateSnapshot(new Map()),
   '2026-10-26T12:00:00Z',
 );
 

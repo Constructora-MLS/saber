@@ -28,9 +28,9 @@ import {
 } from '../contracts/certificate.contract';
 import { toCertificateApiError } from '../errors/certificate-api.error';
 import { Certificate } from '../../domain/model/aggregates/certificate';
-import { CertificateCode } from '../../domain/model/value-objects/certificate-code';
-import { CertificateId } from '../../domain/model/value-objects/certificate-id';
-import { CertificateSnapshot } from '../../domain/model/value-objects/certificate-snapshot';
+import { CertificateCode, restoreCertificateCode } from '../../domain/model/value-objects/certificate-code';
+import { CertificateId, restoreCertificateId } from '../../domain/model/value-objects/certificate-id';
+import { CertificateSnapshot, restoreCertificateSnapshot } from '../../domain/model/value-objects/certificate-snapshot';
 import { CertificateVerification } from '../../domain/model/value-objects/certificate-verification';
 import { CertificateStatus } from '../../domain/model/value-objects/certificate-status';
 import { SNAPSHOT_FIELD } from '../../domain/model/value-objects/certificate-snapshot';
@@ -56,7 +56,7 @@ export class CertificateGateway {
     const queue = await firstValueFrom(
       this.http
         .get<EligibleAssignmentListResource>(`${this.baseUrl}/certificates/eligible-assignments`, {
-          params: this.pageParams(criteria),
+          params: this.eligibleAssignmentParams(criteria),
         })
         .pipe(catchError((error: HttpErrorResponse) => this.toFailure(error))),
     );
@@ -106,10 +106,9 @@ export class CertificateGateway {
     };
   }
 
-  private pageParams(criteria: ListingCriteria): Record<string, string> {
+  private pageParams(criteria: ListingCriteria | CertificateCriteria): Record<string, string> {
     const params: Record<string, string> = { page: `${criteria.page ?? 1}` };
     if (criteria.search?.trim()) params['q'] = criteria.search.trim();
-    if (criteria.serviceId) params['serviceId'] = criteria.serviceId;
 
     if (criteria.limit !== undefined) {
       params['limit'] = `${criteria.limit}`;
@@ -119,6 +118,13 @@ export class CertificateGateway {
     }
 
     return params;
+  }
+
+  private eligibleAssignmentParams(criteria: ListingCriteria): Record<string, string> {
+    return {
+      ...this.pageParams(criteria),
+      ...(criteria.serviceId ? { serviceId: criteria.serviceId } : {}),
+    };
   }
 
   async issueCertificate(assignmentId: string): Promise<Certificate> {
@@ -131,26 +137,6 @@ export class CertificateGateway {
     );
 
     return this.toCertificate(issued);
-  }
-
-  async findCertificate(id: CertificateId): Promise<Certificate | null> {
-    const certificate = await firstValueFrom(
-      this.http
-        .get<CertificateResource>(`${this.baseUrl}/certificates/${id.value}`)
-        .pipe(catchError((error: HttpErrorResponse) => this.toFailure(error))),
-    );
-
-    return this.toCertificate(certificate);
-  }
-
-  async listAssignmentCertificates(assignmentId: string): Promise<readonly Certificate[]> {
-    const history = await firstValueFrom(
-      this.http
-        .get<CertificateListResource>(`${this.baseUrl}/assignments/${assignmentId}/certificates`)
-        .pipe(catchError((error: HttpErrorResponse) => this.toFailure(error))),
-    );
-
-    return history.items.map((item) => this.toCertificate(item));
   }
 
   async findServiceTemplate(serviceId: string): Promise<ServiceTemplate> {
@@ -208,7 +194,7 @@ export class CertificateGateway {
 
     const annulled = await firstValueFrom(
       this.http
-        .post<CertificateResource>(`${this.baseUrl}/certificates/${id.value}/annul`, request)
+        .post<CertificateResource>(`${this.baseUrl}/certificates/${id}/annul`, request)
         .pipe(catchError((error: HttpErrorResponse) => this.toFailure(error))),
     );
 
@@ -217,7 +203,7 @@ export class CertificateGateway {
 
   async downloadCertificateFile(id: CertificateId, signal?: AbortSignal): Promise<Blob> {
     return this.readFile(
-      this.http.get(`${this.baseUrl}/certificates/${id.value}/file`, { responseType: 'blob' }),
+      this.http.get(`${this.baseUrl}/certificates/${id}/file`, { responseType: 'blob' }),
       signal,
     );
   }
@@ -304,8 +290,8 @@ export class CertificateGateway {
 
   private toCertificate(resource: CertificateResource): Certificate {
     return Certificate.restore(
-      CertificateId.restore(resource.id),
-      CertificateCode.restore(resource.code),
+      restoreCertificateId(resource.id),
+      restoreCertificateCode(resource.code),
       resource.assignmentId,
       resource.serviceId,
       this.status(resource.status),
@@ -318,7 +304,7 @@ export class CertificateGateway {
   }
 
   private toSnapshot(resource: CertificateSnapshotResource): CertificateSnapshot {
-    return CertificateSnapshot.restore(
+    return restoreCertificateSnapshot(
       new Map<string, string>([
         [SNAPSHOT_FIELD.employeeFirstName, resource['employee.firstName'] ?? ''],
         [SNAPSHOT_FIELD.employeeLastName, resource['employee.lastName'] ?? ''],
@@ -337,7 +323,7 @@ export class CertificateGateway {
   }
 
   private toPublicSnapshot(resource: PublicCertificateSnapshotResource): CertificateSnapshot {
-    return CertificateSnapshot.restore(
+    return restoreCertificateSnapshot(
       new Map<string, string>([
         [SNAPSHOT_FIELD.employeeFirstName, resource['employee.firstName'] ?? ''],
         [SNAPSHOT_FIELD.employeeLastName, resource['employee.lastName'] ?? ''],
@@ -358,5 +344,3 @@ export class CertificateGateway {
     return raw === 'ISSUED' ? 'ISSUED' : 'ANNULLED';
   }
 }
-
-export { CertificateGateway as CertificateHttpGateway };

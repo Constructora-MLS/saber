@@ -40,6 +40,7 @@ import {
 } from '../../../domain/model/value-objects/certificate-status';
 import { CERTIFICATE_PAGE_SIZE } from '../../../domain/model/value-objects/listing';
 import { CertificateSnapshot } from '../../../domain/model/value-objects/certificate-snapshot';
+import { certificateFailureMessage } from '../../certificate-failure-message';
 import { CertificateApiError } from '../../../infrastructure/errors/certificate-api.error';
 import {
   CertificateServiceReference,
@@ -515,6 +516,9 @@ export class CertificatesPage implements OnInit {
       await this.reload();
     } catch (error) {
       this.notify(this.describe(error).message);
+      if (error instanceof CertificateApiError && error.code === 'certificate_conflict') {
+        await this.reload();
+      }
     } finally {
       this.issuing.set(false);
     }
@@ -901,8 +905,8 @@ export class CertificatesPage implements OnInit {
     const snapshot = certificate.snapshot;
 
     return {
-      certificateId: certificate.id.value,
-      certificateCode: certificate.code.value,
+      certificateId: certificate.id,
+      certificateCode: certificate.code,
       workerName: snapshot.fullName,
       dni: snapshot.dni,
       position: snapshot.position,
@@ -933,48 +937,13 @@ export class CertificatesPage implements OnInit {
    * answer was not understood.
    */
   private describe(error: unknown): CertificateLoadFailure {
-    if (error instanceof CertificateApiError) {
-      if (error.status === 0) {
-        return {
-          title: 'No se pudo conectar con el servidor',
-          message:
-            'El servicio de certificados no respondió. Verifica que el servidor esté activo e inténtalo nuevamente.',
-        };
-      }
-
-      if (error.code === 'invalid_template') {
-        return {
-          title: 'El contenido del certificado no es válido',
-          message:
-            'El texto debe usar las variables disponibles entre llaves, como {nombres}, y ninguna otra.',
-        };
-      }
-
-      if (error.status >= 500) {
-        return {
-          title: 'El servicio de certificados no está disponible',
-          message: 'El servidor falló al responder. Inténtalo nuevamente en unos instantes.',
-        };
-      }
-
-      if (error.code === 'unexpected_error') {
-        return {
-          title: 'No se pudieron cargar los certificados',
-          message:
-            'La plataforma no devolvió una respuesta válida. Inténtalo nuevamente en unos instantes.',
-        };
-      }
-
-      return {
-        title: 'No se pudieron cargar los certificados',
-        message: error.detail,
-      };
-    }
-
+    const message = certificateFailureMessage(error);
     return {
-      title: 'No se pudieron cargar los certificados',
-      message:
-        'Ocurrió un problema inesperado al consultar los certificados. Inténtalo nuevamente.',
+      title:
+        error instanceof Error && 'code' in error && error.code === 'invalid_template'
+          ? 'El contenido del certificado no es válido'
+          : 'No se pudieron cargar los certificados',
+      message,
     };
   }
 

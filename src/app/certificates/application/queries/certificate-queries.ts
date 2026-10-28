@@ -44,7 +44,10 @@ export interface ListingCriteria {
   readonly page?: number;
 }
 
-export interface CertificateCriteria extends ListingCriteria {
+export interface CertificateCriteria {
+  readonly search?: string;
+  readonly limit?: number;
+  readonly page?: number;
   readonly workUnitCode?: string;
   readonly status?: CertificateStatus;
 }

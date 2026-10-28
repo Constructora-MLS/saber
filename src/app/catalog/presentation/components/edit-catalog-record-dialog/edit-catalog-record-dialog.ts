@@ -30,7 +30,7 @@ import {
   CATALOG_NAME_MIN_LENGTH,
 } from '../../../domain/model/value-objects/catalog-name';
 import { DESCRIPTION_MAX_LENGTH } from '../../../domain/model/value-objects/description';
-import { CatalogApiError } from '../../../infrastructure/errors/catalog-api.error';
+import { catalogApiErrorMessage, catalogFieldErrors } from '../../catalog-error-messages';
 import { FieldCounter } from '../../../../shared/presentation/components/field-counter/field-counter';
 
 /**
@@ -129,6 +129,11 @@ export class EditCatalogRecordDialog implements OnInit {
   protected readonly servicesError = signal<string | null>(null);
   protected readonly submitting = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
+  protected readonly serverFieldErrors = signal<Readonly<Record<string, string>>>({});
+
+  protected fieldError(field: string): string | null {
+    return this.serverFieldErrors()[field] ?? null;
+  }
 
   /** Whether the record is a work unit, the only one that belongs to a service. */
   protected readonly isWorkUnit = this.data.kind === 'work-unit';
@@ -151,7 +156,7 @@ export class EditCatalogRecordDialog implements OnInit {
     const current = this.currentService();
     const active = this.services()
       .filter((service) => service.id !== current?.id)
-      .map((service) => ({ id: service.id, name: service.name.value, current: false }));
+      .map((service) => ({ id: service.id, name: service.name, current: false }));
     return current ? [current, ...active] : active;
   });
 
@@ -243,6 +248,7 @@ export class EditCatalogRecordDialog implements OnInit {
 
     this.submitting.set(true);
     this.errorMessage.set(null);
+    this.serverFieldErrors.set({});
 
     const raw = this.form.getRawValue();
 
@@ -250,6 +256,9 @@ export class EditCatalogRecordDialog implements OnInit {
       const updated = await this.apply(raw);
       this.dialogRef.close(updated);
     } catch (error) {
+      this.serverFieldErrors.set(
+        catalogFieldErrors(error, ['name', 'description', 'serviceId', 'status']),
+      );
       this.errorMessage.set(this.describe(error));
     } finally {
       this.submitting.set(false);
@@ -333,8 +342,8 @@ export class EditCatalogRecordDialog implements OnInit {
 
     if (data.kind === 'work-unit') {
       this.form.patchValue({
-        name: data.record.name.value,
-        description: data.record.description?.value ?? '',
+        name: data.record.name,
+        description: data.record.description ?? '',
         serviceId: data.record.serviceId,
         serviceQuery: data.record.serviceName,
         status: data.record.status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE',
@@ -348,8 +357,8 @@ export class EditCatalogRecordDialog implements OnInit {
     }
 
     this.form.patchValue({
-      name: data.record.name.value,
-      description: data.record.description?.value ?? '',
+      name: data.record.name,
+      description: data.record.description ?? '',
       status: data.record.status === 'ACTIVE' ? 'ACTIVE' : 'INACTIVE',
     });
   }
@@ -392,12 +401,9 @@ export class EditCatalogRecordDialog implements OnInit {
    * describe turns a failure into the message the interfaces show.
    */
   private describe(error: unknown): string {
-    if (error instanceof CatalogApiError) {
-      return error.detail;
-    }
     if (error instanceof CatalogValidationError) {
       return error.reason;
     }
-    return 'No se pudo guardar el registro.';
+    return catalogApiErrorMessage(error, 'No se pudo guardar el registro.');
   }
 }

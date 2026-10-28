@@ -15,7 +15,7 @@ import {
 } from '../commands/catalog-commands';
 import { CatalogName } from '../../domain/model/value-objects/catalog-name';
 import { CatalogValidationError } from '../../domain/model/errors/catalog-errors';
-import { Description } from '../../domain/model/value-objects/description';
+import { Description, isDescriptionEmpty } from '../../domain/model/value-objects/description';
 import { CatalogGateway } from '../../infrastructure/gateways/catalog.gateway';
 import { Position } from '../../domain/model/aggregates/position';
 import { Regime } from '../../domain/model/aggregates/regime';
@@ -38,7 +38,7 @@ export class CreateServiceCommandService {
       return null;
     }
     const description = Description.create(raw);
-    return description.isEmpty ? null : description;
+    return isDescriptionEmpty(description) ? null : description;
   }
 }
 
@@ -58,7 +58,7 @@ export class CreatePositionCommandService {
       return null;
     }
     const description = Description.create(raw);
-    return description.isEmpty ? null : description;
+    return isDescriptionEmpty(description) ? null : description;
   }
 }
 
@@ -78,7 +78,7 @@ export class CreateRegimeCommandService {
       return null;
     }
     const description = Description.create(raw);
-    return description.isEmpty ? null : description;
+    return isDescriptionEmpty(description) ? null : description;
   }
 }
 
@@ -102,7 +102,7 @@ export class CreateWorkUnitCommandService {
       return null;
     }
     const description = Description.create(raw);
-    return description.isEmpty ? null : description;
+    return isDescriptionEmpty(description) ? null : description;
   }
 }
 
@@ -124,7 +124,7 @@ export class UpdateServiceCommandService {
 
   private description(raw: string): Description | null {
     const description = Description.create(raw);
-    return description.isEmpty ? null : description;
+    return isDescriptionEmpty(description) ? null : description;
   }
 }
 
@@ -155,7 +155,7 @@ export class UpdatePositionCommandService {
 
   private description(raw: string): Description | null {
     const description = Description.create(raw);
-    return description.isEmpty ? null : description;
+    return isDescriptionEmpty(description) ? null : description;
   }
 }
 
@@ -186,7 +186,7 @@ export class UpdateRegimeCommandService {
 
   private description(raw: string): Description | null {
     const description = Description.create(raw);
-    return description.isEmpty ? null : description;
+    return isDescriptionEmpty(description) ? null : description;
   }
 }
 
@@ -219,7 +219,7 @@ export class UpdateWorkUnitCommandService {
 
   private description(raw: string): Description | null {
     const description = Description.create(raw);
-    return description.isEmpty ? null : description;
+    return isDescriptionEmpty(description) ? null : description;
   }
 }
 

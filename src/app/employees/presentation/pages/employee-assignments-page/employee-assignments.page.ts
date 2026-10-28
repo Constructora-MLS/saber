@@ -39,7 +39,7 @@ import {
   PositionReference,
   WorkUnitReference,
 } from '../../../infrastructure/acl/catalog-reference.acl';
-import { AssignmentApiError } from '../../../infrastructure/errors/assignment-api.error';
+import { describeAssignmentFailure } from '../employee-failures';
 import { AssignmentRow, AssignmentTable } from '../../components/assignment-table/assignment-table';
 import { Paginator } from '../../../../shared/presentation/components/paginator/paginator';
 import { CeaseAssignmentDialog } from '../../components/cease-assignment-dialog/cease-assignment-dialog';
@@ -591,56 +591,13 @@ export class EmployeeAssignmentsPage {
    * answer was not understood.
    */
   private describe(error: unknown): AssignmentLoadFailure {
-    if (error instanceof AssignmentApiError) {
-      if (error.status === 0) {
-        return {
-          title: 'No se pudo conectar con el servidor',
-          message:
-            'El servicio de asignaciones no respondió. Verifica que el servidor esté activo e inténtalo nuevamente.',
-        };
-      }
-
-      if (error.status >= 500) {
-        return {
-          title: 'El servicio de asignaciones no está disponible',
-          message: 'El servidor falló al responder. Inténtalo nuevamente en unos instantes.',
-        };
-      }
-
-      if (error.code === 'unexpected_error') {
-        return {
-          title: 'No se pudieron cargar las asignaciones',
-          message:
-            'La plataforma no devolvió una respuesta válida. Inténtalo nuevamente en unos instantes.',
-        };
-      }
-
-      if (error.code === 'assignment_certificate_history') {
-        return {
-          title: 'La asignación tiene certificados emitidos',
-          message:
-            'Anula el certificado y vuelve a intentarlo. El historial se conserva.',
-        };
-      }
-
-      return {
-        title: 'No se pudieron cargar las asignaciones',
-        message: error.detail,
-      };
-    }
-
     if (error instanceof AssignmentValidationError) {
       return {
         title: 'No se pudo completar la operación',
         message: error.reason,
       };
     }
-
-    return {
-      title: 'No se pudieron cargar las asignaciones',
-      message:
-        'Ocurrió un problema inesperado al consultar las asignaciones. Inténtalo nuevamente.',
-    };
+    return describeAssignmentFailure(error);
   }
 
   /**

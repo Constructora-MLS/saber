@@ -6,7 +6,7 @@ import {
   SaveServiceTemplateCommand,
 } from '../commands/certificate-commands';
 import { Certificate } from '../../domain/model/aggregates/certificate';
-import { CertificateId } from '../../domain/model/value-objects/certificate-id';
+import { CertificateId, restoreCertificateId } from '../../domain/model/value-objects/certificate-id';
 import { CertificateGateway } from '../../infrastructure/gateways/certificate.gateway';
 import { ServiceTemplate } from '../queries/certificate-queries';
 
@@ -43,7 +43,7 @@ export class AnnulCertificateCommandService {
 
   async execute(command: AnnulCertificateCommand): Promise<Certificate> {
     return this.gateway.annulCertificate(
-      CertificateId.restore(command.certificateId),
+      restoreCertificateId(command.certificateId),
       command.reason.trim(),
     );
   }

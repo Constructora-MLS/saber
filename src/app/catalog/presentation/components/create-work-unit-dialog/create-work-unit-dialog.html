@@ -33,6 +33,9 @@
       @if (form.controls.name.hasError('maxlength')) {
         <mat-error>El nombre no puede superar los {{ nameMaxLength }} caracteres.</mat-error>
       }
+      @if (fieldError('name'); as message) {
+        <mat-error>{{ message }}</mat-error>
+      }
       <mat-hint align="end" appFieldCounter [control]="form.controls.name" [max]="nameMaxLength" />
     </mat-form-field>
 
@@ -48,7 +51,7 @@
       />
       <mat-autocomplete #serviceAuto="matAutocomplete" (optionSelected)="selectService($event)">
         @for (service of services(); track service.id) {
-          <mat-option [value]="service.id">{{ service.name.value }}</mat-option>
+          <mat-option [value]="service.id">{{ service.name }}</mat-option>
         }
       </mat-autocomplete>
       @if (loadingServices()) {
@@ -56,6 +59,9 @@
       }
       @if (form.controls.serviceId.hasError('required')) {
         <mat-error>La unidad de trabajo pertenece a un servicio activo.</mat-error>
+      }
+      @if (fieldError('serviceId'); as message) {
+        <mat-error>{{ message }}</mat-error>
       }
       @if (servicesError(); as message) {
         <mat-error>{{ message }}</mat-error>
@@ -80,6 +86,9 @@
         <mat-error>
           La descripción no puede superar los {{ descriptionMaxLength }} caracteres.
         </mat-error>
+      }
+      @if (fieldError('description'); as message) {
+        <mat-error>{{ message }}</mat-error>
       }
       <mat-hint
         align="end"

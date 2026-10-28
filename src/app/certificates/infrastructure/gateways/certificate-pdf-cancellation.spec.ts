@@ -4,8 +4,8 @@ import { Injector, runInInjectionContext } from '@angular/core';
 import { Observable } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { API_BASE_URL } from '../../../api.config';
-import { CertificateId } from '../../domain/model/value-objects/certificate-id';
-import { CertificateGateway as CertificateHttpGateway } from './certificate.gateway';
+import { CertificateId, restoreCertificateId } from '../../domain/model/value-objects/certificate-id';
+import { CertificateGateway } from './certificate.gateway';
 
 describe('cancelación HTTP de PDFs', () => {
   function setup() {
@@ -21,7 +21,7 @@ describe('cancelación HTTP de PDFs', () => {
         { provide: HttpClient, useValue: { get: () => response, post: () => response } },
       ],
     });
-    const gateway = runInInjectionContext(injector, () => new CertificateHttpGateway());
+    const gateway = runInInjectionContext(injector, () => new CertificateGateway());
     return { gateway, unsubscribe, subscribe };
   }
 
@@ -32,7 +32,7 @@ describe('cancelación HTTP de PDFs', () => {
       const controller = new AbortController();
       const result =
         kind === 'file'
-          ? gateway.downloadCertificateFile(CertificateId.restore('id'), controller.signal)
+          ? gateway.downloadCertificateFile(restoreCertificateId('id'), controller.signal)
           : kind === 'public'
             ? gateway.downloadPublicCertificateFile('MLS-7K9D2Q8M5P', controller.signal)
             : kind === 'assignment'

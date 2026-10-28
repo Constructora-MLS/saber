@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { DeleteEmployeeCommandService } from '../../../application/command-services/employee-command-services';
 import { EmployeeValidationError } from '../../../domain/model/errors/employee-errors';
 import { EmployeeApiError } from '../../../infrastructure/errors/employee-api.error';
+import { describeEmployeeFailure } from '../../pages/employee-failures';
 
 /**
  * DeletableEmployee is the worker that a worker of the application asks to
@@ -72,10 +73,7 @@ export class DeleteEmployeeDialog {
    */
   private describe(error: unknown): string {
     if (error instanceof EmployeeApiError) {
-      if (error.code === 'not_found') {
-        return 'El trabajador ya no está registrado.';
-      }
-      return error.detail;
+      return describeEmployeeFailure(error).message;
     }
     if (error instanceof EmployeeValidationError) {
       return error.reason;

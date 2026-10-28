@@ -12,6 +12,7 @@ import {
   PERSON_NAME_MIN_LENGTH,
 } from '../../../domain/model/value-objects/person-name';
 import { EmployeeApiError } from '../../../infrastructure/errors/employee-api.error';
+import { describeEmployeeFailure, employeeFieldFailure } from '../../pages/employee-failures';
 import { CATALOG_REFERENCE_RESOLVER } from '../../../infrastructure/acl/catalog-reference.acl';
 import { FieldCounter } from '../../../../shared/presentation/components/field-counter/field-counter';
 import {
@@ -152,13 +153,8 @@ export class RegisterEmployeeDialog {
    */
   private describe(error: unknown): string {
     if (error instanceof EmployeeApiError) {
-      if (error.code === 'dni_already_exists') {
-        return 'El DNI ya está registrado por otro trabajador.';
-      }
-      if (error.code === 'regime_not_found') {
-        return 'El régimen seleccionado ya no está disponible.';
-      }
-      return error.detail;
+      return employeeFieldFailure(error, ['dni', 'firstName', 'lastName', 'regimeId']) ??
+        describeEmployeeFailure(error).message;
     }
     if (error instanceof EmployeeValidationError) {
       return error.reason;

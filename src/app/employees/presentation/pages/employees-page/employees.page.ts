@@ -11,7 +11,7 @@ import { ListEmployeesQueryService } from '../../../application/query-services/e
 import { Employee } from '../../../domain/model/aggregates/employee';
 import { EmployeePage } from '../../../application/queries/employee-queries';
 import { CATALOG_REFERENCE_RESOLVER } from '../../../infrastructure/acl/catalog-reference.acl';
-import { EmployeeApiError } from '../../../infrastructure/errors/employee-api.error';
+import { describeEmployeeFailure } from '../employee-failures';
 import {
   DeleteEmployeeDialog,
   DeletableEmployee,
@@ -82,7 +82,7 @@ export class EmployeesPage implements OnInit {
   protected readonly page = signal(1);
   /** The number of pages of the listing. */
   protected readonly totalPages = signal(0);
-  protected readonly loading = signal(false);
+  protected readonly loading = signal(true);
   protected readonly loadFailure = signal<EmployeeLoadFailure | null>(null);
 
   /**
@@ -259,7 +259,7 @@ export class EmployeesPage implements OnInit {
         limit: PAGE_SIZE,
       });
 
-      this.publish(result);
+      await this.publish(result);
     } catch (error) {
       this.failedPage.set(page);
       this.loadFailure.set(this.describe(error));
@@ -324,41 +324,7 @@ export class EmployeesPage implements OnInit {
    * was not understood.
    */
   private describe(error: unknown): EmployeeLoadFailure {
-    if (error instanceof EmployeeApiError) {
-      if (error.status === 0) {
-        return {
-          title: 'No se pudo conectar con el servidor',
-          message:
-            'El servicio de personal no respondió. Verifica que el servidor esté activo e inténtalo nuevamente.',
-        };
-      }
-
-      if (error.status >= 500) {
-        return {
-          title: 'El servicio de personal no está disponible',
-          message: 'El servidor falló al responder. Inténtalo nuevamente en unos instantes.',
-        };
-      }
-
-      if (error.code === 'unexpected_error') {
-        return {
-          title: 'No se pudo cargar el personal',
-          message:
-            'La plataforma no devolvió una respuesta válida. Inténtalo nuevamente en unos instantes.',
-        };
-      }
-
-      return {
-        title: 'No se pudo cargar el personal',
-        message: error.detail,
-      };
-    }
-
-    return {
-      title: 'No se pudo cargar el personal',
-      message:
-        'Ocurrió un problema inesperado al consultar los trabajadores. Inténtalo nuevamente.',
-    };
+    return describeEmployeeFailure(error);
   }
 
   /**

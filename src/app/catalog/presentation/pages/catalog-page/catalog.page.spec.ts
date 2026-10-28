@@ -45,6 +45,8 @@ describe('CatalogPage', () => {
       loading(): boolean;
     };
 
+    expect(page.loading()).toBe(true);
+
     const oldLoad = page.load(1);
     const currentLoad = page.load(2);
 

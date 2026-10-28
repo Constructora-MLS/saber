@@ -12,7 +12,7 @@ import {
   CATALOG_NAME_MIN_LENGTH,
 } from '../../../domain/model/value-objects/catalog-name';
 import { DESCRIPTION_MAX_LENGTH } from '../../../domain/model/value-objects/description';
-import { CatalogApiError } from '../../../infrastructure/errors/catalog-api.error';
+import { catalogApiErrorMessage, catalogFieldErrors } from '../../catalog-error-messages';
 import { FieldCounter } from '../../../../shared/presentation/components/field-counter/field-counter';
 
 /**
@@ -57,6 +57,11 @@ export class CreateServiceDialog {
 
   protected readonly submitting = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
+  protected readonly serverFieldErrors = signal<Readonly<Record<string, string>>>({});
+
+  protected fieldError(field: string): string | null {
+    return this.serverFieldErrors()[field] ?? null;
+  }
 
   protected cancel(): void {
     this.dialogRef.close();
@@ -73,6 +78,7 @@ export class CreateServiceDialog {
 
     this.submitting.set(true);
     this.errorMessage.set(null);
+    this.serverFieldErrors.set({});
 
     const command = this.toCommand(this.form.getRawValue());
 
@@ -80,6 +86,7 @@ export class CreateServiceDialog {
       const service = await this.createService.execute(command);
       this.dialogRef.close(service);
     } catch (error) {
+      this.serverFieldErrors.set(catalogFieldErrors(error, ['name', 'description']));
       this.errorMessage.set(this.describe(error));
     } finally {
       this.submitting.set(false);
@@ -99,12 +106,9 @@ export class CreateServiceDialog {
   }
 
   private describe(error: unknown): string {
-    if (error instanceof CatalogApiError) {
-      return error.detail;
-    }
     if (error instanceof CatalogValidationError) {
       return error.reason;
     }
-    return 'No se pudo registrar el servicio.';
+    return catalogApiErrorMessage(error, 'No se pudo registrar el servicio.');
   }
 }

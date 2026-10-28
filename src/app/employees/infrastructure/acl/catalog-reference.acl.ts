@@ -1,7 +1,8 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { inject, Injectable, InjectionToken } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { catchError, firstValueFrom, throwError } from 'rxjs';
 import { API_BASE_URL } from '../../../api.config';
+import { toEmployeeApiError } from '../errors/employee-api.error';
 import {
   normalizeCatalogSearch,
   CATALOG_SELECTOR_PAGE_SIZE as CATALOG_PAGE_SIZE,
@@ -204,7 +205,16 @@ export class CatalogReferenceAcl implements CatalogReferenceResolver {
     }
 
     const page = await firstValueFrom(
-      this.http.get<{ readonly items: readonly TResource[] }>(`${this.baseUrl}${path}`, { params }),
+      this.http
+        .get<{ readonly items: readonly TResource[] }>(`${this.baseUrl}${path}`, { params })
+        .pipe(
+          catchError((error: unknown) => {
+            if (!(error instanceof HttpErrorResponse)) {
+              return throwError(() => error);
+            }
+            return throwError(() => toEmployeeApiError(error.status, error.error));
+          }),
+        ),
     );
 
     return page.items;

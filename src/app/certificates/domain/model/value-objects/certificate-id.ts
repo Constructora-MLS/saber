@@ -1,54 +1,31 @@
 // Package valueobjects holds the value objects of the Certificates bounded
 // context.
 //
-// Every value object validates its invariants on construction and never
-// exposes a mutable state.
+// Certificate identifiers are opaque UUIDs. The branded type prevents
+// accidental mixing with other strings while keeping the value frictionless
+// for forms and HTTP contracts.
 // package valueobjects
 
 import { CertificateValidationError } from '../errors/certificate-errors';
 
-/**
- * UUID_PATTERN is the shape of the identifier of a record of the platform.
- */
+/** UUID_PATTERN is the shape of an identifier published by the platform. */
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-/**
- * CertificateId is the identifier of an issued certificate.
- */
-export class CertificateId {
-  private constructor(private readonly text: string) {}
+export type CertificateId = string & { readonly __brand: 'CertificateId' };
 
-  /**
-   * create validates and builds the identifier of a certificate.
-   *
-   * The identifier is the identifier of a record of the platform, so it
-   * must be a UUID: the platform rejects any other value.
-   */
-  static create(raw: string): CertificateId {
-    const trimmed = raw.trim();
-    if (trimmed.length === 0) {
-      throw new CertificateValidationError(
-        'id',
-        'El identificador del certificado es obligatorio.',
-      );
-    }
-    if (!UUID_PATTERN.test(trimmed)) {
-      throw new CertificateValidationError('id', 'El identificador del certificado no es válido.');
-    }
-    return new CertificateId(trimmed);
+/** createCertificateId validates a certificate UUID and trims its input. */
+export function createCertificateId(raw: string): CertificateId {
+  const trimmed = raw.trim();
+  if (trimmed.length === 0) {
+    throw new CertificateValidationError('id', 'El identificador del certificado es obligatorio.');
   }
+  if (!UUID_PATTERN.test(trimmed)) {
+    throw new CertificateValidationError('id', 'El identificador del certificado no es válido.');
+  }
+  return trimmed as CertificateId;
+}
 
-  /**
-   * restore rebuilds an identifier from its stored value.
-   */
-  static restore(value: string): CertificateId {
-    return new CertificateId(value);
-  }
-
-  /**
-   * value returns the identifier as it was stored.
-   */
-  get value(): string {
-    return this.text;
-  }
+/** restoreCertificateId trusts the UUID already validated at the API boundary. */
+export function restoreCertificateId(value: string): CertificateId {
+  return value as CertificateId;
 }

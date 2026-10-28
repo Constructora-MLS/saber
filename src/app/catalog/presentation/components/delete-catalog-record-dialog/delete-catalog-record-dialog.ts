@@ -9,7 +9,7 @@ import {
   DeleteWorkUnitCommandService,
 } from '../../../application/command-services/catalog-command-services';
 import { CatalogValidationError } from '../../../domain/model/errors/catalog-errors';
-import { CatalogApiError } from '../../../infrastructure/errors/catalog-api.error';
+import { catalogApiErrorMessage } from '../../catalog-error-messages';
 
 /**
  * DeletableCatalogRecord is the record that a worker of the application asks
@@ -119,12 +119,9 @@ export class DeleteCatalogRecordDialog {
    * describe turns a failure into the message the interfaces show.
    */
   private describe(error: unknown): string {
-    if (error instanceof CatalogApiError) {
-      return error.detail;
-    }
     if (error instanceof CatalogValidationError) {
       return error.reason;
     }
-    return 'No se pudo borrar el registro.';
+    return catalogApiErrorMessage(error, 'No se pudo borrar el registro.');
   }
 }

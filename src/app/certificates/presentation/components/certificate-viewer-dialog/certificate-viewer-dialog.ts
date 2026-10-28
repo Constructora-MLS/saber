@@ -14,6 +14,7 @@ import {
   GetCertificateFileQueryService,
   GetCertificatePreviewQueryService,
 } from '../../../application/query-services/certificate-query-services';
+import { certificateFailureMessage } from '../../certificate-failure-message';
 
 /**
  * CertificateViewerData identifies the PDF that the dialog shows.
@@ -136,9 +137,9 @@ export class CertificateViewerDialog implements OnDestroy {
       // The document is a PDF that the platform itself archived, so the
       // browser may show it as a resource of the page.
       this.documentUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(this.fileUrl));
-    } catch {
+    } catch (error) {
       if (!this.request.signal.aborted) {
-        this.failure.set('No se pudo abrir el certificado. Inténtalo nuevamente.');
+        this.failure.set(certificateFailureMessage(error));
       }
     } finally {
       if (!this.request.signal.aborted) this.loading.set(false);

@@ -4,7 +4,10 @@ import { Injector, runInInjectionContext } from '@angular/core';
 import { of, throwError } from 'rxjs';
 import { describe, expect, it } from 'vitest';
 import { API_BASE_URL } from '../../../api.config';
-import { CertificateGateway as CertificateHttpGateway } from './certificate.gateway';
+import { CertificateGateway } from './certificate.gateway';
+import { CertificateApiError } from '../errors/certificate-api.error';
+import { restoreCertificateId } from '../../domain/model/value-objects/certificate-id';
+import { hasSnapshotField, SNAPSHOT_FIELD } from '../../domain/model/value-objects/certificate-snapshot';
 
 describe('paginación de certificados', () => {
   function setup() {
@@ -23,7 +26,7 @@ describe('paginación de certificados', () => {
         },
       ],
     });
-    const gateway = runInInjectionContext(injector, () => new CertificateHttpGateway());
+    const gateway = runInInjectionContext(injector, () => new CertificateGateway());
     return { gateway, requests };
   }
 
@@ -65,7 +68,7 @@ describe('paginación de certificados', () => {
     expect(requests[0].params).toEqual({ page: '1' });
   });
 
-  it('filtra el historial por obra y omite el filtro cuando no hay obra', async () => {
+  it('filtra el historial por obra y omite parámetros no aplicables', async () => {
     const { gateway, requests } = setup();
     await gateway.listCertificates({ page: 1, workUnitCode: 'OB-021' });
     expect(requests[0].params).toEqual({ page: '1', workUnitCode: 'OB-021' });
@@ -113,12 +116,83 @@ describe('paginación de certificados', () => {
         },
       ],
     });
-    const gateway = runInInjectionContext(injector, () => new CertificateHttpGateway());
+    const gateway = runInInjectionContext(injector, () => new CertificateGateway());
 
     const page = await gateway.listCertificates({ page: 1 });
 
     expect(page.items[0].snapshot.service).toBe('Ejecución de obras civiles');
     expect(page.items[0].snapshot.workUnit).toBe('Mejoramiento del puente La Molina');
+  });
+});
+
+describe('errores de la API de certificados', () => {
+  function gatewayFor(error: HttpErrorResponse) {
+    const injector = Injector.create({
+      providers: [
+        { provide: API_BASE_URL, useValue: '/api/v1' },
+        {
+          provide: HttpClient,
+          useValue: {
+            post: () => throwError(() => error),
+            get: () => throwError(() => error),
+          },
+        },
+      ],
+    });
+    return runInInjectionContext(injector, () => new CertificateGateway());
+  }
+
+  it('preserva los errores de validación por campo de la anulación', async () => {
+    const gateway = gatewayFor(
+      new HttpErrorResponse({
+        status: 400,
+        error: {
+          code: 'invalid_annulment_reason',
+          detail: 'invalid reason',
+          errors: [{ field: 'reason', message: 'too long' }],
+        },
+      }),
+    );
+    await expect(
+      gateway.annulCertificate(restoreCertificateId('123e4567-e89b-12d3-a456-426614174000'), 'reason'),
+    ).rejects.toMatchObject({
+      status: 400,
+      code: 'invalid_annulment_reason',
+      fieldErrors: [{ field: 'reason', message: 'too long' }],
+    });
+  });
+
+  it('preserva el código del conflicto de emisión', async () => {
+    const gateway = gatewayFor(
+      new HttpErrorResponse({
+        status: 409,
+        error: { code: 'certificate_conflict', detail: 'internal English detail' },
+      }),
+    );
+    await expect(gateway.issueCertificate('assignment')).rejects.toMatchObject({
+      status: 409,
+      code: 'certificate_conflict',
+    });
+  });
+
+  it('lee document_not_found desde problem+json en una respuesta blob', async () => {
+    const problem = new Blob(
+      [JSON.stringify({ code: 'document_not_found', detail: 'missing archived file' })],
+      { type: 'application/problem+json' },
+    );
+    const gateway = gatewayFor(new HttpErrorResponse({ status: 404, error: problem }));
+    await expect(gateway.downloadCertificateFile(restoreCertificateId('123e4567-e89b-12d3-a456-426614174000')))
+      .rejects.toMatchObject({ status: 404, code: 'document_not_found' } satisfies Partial<CertificateApiError>);
+  });
+
+  it('preserva storage_unavailable y el estado 503 en respuestas blob', async () => {
+    const problem = new Blob(
+      [JSON.stringify({ code: 'storage_unavailable', detail: 'private storage detail' })],
+      { type: 'application/problem+json' },
+    );
+    const gateway = gatewayFor(new HttpErrorResponse({ status: 503, error: problem }));
+    await expect(gateway.downloadCertificateFile(restoreCertificateId('123e4567-e89b-12d3-a456-426614174000')))
+      .rejects.toMatchObject({ status: 503, code: 'storage_unavailable' });
   });
 });
 
@@ -140,7 +214,7 @@ describe('PDF público', () => {
         },
       ],
     });
-    const gateway = runInInjectionContext(injector, () => new CertificateHttpGateway());
+    const gateway = runInInjectionContext(injector, () => new CertificateGateway());
     expect(await gateway.downloadPublicCertificateFile('MLS-7K9D2Q8M5P')).toBe(pdf);
     expect(requests).toEqual(['/api/v1/certificates/verify/MLS-7K9D2Q8M5P/file']);
   });
@@ -176,7 +250,7 @@ describe('verificación de certificados', () => {
         },
       ],
     });
-    const gateway = runInInjectionContext(injector, () => new CertificateHttpGateway());
+    const gateway = runInInjectionContext(injector, () => new CertificateGateway());
     return { gateway, requests };
   }
 
@@ -199,7 +273,9 @@ describe('verificación de certificados', () => {
     const verification = await gateway.verifyCertificate('MLS-7K9D2Q8M5P');
 
     expect(verification?.snapshot.dni).toBe('');
-    expect(verification?.snapshot.fields.has('employee.dni')).toBe(false);
+    expect(
+      verification && hasSnapshotField(verification.snapshot, SNAPSHOT_FIELD.employeeDni),
+    ).toBe(false);
   });
 
   for (const status of [404, 500]) {
@@ -215,7 +291,7 @@ describe('verificación de certificados', () => {
           },
         ],
       });
-      const gateway = runInInjectionContext(injector, () => new CertificateHttpGateway());
+      const gateway = runInInjectionContext(injector, () => new CertificateGateway());
       if (status === 404) {
         expect(await gateway.verifyCertificate('MLS-7K9D2Q8M5P')).toBeNull();
       } else {

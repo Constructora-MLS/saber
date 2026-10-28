@@ -16,6 +16,7 @@ import {
 } from '../../../application/query-services/catalog-query-services';
 import { FilterableCatalogStatus } from '../../../domain/model/value-objects/catalog-status';
 import { CatalogApiError } from '../../../infrastructure/errors/catalog-api.error';
+import { catalogApiErrorMessage } from '../../catalog-error-messages';
 import {
   CatalogColumn,
   CatalogRow,
@@ -213,7 +214,9 @@ export class CatalogPage implements OnInit {
   protected readonly page = signal(1);
   /** The number of pages of the listing. */
   protected readonly totalPages = signal(0);
-  protected readonly loading = signal(false);
+  // Start in the loading state so the first render cannot show an empty
+  // catalog before ngOnInit starts the initial request.
+  protected readonly loading = signal(true);
   protected readonly loadFailure = signal<CatalogLoadFailure | null>(null);
 
   protected readonly activeTabDefinition = computed(
@@ -339,7 +342,7 @@ export class CatalogPage implements OnInit {
         .afterClosed()
         .subscribe((created) => {
           if (created) {
-            this.notify(`Unidad de trabajo registrada con el código ${created.code.value}.`);
+            this.notify(`Unidad de trabajo registrada con el código ${created.code}.`);
             void this.reload();
           }
         });
@@ -408,7 +411,7 @@ export class CatalogPage implements OnInit {
     const data: DeletableCatalogRecord = {
       kind: record.kind,
       id: record.record.id,
-      name: record.record.name.value,
+      name: record.record.name,
     };
 
     this.dialog
@@ -529,8 +532,8 @@ export class CatalogPage implements OnInit {
         return {
           id: record.record.id,
           code: null,
-          name: record.record.name.value,
-          description: record.record.description?.value ?? null,
+          name: record.record.name,
+          description: record.record.description ?? null,
           reference: null,
           status: record.record.status,
         };
@@ -538,8 +541,8 @@ export class CatalogPage implements OnInit {
         return {
           id: record.record.id,
           code: null,
-          name: record.record.name.value,
-          description: record.record.description?.value ?? null,
+          name: record.record.name,
+          description: record.record.description ?? null,
           reference: null,
           status: record.record.status,
         };
@@ -547,17 +550,17 @@ export class CatalogPage implements OnInit {
         return {
           id: record.record.id,
           code: null,
-          name: record.record.name.value,
-          description: record.record.description?.value ?? null,
+          name: record.record.name,
+          description: record.record.description ?? null,
           reference: null,
           status: record.record.status,
         };
       case 'work-unit':
         return {
           id: record.record.id,
-          code: record.record.code.value,
-          name: record.record.name.value,
-          description: record.record.description?.value ?? null,
+          code: record.record.code,
+          name: record.record.name,
+          description: record.record.description ?? null,
           reference: record.record.serviceName,
           status: record.record.status,
         };
@@ -581,24 +584,12 @@ export class CatalogPage implements OnInit {
         };
       }
 
-      if (error.status >= 500) {
-        return {
-          title: 'El servicio de catálogos no está disponible',
-          message: 'El servidor falló al responder. Inténtalo nuevamente en unos instantes.',
-        };
-      }
-
-      if (error.code === 'unexpected_error') {
-        return {
-          title: 'No se pudo cargar el catálogo',
-          message:
-            'La plataforma no devolvió una respuesta válida. Inténtalo nuevamente en unos instantes.',
-        };
-      }
-
       return {
-        title: 'No se pudo cargar el catálogo',
-        message: error.detail,
+        title:
+          error.status >= 500
+            ? 'El servicio de catálogos no está disponible'
+            : 'No se pudo cargar el catálogo',
+        message: catalogApiErrorMessage(error, 'No se pudo cargar el catálogo.'),
       };
     }
 

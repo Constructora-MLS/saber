@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { CertificateGateway } from '../../infrastructure/gateways/certificate.gateway';
 import { CertificateVerification } from '../../domain/model/value-objects/certificate-verification';
-import { CertificateCode } from '../../domain/model/value-objects/certificate-code';
+import { createCertificateCode } from '../../domain/model/value-objects/certificate-code';
 
 @Injectable({ providedIn: 'root' })
 export class VerifyCertificateQueryService {
@@ -18,7 +18,7 @@ export class GetPublicCertificateFileQueryService {
 
   execute(code: string, signal?: AbortSignal): Promise<Blob> {
     return this.gateway.downloadPublicCertificateFile(
-      CertificateCode.create(code).value,
+      createCertificateCode(code),
       signal,
     );
   }

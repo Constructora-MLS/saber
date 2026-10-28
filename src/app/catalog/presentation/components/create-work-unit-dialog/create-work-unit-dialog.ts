@@ -20,7 +20,7 @@ import {
   CATALOG_NAME_MIN_LENGTH,
 } from '../../../domain/model/value-objects/catalog-name';
 import { DESCRIPTION_MAX_LENGTH } from '../../../domain/model/value-objects/description';
-import { CatalogApiError } from '../../../infrastructure/errors/catalog-api.error';
+import { catalogApiErrorMessage, catalogFieldErrors } from '../../catalog-error-messages';
 import { FieldCounter } from '../../../../shared/presentation/components/field-counter/field-counter';
 
 /**
@@ -86,6 +86,11 @@ export class CreateWorkUnitDialog implements OnInit {
   protected readonly servicesError = signal<string | null>(null);
   protected readonly submitting = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
+  protected readonly serverFieldErrors = signal<Readonly<Record<string, string>>>({});
+
+  protected fieldError(field: string): string | null {
+    return this.serverFieldErrors()[field] ?? null;
+  }
 
   ngOnInit(): void {
     this.destroyRef.onDestroy(() => this.clearSearchTimer());
@@ -106,7 +111,7 @@ export class CreateWorkUnitDialog implements OnInit {
     this.queryTerm.set(term);
 
     const selected = this.selectedService();
-    if (selected && term !== selected.name.value) {
+    if (selected && term !== selected.name) {
       // The text no longer names the chosen service, so the choice is
       // dropped and the worker has to pick one again.
       this.selectedService.set(null);
@@ -132,7 +137,7 @@ export class CreateWorkUnitDialog implements OnInit {
     }
     this.selectedService.set(service);
     this.form.controls.serviceId.setValue(id);
-    this.form.controls.serviceQuery.setValue(service.name.value);
+    this.form.controls.serviceQuery.setValue(service.name);
   }
 
   protected async submit(): Promise<void> {
@@ -146,6 +151,7 @@ export class CreateWorkUnitDialog implements OnInit {
 
     this.submitting.set(true);
     this.errorMessage.set(null);
+    this.serverFieldErrors.set({});
 
     const command = this.toCommand(this.form.getRawValue());
 
@@ -153,6 +159,7 @@ export class CreateWorkUnitDialog implements OnInit {
       const workUnit = await this.createWorkUnit.execute(command);
       this.dialogRef.close(workUnit);
     } catch (error) {
+      this.serverFieldErrors.set(catalogFieldErrors(error, ['name', 'description', 'serviceId']));
       this.errorMessage.set(this.describe(error));
     } finally {
       this.submitting.set(false);
@@ -214,12 +221,9 @@ export class CreateWorkUnitDialog implements OnInit {
   }
 
   private describe(error: unknown): string {
-    if (error instanceof CatalogApiError) {
-      return error.detail;
-    }
     if (error instanceof CatalogValidationError) {
       return error.reason;
     }
-    return 'No se pudo registrar la unidad de trabajo.';
+    return catalogApiErrorMessage(error, 'No se pudo registrar la unidad de trabajo.');
   }
 }

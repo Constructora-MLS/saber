@@ -1,7 +1,8 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { inject, Injectable, InjectionToken } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
+import { catchError, firstValueFrom, throwError } from 'rxjs';
 import { API_BASE_URL } from '../../../api.config';
+import { toCatalogApiError } from '../../../catalog/infrastructure/errors/catalog-api.error';
 import {
   CATALOG_SELECTOR_PAGE_SIZE,
   normalizeCatalogSearch,
@@ -51,7 +52,11 @@ export class CatalogServiceAcl implements CertificateServiceResolver {
     const page = await firstValueFrom(
       this.http.get<{
         readonly items: readonly { readonly code: string; readonly name: string }[];
-      }>(`${this.baseUrl}/work-units`, { params }),
+      }>(`${this.baseUrl}/work-units`, { params }).pipe(
+        catchError((error: HttpErrorResponse) =>
+          throwError(() => toCatalogApiError(error.status, error.error)),
+        ),
+      ),
     );
     return page.items.map(({ code, name }) => ({ code, name }));
   }
@@ -85,9 +90,15 @@ export class CatalogServiceAcl implements CertificateServiceResolver {
     }
 
     const page = await firstValueFrom(
-      this.http.get<{ readonly items: readonly ServiceResource[] }>(`${this.baseUrl}/services`, {
-        params,
-      }),
+      this.http
+        .get<{ readonly items: readonly ServiceResource[] }>(`${this.baseUrl}/services`, {
+          params,
+        })
+        .pipe(
+          catchError((error: HttpErrorResponse) =>
+            throwError(() => toCatalogApiError(error.status, error.error)),
+          ),
+        ),
     );
 
     return page.items;

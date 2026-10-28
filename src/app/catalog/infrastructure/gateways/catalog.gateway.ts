@@ -106,8 +106,8 @@ export class CatalogGateway {
 
   async createService(service: NewService): Promise<Service> {
     const request: CreateServiceRequest = {
-      name: service.name.value,
-      ...(service.description ? { description: service.description.value } : {}),
+      name: service.name,
+      ...(service.description ? { description: service.description } : {}),
     };
     const created = await this.post<ServiceResource>('/services', request);
 
@@ -116,8 +116,8 @@ export class CatalogGateway {
 
   async updateService(changes: ServiceChanges): Promise<Service> {
     const request: UpdateServiceRequest = {
-      name: changes.name.value,
-      description: changes.description ? changes.description.value : '',
+      name: changes.name,
+      description: changes.description ? changes.description : '',
       status: changes.status,
     };
     const updated = await this.patch<ServiceResource>(`/services/${changes.id}`, request);
@@ -142,8 +142,8 @@ export class CatalogGateway {
 
   async createPosition(position: NewPosition): Promise<Position> {
     const request: CreatePositionRequest = {
-      name: position.name.value,
-      ...(position.description ? { description: position.description.value } : {}),
+      name: position.name,
+      ...(position.description ? { description: position.description } : {}),
     };
     const created = await this.post<PositionResource>('/positions', request);
 
@@ -152,8 +152,8 @@ export class CatalogGateway {
 
   async updatePosition(changes: PositionChanges): Promise<Position> {
     const request: UpdatePositionRequest = {
-      name: changes.name.value,
-      description: changes.description ? changes.description.value : '',
+      name: changes.name,
+      description: changes.description ? changes.description : '',
       status: changes.status,
     };
     const updated = await this.patch<PositionResource>(`/positions/${changes.id}`, request);
@@ -178,8 +178,8 @@ export class CatalogGateway {
 
   async createRegime(regime: NewRegime): Promise<Regime> {
     const request: CreateRegimeRequest = {
-      name: regime.name.value,
-      ...(regime.description ? { description: regime.description.value } : {}),
+      name: regime.name,
+      ...(regime.description ? { description: regime.description } : {}),
     };
     const created = await this.post<RegimeResource>('/regimes', request);
 
@@ -188,8 +188,8 @@ export class CatalogGateway {
 
   async updateRegime(changes: RegimeChanges): Promise<Regime> {
     const request: UpdateRegimeRequest = {
-      name: changes.name.value,
-      description: changes.description ? changes.description.value : '',
+      name: changes.name,
+      description: changes.description ? changes.description : '',
       status: changes.status,
     };
     const updated = await this.patch<RegimeResource>(`/regimes/${changes.id}`, request);
@@ -219,9 +219,9 @@ export class CatalogGateway {
 
   async createWorkUnit(workUnit: NewWorkUnit): Promise<WorkUnit> {
     const request: CreateWorkUnitRequest = {
-      name: workUnit.name.value,
+      name: workUnit.name,
       serviceId: workUnit.serviceId,
-      ...(workUnit.description ? { description: workUnit.description.value } : {}),
+      ...(workUnit.description ? { description: workUnit.description } : {}),
     };
     const created = await this.post<WorkUnitResource>('/work-units', request);
 
@@ -230,8 +230,8 @@ export class CatalogGateway {
 
   async updateWorkUnit(changes: WorkUnitChanges): Promise<WorkUnit> {
     const request: UpdateWorkUnitRequest = {
-      name: changes.name.value,
-      description: changes.description ? changes.description.value : '',
+      name: changes.name,
+      description: changes.description ? changes.description : '',
       ...(changes.serviceId ? { serviceId: changes.serviceId } : {}),
       status: changes.status,
     };

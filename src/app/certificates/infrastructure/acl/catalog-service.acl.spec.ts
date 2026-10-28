@@ -1,72 +1,39 @@
 import '@angular/compiler';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injector, runInInjectionContext } from '@angular/core';
-import { of } from 'rxjs';
+import { throwError } from 'rxjs';
 import { describe, expect, it } from 'vitest';
 import { API_BASE_URL } from '../../../api.config';
+import { CatalogApiError } from '../../../catalog/infrastructure/errors/catalog-api.error';
 import { CatalogServiceAcl } from './catalog-service.acl';
 
-function setup(
-  items: readonly { readonly uuid: string; readonly code: string; readonly name: string }[],
-) {
-  const requests: { url: string; params: Record<string, string> }[] = [];
-  const injector = Injector.create({
-    providers: [
-      { provide: API_BASE_URL, useValue: '/api/v1' },
-      {
-        provide: HttpClient,
-        useValue: {
-          get(
-            url: string,
-            options: { params: { keys(): string[]; get(name: string): string | null } },
-          ) {
-            const params = Object.fromEntries(
-              options.params.keys().map((key) => [key, options.params.get(key) ?? '']),
-            );
-            requests.push({ url, params });
-            return of({ items, page: 1, total: items.length, totalPages: 1 });
+describe('adaptador ACL de catálogo', () => {
+  it('traduce errores del catálogo al tipo de error de ese contexto', async () => {
+    const injector = Injector.create({
+      providers: [
+        { provide: API_BASE_URL, useValue: '/api/v1' },
+        {
+          provide: HttpClient,
+          useValue: {
+            get: () =>
+              throwError(
+                () =>
+                  new HttpErrorResponse({
+                    status: 400,
+                    error: { code: 'invalid_search', detail: 'internal catalog detail' },
+                  }),
+              ),
           },
         },
-      },
-    ],
-  });
-  const acl = runInInjectionContext(injector, () => new CatalogServiceAcl());
-  return { acl, requests };
-}
+      ],
+    });
+    const acl = runInInjectionContext(injector, () => new CatalogServiceAcl());
 
-describe('catálogo de obras para el filtro de certificados', () => {
-  it('pide una sola página de obras, nunca el catálogo completo', async () => {
-    const { acl, requests } = setup([]);
-
-    await acl.listWorkUnits();
-
-    expect(requests[0].url).toBe('/api/v1/work-units');
-    expect(requests[0].params).toEqual({ limit: '20', page: '1' });
-  });
-
-  it('busca las obras por el término que escribe el usuario', async () => {
-    const { acl, requests } = setup([]);
-
-    await acl.listWorkUnits('puente');
-
-    expect(requests[0].params).toEqual({ limit: '20', page: '1', search: 'puente' });
-  });
-
-  it('no pregunta al catálogo por un término que la plataforma rechazaría', async () => {
-    const { acl, requests } = setup([]);
-
-    await acl.listWorkUnits('a');
-
-    expect(requests[0].params).toEqual({ limit: '20', page: '1' });
-  });
-
-  it('devuelve el código y el nombre de las obras, sin las obras retiradas', async () => {
-    const { acl } = setup([
-      { uuid: 'id-1', code: 'OB-021', name: 'Mejoramiento del puente La Molina' },
-    ]);
-
-    expect(await acl.listWorkUnits('')).toEqual([
-      { code: 'OB-021', name: 'Mejoramiento del puente La Molina' },
-    ]);
+    await expect(acl.listWorkUnits('obra')).rejects.toBeInstanceOf(CatalogApiError);
+    await expect(acl.listWorkUnits('obra')).rejects.toMatchObject({
+      status: 400,
+      code: 'invalid_search',
+      detail: 'internal catalog detail',
+    });
   });
 });

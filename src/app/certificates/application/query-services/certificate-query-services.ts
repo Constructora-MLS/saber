@@ -6,7 +6,7 @@ import {
   ListingPage,
   ServiceTemplate,
 } from '../queries/certificate-queries';
-import { CertificateId } from '../../domain/model/value-objects/certificate-id';
+import { CertificateId, restoreCertificateId } from '../../domain/model/value-objects/certificate-id';
 import { CertificateGateway } from '../../infrastructure/gateways/certificate.gateway';
 import { Certificate } from '../../domain/model/aggregates/certificate';
 import { CERTIFICATE_PAGE_SIZE } from '../../domain/model/value-objects/listing';
@@ -87,7 +87,7 @@ export class GetCertificateFileQueryService {
     }
 
     const file = await this.gateway.downloadCertificateFile(
-      CertificateId.restore(certificateId),
+      restoreCertificateId(certificateId),
       signal,
     );
     signal?.throwIfAborted();

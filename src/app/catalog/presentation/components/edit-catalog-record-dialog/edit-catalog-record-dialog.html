@@ -29,6 +29,9 @@
       @if (form.controls.name.hasError('maxlength')) {
         <mat-error>El nombre no puede superar los {{ nameMaxLength }} caracteres.</mat-error>
       }
+      @if (fieldError('name'); as message) {
+        <mat-error>{{ message }}</mat-error>
+      }
       <mat-hint align="end" appFieldCounter [control]="form.controls.name" [max]="nameMaxLength" />
     </mat-form-field>
 
@@ -56,6 +59,9 @@
         @if (form.controls.serviceId.hasError('required')) {
           <mat-error>La unidad de trabajo pertenece a un servicio.</mat-error>
         }
+        @if (fieldError('serviceId'); as message) {
+          <mat-error>{{ message }}</mat-error>
+        }
         @if (servicesError(); as message) {
           <mat-error>{{ message }}</mat-error>
         }
@@ -78,6 +84,9 @@
           La descripción no puede superar los {{ descriptionMaxLength }} caracteres.
         </mat-error>
       }
+      @if (fieldError('description'); as message) {
+        <mat-error>{{ message }}</mat-error>
+      }
       <mat-hint
         align="end"
         appFieldCounter
@@ -94,6 +103,9 @@
       </mat-select>
       @if (form.controls.status.hasError('required')) {
         <mat-error>El registro necesita un estado.</mat-error>
+      }
+      @if (fieldError('status'); as message) {
+        <mat-error>{{ message }}</mat-error>
       }
     </mat-form-field>
   </form>
