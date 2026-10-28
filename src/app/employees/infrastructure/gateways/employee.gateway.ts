@@ -1,5 +1,5 @@
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
-import { inject, Injectable, InjectionToken } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { catchError, firstValueFrom, throwError } from 'rxjs';
 import { API_BASE_URL } from '../../../api.config';
 import {
@@ -16,10 +16,7 @@ import { EmployeeId } from '../../domain/model/value-objects/employee-id';
 import { EmployeeStatus } from '../../domain/model/value-objects/employee-status';
 import { PersonName } from '../../domain/model/value-objects/person-name';
 import { RegimeId } from '../../domain/model/value-objects/regime-id';
-import {
-  EmployeeCriteria,
-  EmployeePage,
-} from '../../application/queries/employee-queries';
+import { EmployeeCriteria, EmployeePage } from '../../application/queries/employee-queries';
 
 export interface NewEmployee {
   readonly firstName: PersonName;
@@ -36,21 +33,9 @@ export interface EmployeeChanges {
   readonly regimeId?: RegimeId;
 }
 
-export interface EmployeeRepository {
-  listEmployees(criteria: EmployeeCriteria): Promise<EmployeePage<Employee>>;
-  findEmployee(id: EmployeeId): Promise<Employee | null>;
-  createEmployee(employee: NewEmployee): Promise<Employee>;
-  updateEmployee(changes: EmployeeChanges): Promise<Employee>;
-  deleteEmployee(id: EmployeeId): Promise<void>;
-}
-
-export const EMPLOYEE_REPOSITORY = new InjectionToken<EmployeeRepository>('EMPLOYEE_REPOSITORY', {
-  providedIn: 'root',
-  factory: () => inject(EmployeeGateway),
-});
 
 @Injectable({ providedIn: 'root' })
-export class EmployeeGateway implements EmployeeRepository {
+export class EmployeeGateway {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = inject(API_BASE_URL);
 
@@ -72,12 +57,22 @@ export class EmployeeGateway implements EmployeeRepository {
   async findEmployee(id: EmployeeId): Promise<Employee | null> {
     try {
       const resource = await firstValueFrom(
-        this.http.get<EmployeeResource>(`${this.baseUrl}/employees/${id.value}`),
+        this.http.get<EmployeeResource>(`${this.baseUrl}/employees/${id.value}`).pipe(
+          catchError((error: HttpErrorResponse) => {
+            if (error.status === 404) {
+              return throwError(() => error);
+            }
+            return this.toFailure(error);
+          }),
+        ),
       );
 
       return this.toEmployee(resource);
-    } catch {
-      return null;
+    } catch (error) {
+      if (error instanceof HttpErrorResponse && error.status === 404) {
+        return null;
+      }
+      throw error;
     }
   }
 

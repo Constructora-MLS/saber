@@ -67,11 +67,7 @@ export class GetWorkerRecordQueryService {
   }
 
   private async findWorker(employeeId: string): Promise<Employee | null> {
-    try {
-      return await this.employees.findEmployee(EmployeeId.create(employeeId));
-    } catch {
-      return null;
-    }
+    return this.employees.findEmployee(EmployeeId.create(employeeId));
   }
 
   private async regimes(

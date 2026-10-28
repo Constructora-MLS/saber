@@ -1,5 +1,5 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { inject, Injectable, InjectionToken } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import {
   catchError,
   firstValueFrom,
@@ -42,36 +42,11 @@ import {
   ServiceTemplate,
 } from '../../application/queries/certificate-queries';
 
-export interface CertificateRepository {
-  listEligibleAssignments(criteria?: ListingCriteria): Promise<ListingPage<EligibleAssignment>>;
-  listCertificates(criteria: CertificateCriteria): Promise<ListingPage<Certificate>>;
-  issueCertificate(assignmentId: string): Promise<Certificate>;
-  findCertificate(id: CertificateId): Promise<Certificate | null>;
-  verifyCertificate(code: string): Promise<CertificateVerification | null>;
-  listAssignmentCertificates(assignmentId: string): Promise<readonly Certificate[]>;
-  findServiceTemplate(serviceId: string): Promise<ServiceTemplate>;
-  saveServiceTemplate(serviceId: string, body: string): Promise<ServiceTemplate>;
-  restoreServiceTemplate(serviceId: string): Promise<ServiceTemplate>;
-  annulCertificate(id: CertificateId, reason: string): Promise<Certificate>;
-  downloadCertificateFile(id: CertificateId, signal?: AbortSignal): Promise<Blob>;
-  downloadPublicCertificateFile(code: string, signal?: AbortSignal): Promise<Blob>;
-  previewCertificate(assignmentId: string, signal?: AbortSignal): Promise<Blob>;
-  previewServiceTemplate(serviceId: string, body: string, signal?: AbortSignal): Promise<Blob>;
-}
-
-export const CERTIFICATE_REPOSITORY = new InjectionToken<CertificateRepository>(
-  'CERTIFICATE_REPOSITORY',
-  {
-    providedIn: 'root',
-    factory: () => inject(CertificateGateway),
-  },
-);
-
 /**
  * CertificateGateway is the communication boundary with the Certificates API.
  */
 @Injectable({ providedIn: 'root' })
-export class CertificateGateway implements CertificateRepository {
+export class CertificateGateway {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = inject(API_BASE_URL);
 

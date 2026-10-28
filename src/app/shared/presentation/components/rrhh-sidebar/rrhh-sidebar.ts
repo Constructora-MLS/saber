@@ -1,4 +1,4 @@
-import { Component, input, output, signal } from '@angular/core';
+import { Component, DestroyRef, inject, input, output, signal } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { IsActiveMatchOptions, RouterLink, RouterLinkActive } from '@angular/router';
 import { AppSwitcher, AppSwitcherOption } from '../app-switcher/app-switcher';
@@ -22,6 +22,7 @@ interface RrhhNavigationItem {
   },
 })
 export class RrhhSidebar {
+  private readonly destroyRef = inject(DestroyRef);
   readonly moduleLabel = input('Recursos Humanos');
   readonly userInitials = input('UA');
   readonly userName = input('Usuario actual');
@@ -69,12 +70,14 @@ export class RrhhSidebar {
 
     const compactQuery = window.matchMedia('(max-width: 60rem)');
     this.isCompact.set(compactQuery.matches);
-    compactQuery.addEventListener('change', (event) => {
+    const onChange = (event: MediaQueryListEvent) => {
       this.isCompact.set(event.matches);
       if (!event.matches) {
         this.closeDrawer();
       }
-    });
+    };
+    compactQuery.addEventListener('change', onChange);
+    this.destroyRef.onDestroy(() => compactQuery.removeEventListener('change', onChange));
   }
 
   protected menuLabel(): string {

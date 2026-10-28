@@ -37,14 +37,14 @@ export class CertificateSnapshot {
    * restore rebuilds the snapshot from the values of its fields.
    */
   static restore(values: ReadonlyMap<string, string>): CertificateSnapshot {
-    return new CertificateSnapshot(values);
+    return new CertificateSnapshot(new Map(values));
   }
 
   /**
    * values are the values of the fields of the snapshot.
    */
   get fields(): ReadonlyMap<string, string> {
-    return this.values;
+    return new Map(this.values);
   }
 
   /** The first name of the worker, as the certificate writes it. */

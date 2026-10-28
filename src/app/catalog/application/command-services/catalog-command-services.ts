@@ -14,6 +14,7 @@ import {
   UpdateWorkUnitCommand,
 } from '../commands/catalog-commands';
 import { CatalogName } from '../../domain/model/value-objects/catalog-name';
+import { CatalogValidationError } from '../../domain/model/errors/catalog-errors';
 import { Description } from '../../domain/model/value-objects/description';
 import { CatalogGateway } from '../../infrastructure/gateways/catalog.gateway';
 import { Position } from '../../domain/model/aggregates/position';
@@ -89,7 +90,7 @@ export class CreateWorkUnitCommandService {
     const name = CatalogName.create(command.name);
     const serviceId = command.serviceId.trim();
     if (serviceId.length === 0) {
-      throw new Error('La unidad de trabajo pertenece a un servicio.');
+      throw new CatalogValidationError('serviceId', 'La unidad de trabajo pertenece a un servicio.');
     }
     const description = this.description(command.description);
 

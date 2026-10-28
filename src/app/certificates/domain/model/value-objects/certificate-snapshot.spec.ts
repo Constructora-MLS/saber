@@ -16,6 +16,21 @@ describe('datos archivados del certificado', () => {
     expect(snapshot.service).toBe('');
   });
 
+  it('copia los valores para que cambios externos no alteren la instantánea', () => {
+    const source = new Map<string, string>([[SNAPSHOT_FIELD.employeeFirstName, 'Ana']]);
+    const snapshot = CertificateSnapshot.restore(source);
+    source.set(SNAPSHOT_FIELD.employeeFirstName, 'Eva');
+    expect(snapshot.firstName).toBe('Ana');
+  });
+
+  it('impide que mutar el mapa publicado altere la instantánea', () => {
+    const snapshot = CertificateSnapshot.restore(new Map([[SNAPSHOT_FIELD.employeeFirstName, 'Ana']]));
+    const fields = snapshot.fields as Map<string, string>;
+    fields.set(SNAPSHOT_FIELD.employeeFirstName, 'Eva');
+    fields.clear();
+    expect(snapshot.firstName).toBe('Ana');
+  });
+
   it('no confunde el servicio con la unidad de trabajo', () => {
     const snapshot = CertificateSnapshot.restore(
       new Map<string, string>([

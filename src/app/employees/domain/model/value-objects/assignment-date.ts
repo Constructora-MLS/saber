@@ -64,7 +64,7 @@ export class AssignmentDate {
    * restore rebuilds a date from its stored value.
    */
   static restore(value: string): AssignmentDate {
-    return new AssignmentDate(value, Date.UTC(0, 0, 1));
+    return AssignmentDate.create(value, 'date');
   }
 
   /**

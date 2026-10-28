@@ -132,6 +132,7 @@ export class CatalogPage implements OnInit {
   private readonly listWorkUnits = inject(ListWorkUnitsQueryService);
 
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
+  private loadSequence = 0;
   /** The page that failed, so the retry asks for the same one. */
   private readonly failedPage = signal<number | null>(null);
 
@@ -432,6 +433,7 @@ export class CatalogPage implements OnInit {
    * load asks the use case for a page of the active catalog.
    */
   private async load(page: number): Promise<void> {
+    const sequence = ++this.loadSequence;
     this.loading.set(true);
     this.loadFailure.set(null);
 
@@ -447,6 +449,7 @@ export class CatalogPage implements OnInit {
           limit: PAGE_SIZE,
           page,
         });
+        if (sequence !== this.loadSequence) return;
         this.publish(
           result.items.map((service) => ({ kind: 'service', record: service }) as const),
           result,
@@ -461,6 +464,7 @@ export class CatalogPage implements OnInit {
           limit: PAGE_SIZE,
           page,
         });
+        if (sequence !== this.loadSequence) return;
         this.publish(
           result.items.map((unit) => ({ kind: 'work-unit', record: unit }) as const),
           result,
@@ -475,6 +479,7 @@ export class CatalogPage implements OnInit {
           limit: PAGE_SIZE,
           page,
         });
+        if (sequence !== this.loadSequence) return;
         this.publish(
           result.items.map((position) => ({ kind: 'position', record: position }) as const),
           result,
@@ -488,15 +493,17 @@ export class CatalogPage implements OnInit {
         limit: PAGE_SIZE,
         page,
       });
+      if (sequence !== this.loadSequence) return;
       this.publish(
         result.items.map((regime) => ({ kind: 'regime', record: regime }) as const),
         result,
       );
     } catch (error) {
+      if (sequence !== this.loadSequence) return;
       this.failedPage.set(page);
       this.loadFailure.set(this.describe(error));
     } finally {
-      this.loading.set(false);
+      if (sequence === this.loadSequence) this.loading.set(false);
     }
   }
 

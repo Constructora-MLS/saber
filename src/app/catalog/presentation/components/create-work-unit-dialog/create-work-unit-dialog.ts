@@ -53,6 +53,7 @@ export class CreateWorkUnitDialog implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
+  private searchSequence = 0;
 
   /** The shortest name that a record accepts. */
   protected readonly nameMinLength = CATALOG_NAME_MIN_LENGTH;
@@ -183,6 +184,7 @@ export class CreateWorkUnitDialog implements OnInit {
    * rule even if the contract changes.
    */
   private async searchServices(term: string): Promise<void> {
+    const sequence = ++this.searchSequence;
     this.loadingServices.set(true);
     this.servicesError.set(null);
     try {
@@ -191,11 +193,13 @@ export class CreateWorkUnitDialog implements OnInit {
         status: 'ACTIVE',
         limit: 20,
       });
+      if (sequence !== this.searchSequence) return;
       this.services.set(page.items.filter((service) => service.status === 'ACTIVE'));
     } catch {
+      if (sequence !== this.searchSequence) return;
       this.servicesError.set('No se pudieron cargar los servicios.');
     } finally {
-      this.loadingServices.set(false);
+      if (sequence === this.searchSequence) this.loadingServices.set(false);
     }
   }
 

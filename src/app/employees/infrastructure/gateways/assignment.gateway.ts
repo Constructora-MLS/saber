@@ -1,5 +1,5 @@
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
-import { inject, Injectable, InjectionToken } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { catchError, firstValueFrom, throwError } from 'rxjs';
 import { API_BASE_URL } from '../../../api.config';
 import {
@@ -37,24 +37,9 @@ export interface AssignmentChanges {
   readonly startDate?: AssignmentDate;
 }
 
-export interface AssignmentRepository {
-  listAssignments(criteria: AssignmentCriteria): Promise<AssignmentPage<Assignment>>;
-  createAssignment(assignment: NewAssignment): Promise<Assignment>;
-  updateAssignment(changes: AssignmentChanges): Promise<Assignment>;
-  ceaseAssignment(id: AssignmentId, date: AssignmentDate): Promise<Assignment>;
-  deleteAssignment(id: AssignmentId): Promise<void>;
-}
-
-export const ASSIGNMENT_REPOSITORY = new InjectionToken<AssignmentRepository>(
-  'ASSIGNMENT_REPOSITORY',
-  {
-    providedIn: 'root',
-    factory: () => inject(AssignmentGateway),
-  },
-);
 
 @Injectable({ providedIn: 'root' })
-export class AssignmentGateway implements AssignmentRepository {
+export class AssignmentGateway {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = inject(API_BASE_URL);
 
