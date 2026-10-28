@@ -5,10 +5,49 @@
 // package queries
 
 import { CertificateStatus } from '../../domain/model/value-objects/certificate-status';
-import {
-  ListingPage,
-  EligibleAssignment,
-} from '../../domain/repositories/certificate-repositories';
+import { CertificateSnapshot } from '../../domain/model/value-objects/certificate-snapshot';
+
+/**
+ * EligibleAssignment is an assignment whose labour period is closed and
+ * that may receive a certificate.
+ */
+export interface EligibleAssignment {
+  readonly assignmentId: string;
+  readonly serviceId: string;
+  readonly endDate: string;
+  readonly snapshot: CertificateSnapshot;
+}
+
+/**
+ * ServiceTemplate is the editable text of the certificate of a service.
+ */
+export interface ServiceTemplate {
+  readonly serviceId: string;
+  readonly body: string;
+  readonly tokens: readonly string[];
+}
+
+/**
+ * ListingCriteria are the pagination of a listing.
+ */
+export interface ListingPage<T> {
+  readonly items: readonly T[];
+  readonly page: number;
+  readonly total: number;
+  readonly totalPages: number;
+}
+
+export interface ListingCriteria {
+  readonly search?: string;
+  readonly serviceId?: string;
+  readonly limit?: number;
+  readonly page?: number;
+}
+
+export interface CertificateCriteria extends ListingCriteria {
+  readonly workUnitCode?: string;
+  readonly status?: CertificateStatus;
+}
 
 /**
  * CertificateQueueItem is an assignment still waiting for a certificate.

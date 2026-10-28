@@ -1,10 +1,3 @@
-// Package commandservices holds the use cases that change the state of the
-// Catalog bounded context.
-//
-// Every use case validates the intent of the command against the invariants
-// of the domain before it reaches the registry.
-// package commandservices
-
 import { inject, Injectable } from '@angular/core';
 import {
   CreatePositionCommand,
@@ -22,29 +15,21 @@ import {
 } from '../commands/catalog-commands';
 import { CatalogName } from '../../domain/model/value-objects/catalog-name';
 import { Description } from '../../domain/model/value-objects/description';
-import {
-  POSITION_REPOSITORY,
-  REGIME_REPOSITORY,
-  SERVICE_REPOSITORY,
-  WORK_UNIT_REPOSITORY,
-} from '../../domain/repositories/catalog-repositories';
+import { CatalogGateway } from '../../infrastructure/gateways/catalog.gateway';
 import { Position } from '../../domain/model/aggregates/position';
 import { Regime } from '../../domain/model/aggregates/regime';
 import { Service } from '../../domain/model/aggregates/service';
 import { WorkUnit } from '../../domain/model/aggregates/work-unit';
 
-/**
- * CreateServiceCommandService registers a service in the catalog.
- */
 @Injectable({ providedIn: 'root' })
 export class CreateServiceCommandService {
-  private readonly repository = inject(SERVICE_REPOSITORY);
+  private readonly gateway = inject(CatalogGateway);
 
   async execute(command: CreateServiceCommand): Promise<Service> {
     const name = CatalogName.create(command.name);
     const description = this.description(command.description);
 
-    return this.repository.createService({ name, description });
+    return this.gateway.createService({ name, description });
   }
 
   private description(raw: string | null | undefined): Description | null {
@@ -56,18 +41,15 @@ export class CreateServiceCommandService {
   }
 }
 
-/**
- * CreatePositionCommandService registers a position in the catalog.
- */
 @Injectable({ providedIn: 'root' })
 export class CreatePositionCommandService {
-  private readonly repository = inject(POSITION_REPOSITORY);
+  private readonly gateway = inject(CatalogGateway);
 
   async execute(command: CreatePositionCommand): Promise<Position> {
     const name = CatalogName.create(command.name);
     const description = this.description(command.description);
 
-    return this.repository.createPosition({ name, description });
+    return this.gateway.createPosition({ name, description });
   }
 
   private description(raw: string | null | undefined): Description | null {
@@ -79,18 +61,15 @@ export class CreatePositionCommandService {
   }
 }
 
-/**
- * CreateRegimeCommandService registers a regime in the catalog.
- */
 @Injectable({ providedIn: 'root' })
 export class CreateRegimeCommandService {
-  private readonly repository = inject(REGIME_REPOSITORY);
+  private readonly gateway = inject(CatalogGateway);
 
   async execute(command: CreateRegimeCommand): Promise<Regime> {
     const name = CatalogName.create(command.name);
     const description = this.description(command.description);
 
-    return this.repository.createRegime({ name, description });
+    return this.gateway.createRegime({ name, description });
   }
 
   private description(raw: string | null | undefined): Description | null {
@@ -102,12 +81,9 @@ export class CreateRegimeCommandService {
   }
 }
 
-/**
- * CreateWorkUnitCommandService registers a work unit in the catalog.
- */
 @Injectable({ providedIn: 'root' })
 export class CreateWorkUnitCommandService {
-  private readonly repository = inject(WORK_UNIT_REPOSITORY);
+  private readonly gateway = inject(CatalogGateway);
 
   async execute(command: CreateWorkUnitCommand): Promise<WorkUnit> {
     const name = CatalogName.create(command.name);
@@ -117,7 +93,7 @@ export class CreateWorkUnitCommandService {
     }
     const description = this.description(command.description);
 
-    return this.repository.createWorkUnit({ name, description, serviceId });
+    return this.gateway.createWorkUnit({ name, description, serviceId });
   }
 
   private description(raw: string | null | undefined): Description | null {
@@ -129,21 +105,15 @@ export class CreateWorkUnitCommandService {
   }
 }
 
-/**
- * UpdateServiceCommandService modifies a service.
- *
- * The command carries the whole set of the editable fields, so the
- * modification never leaves a field of the record in an unknown state.
- */
 @Injectable({ providedIn: 'root' })
 export class UpdateServiceCommandService {
-  private readonly repository = inject(SERVICE_REPOSITORY);
+  private readonly gateway = inject(CatalogGateway);
 
   async execute(command: UpdateServiceCommand): Promise<Service> {
     const name = CatalogName.create(command.name);
     const description = this.description(command.description);
 
-    return this.repository.updateService({
+    return this.gateway.updateService({
       id: command.uuid,
       name,
       description,
@@ -157,30 +127,24 @@ export class UpdateServiceCommandService {
   }
 }
 
-/**
- * DeleteServiceCommandService logically deletes a service.
- */
 @Injectable({ providedIn: 'root' })
 export class DeleteServiceCommandService {
-  private readonly repository = inject(SERVICE_REPOSITORY);
+  private readonly gateway = inject(CatalogGateway);
 
   async execute(command: DeleteServiceCommand): Promise<void> {
-    await this.repository.deleteService(command.uuid);
+    await this.gateway.deleteService(command.uuid);
   }
 }
 
-/**
- * UpdatePositionCommandService modifies a position.
- */
 @Injectable({ providedIn: 'root' })
 export class UpdatePositionCommandService {
-  private readonly repository = inject(POSITION_REPOSITORY);
+  private readonly gateway = inject(CatalogGateway);
 
   async execute(command: UpdatePositionCommand): Promise<Position> {
     const name = CatalogName.create(command.name);
     const description = this.description(command.description);
 
-    return this.repository.updatePosition({
+    return this.gateway.updatePosition({
       id: command.uuid,
       name,
       description,
@@ -194,30 +158,24 @@ export class UpdatePositionCommandService {
   }
 }
 
-/**
- * DeletePositionCommandService logically deletes a position.
- */
 @Injectable({ providedIn: 'root' })
 export class DeletePositionCommandService {
-  private readonly repository = inject(POSITION_REPOSITORY);
+  private readonly gateway = inject(CatalogGateway);
 
   async execute(command: DeletePositionCommand): Promise<void> {
-    await this.repository.deletePosition(command.uuid);
+    await this.gateway.deletePosition(command.uuid);
   }
 }
 
-/**
- * UpdateRegimeCommandService modifies a regime.
- */
 @Injectable({ providedIn: 'root' })
 export class UpdateRegimeCommandService {
-  private readonly repository = inject(REGIME_REPOSITORY);
+  private readonly gateway = inject(CatalogGateway);
 
   async execute(command: UpdateRegimeCommand): Promise<Regime> {
     const name = CatalogName.create(command.name);
     const description = this.description(command.description);
 
-    return this.repository.updateRegime({
+    return this.gateway.updateRegime({
       id: command.uuid,
       name,
       description,
@@ -231,35 +189,25 @@ export class UpdateRegimeCommandService {
   }
 }
 
-/**
- * DeleteRegimeCommandService logically deletes a regime.
- */
 @Injectable({ providedIn: 'root' })
 export class DeleteRegimeCommandService {
-  private readonly repository = inject(REGIME_REPOSITORY);
+  private readonly gateway = inject(CatalogGateway);
 
   async execute(command: DeleteRegimeCommand): Promise<void> {
-    await this.repository.deleteRegime(command.uuid);
+    await this.gateway.deleteRegime(command.uuid);
   }
 }
 
-/**
- * UpdateWorkUnitCommandService modifies a work unit.
- *
- * The service is only sent when it changes, so the platform keeps the
- * current service and a work unit whose service was disabled later can still
- * be modified.
- */
 @Injectable({ providedIn: 'root' })
 export class UpdateWorkUnitCommandService {
-  private readonly repository = inject(WORK_UNIT_REPOSITORY);
+  private readonly gateway = inject(CatalogGateway);
 
   async execute(command: UpdateWorkUnitCommand): Promise<WorkUnit> {
     const name = CatalogName.create(command.name);
     const description = this.description(command.description);
     const serviceId = command.serviceId?.trim();
 
-    return this.repository.updateWorkUnit({
+    return this.gateway.updateWorkUnit({
       id: command.uuid,
       name,
       description,
@@ -274,14 +222,11 @@ export class UpdateWorkUnitCommandService {
   }
 }
 
-/**
- * DeleteWorkUnitCommandService logically deletes a work unit.
- */
 @Injectable({ providedIn: 'root' })
 export class DeleteWorkUnitCommandService {
-  private readonly repository = inject(WORK_UNIT_REPOSITORY);
+  private readonly gateway = inject(CatalogGateway);
 
   async execute(command: DeleteWorkUnitCommand): Promise<void> {
-    await this.repository.deleteWorkUnit(command.uuid);
+    await this.gateway.deleteWorkUnit(command.uuid);
   }
 }
