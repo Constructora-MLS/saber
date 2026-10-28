@@ -5,6 +5,20 @@
 
 import { FilterableEmployeeStatus } from '../../domain/model/value-objects/employee-status';
 
+export interface EmployeePage<T> {
+  readonly items: readonly T[];
+  readonly page: number;
+  readonly totalPages: number;
+  readonly total: number;
+}
+
+export interface EmployeeCriteria {
+  readonly search?: string;
+  readonly status?: FilterableEmployeeStatus;
+  readonly limit?: number;
+  readonly page?: number;
+}
+
 /**
  * ListEmployeesQuery asks for a page of the workers of the platform.
  */

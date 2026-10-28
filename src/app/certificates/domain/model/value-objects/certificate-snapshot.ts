@@ -23,107 +23,50 @@ export const SNAPSHOT_FIELD = {
   issueDate: 'issueDate',
 } as const;
 
-/**
- * CertificateSnapshot is the data of the worker and the assignment that a
- * certificate archives.
- *
- * The snapshot is a copy: the certificate keeps the data as it was on the
- * day of the issuance, even when the worker or the assignment change later.
- */
-export class CertificateSnapshot {
-  private constructor(private readonly values: ReadonlyMap<string, string>) {}
+/** CertificateSnapshot is the immutable data archived at issuance time. */
+export interface CertificateSnapshot {
+  readonly fields: Readonly<Record<string, string>>;
+  readonly firstName: string;
+  readonly lastName: string;
+  readonly paternalSurname: string;
+  readonly maternalSurname: string;
+  readonly dni: string;
+  readonly position: string;
+  readonly service: string;
+  readonly workUnit: string;
+  readonly workUnitCode: string;
+  readonly startDate: string;
+  readonly endDate: string;
+  readonly issueDate: string;
+  readonly fullName: string;
+}
 
-  /**
-   * restore rebuilds the snapshot from the values of its fields.
-   */
-  static restore(values: ReadonlyMap<string, string>): CertificateSnapshot {
-    return new CertificateSnapshot(values);
-  }
+/** restoreCertificateSnapshot copies and freezes the archived field values. */
+export function restoreCertificateSnapshot(values: ReadonlyMap<string, string>): CertificateSnapshot {
+  const fields = Object.freeze(Object.fromEntries(values));
+  const value = (field: string): string => fields[field] ?? '';
+  const firstName = value(SNAPSHOT_FIELD.employeeFirstName);
+  const lastName = value(SNAPSHOT_FIELD.employeeLastName);
 
-  /**
-   * values are the values of the fields of the snapshot.
-   */
-  get fields(): ReadonlyMap<string, string> {
-    return this.values;
-  }
+  return Object.freeze({
+    fields,
+    firstName,
+    lastName,
+    paternalSurname: value(SNAPSHOT_FIELD.employeePaternalSurname),
+    maternalSurname: value(SNAPSHOT_FIELD.employeeMaternalSurname),
+    dni: value(SNAPSHOT_FIELD.employeeDni),
+    position: value(SNAPSHOT_FIELD.assignmentPosition),
+    service: value(SNAPSHOT_FIELD.assignmentService),
+    workUnit: value(SNAPSHOT_FIELD.assignmentWorkUnit),
+    workUnitCode: value(SNAPSHOT_FIELD.assignmentWorkUnitCode),
+    startDate: value(SNAPSHOT_FIELD.assignmentStartDate),
+    endDate: value(SNAPSHOT_FIELD.assignmentEndDate),
+    issueDate: value(SNAPSHOT_FIELD.issueDate),
+    fullName: `${firstName} ${lastName}`.trim(),
+  });
+}
 
-  /** The first name of the worker, as the certificate writes it. */
-  get firstName(): string {
-    return this.value(SNAPSHOT_FIELD.employeeFirstName);
-  }
-
-  /** The last name of the worker, as the certificate writes it. */
-  get lastName(): string {
-    return this.value(SNAPSHOT_FIELD.employeeLastName);
-  }
-
-  /** The paternal surname of the worker, as the certificate writes it. */
-  get paternalSurname(): string {
-    return this.value(SNAPSHOT_FIELD.employeePaternalSurname);
-  }
-
-  /** The maternal surname of the worker, as the certificate writes it. */
-  get maternalSurname(): string {
-    return this.value(SNAPSHOT_FIELD.employeeMaternalSurname);
-  }
-
-  /** The identity document of the worker, as the certificate writes it. */
-  get dni(): string {
-    return this.value(SNAPSHOT_FIELD.employeeDni);
-  }
-
-  /** The position the worker performed. */
-  get position(): string {
-    return this.value(SNAPSHOT_FIELD.assignmentPosition);
-  }
-
-  /**
-   * The service that owned the unit of work when the certificate was
-   * issued.
-   *
-   * It is absent in the certificates that were issued before the platform
-   * archived the name of the service.
-   */
-  get service(): string {
-    return this.value(SNAPSHOT_FIELD.assignmentService);
-  }
-
-  /** The unit of work the worker was assigned to. */
-  get workUnit(): string {
-    return this.value(SNAPSHOT_FIELD.assignmentWorkUnit);
-  }
-
-  /** The code of the unit of work the worker was assigned to. */
-  get workUnitCode(): string {
-    return this.value(SNAPSHOT_FIELD.assignmentWorkUnitCode);
-  }
-
-  /** The date the labour period starts, in the YYYY-MM-DD format. */
-  get startDate(): string {
-    return this.value(SNAPSHOT_FIELD.assignmentStartDate);
-  }
-
-  /** The date the labour period was closed, in the YYYY-MM-DD format. */
-  get endDate(): string {
-    return this.value(SNAPSHOT_FIELD.assignmentEndDate);
-  }
-
-  /** The date the certificate was issued, in the YYYY-MM-DD format. */
-  get issueDate(): string {
-    return this.value(SNAPSHOT_FIELD.issueDate);
-  }
-
-  /**
-   * fullName is the name of the worker as the certificate writes it.
-   */
-  get fullName(): string {
-    return `${this.firstName} ${this.lastName}`.trim();
-  }
-
-  /**
-   * value reads the value of a field.
-   */
-  private value(field: string): string {
-    return this.values.get(field) ?? '';
-  }
+/** hasSnapshotField reports whether a field existed in the archived data. */
+export function hasSnapshotField(snapshot: CertificateSnapshot, field: string): boolean {
+  return Object.hasOwn(snapshot.fields, field);
 }

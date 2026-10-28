@@ -1,16 +1,16 @@
 import '@angular/compiler';
 import { describe, expect, it } from 'vitest';
-import { CertificateCode } from './certificate-code';
+import { createCertificateCode } from './certificate-code';
 import { CertificateValidationError } from '../errors/certificate-errors';
 
 describe('código público del certificado', () => {
   it('acepta el código que publica la plataforma', () => {
-    const code = CertificateCode.create('MLS-7K9D2Q8M5P');
-    expect(code.value).toBe('MLS-7K9D2Q8M5P');
+    const code = createCertificateCode('MLS-7K9D2Q8M5P');
+    expect(code).toBe('MLS-7K9D2Q8M5P');
   });
 
   it('normaliza el código que llega con espacios o minúsculas', () => {
-    expect(CertificateCode.create('  mls-7k9d2q8m5p ').value).toBe('MLS-7K9D2Q8M5P');
+    expect(createCertificateCode('  mls-7k9d2q8m5p ')).toBe('MLS-7K9D2Q8M5P');
   });
 
   it('rechaza un código que no respeta el formato publicado', () => {
@@ -25,7 +25,7 @@ describe('código público del certificado', () => {
       'MLS-7K9D2Q8M5U',
       'XYZ-7K9D2Q8M5P',
     ]) {
-      expect(() => CertificateCode.create(raw)).toThrow(CertificateValidationError);
+      expect(() => createCertificateCode(raw)).toThrow(CertificateValidationError);
     }
   });
 });

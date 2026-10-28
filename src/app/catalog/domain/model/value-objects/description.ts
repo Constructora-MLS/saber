@@ -3,59 +3,45 @@
 import { CatalogValidationError } from '../errors/catalog-errors';
 import { hasControlCharacters, textLength } from './text';
 
-/**
- * The maximum length of the description of a catalog record.
- */
+/** The maximum length of the description of a catalog record. */
 export const DESCRIPTION_MAX_LENGTH = 500;
 
-/**
- * Description is the optional description of a catalog record.
- */
-export class Description {
-  private constructor(private readonly text: string) {}
+/** Description is a validated optional description of a catalog record. */
+export type Description = string & { readonly __description: unique symbol };
 
-  /**
-   * create validates and builds a description. An empty description is
-   * valid: the record simply carries no description.
-   *
-   * The control characters are rejected, because the platform rejects them
-   * too and the form must not offer a value that the server refuses.
-   */
-  static create(raw: string): Description {
-    const trimmed = raw.trim();
-    if (textLength(trimmed) > DESCRIPTION_MAX_LENGTH) {
-      throw new CatalogValidationError(
-        'description',
-        `La descripción no puede superar los ${DESCRIPTION_MAX_LENGTH} caracteres.`,
-      );
-    }
-    if (hasControlCharacters(trimmed)) {
-      throw new CatalogValidationError(
-        'description',
-        'La descripción contiene caracteres no permitidos.',
-      );
-    }
-    return new Description(trimmed);
+/** parseDescription validates and normalizes a description. */
+export function parseDescription(raw: string): Description {
+  const trimmed = raw.trim();
+  if (textLength(trimmed) > DESCRIPTION_MAX_LENGTH) {
+    throw new CatalogValidationError(
+      'description',
+      `La descripción no puede superar los ${DESCRIPTION_MAX_LENGTH} caracteres.`,
+    );
   }
-
-  /**
-   * restore rebuilds a description from its stored value.
-   */
-  static restore(value: string): Description {
-    return new Description(value);
+  if (hasControlCharacters(trimmed)) {
+    throw new CatalogValidationError(
+      'description',
+      'La descripción contiene caracteres no permitidos.',
+    );
   }
-
-  /**
-   * value returns the description as it was stored.
-   */
-  get value(): string {
-    return this.text;
-  }
-
-  /**
-   * isEmpty reports whether the description carries no text.
-   */
-  get isEmpty(): boolean {
-    return this.text.length === 0;
-  }
+  return trimmed as Description;
 }
+
+/** restoreDescription trusts a value returned by the backend. */
+export function restoreDescription(value: string): Description {
+  return value as Description;
+}
+
+/** isDescriptionEmpty reports whether a description carries no text. */
+export function isDescriptionEmpty(value: Description): boolean {
+  return value.length === 0;
+}
+
+/**
+ * Description keeps the established factory call sites while exposing a
+ * primitive branded type rather than a wrapper class.
+ */
+export const Description = {
+  create: parseDescription,
+  restore: restoreDescription,
+} as const;

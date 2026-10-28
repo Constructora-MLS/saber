@@ -6,7 +6,7 @@ export const routes: Routes = [
     path: 'verify/:code',
     title: 'Certificado de trabajo',
     loadComponent: () =>
-      import('./certificates/interfaces/pages/credential-page/credential-page').then(
+      import('./certificates/presentation/pages/credential-page/credential.page').then(
         (module) => module.CredentialPage,
       ),
   },
@@ -15,7 +15,7 @@ export const routes: Routes = [
   {
     path: '',
     loadComponent: () =>
-      import('./shared/interfaces/layouts/rrhh-layout/rrhh-layout').then(
+      import('./shared/presentation/layouts/rrhh-layout/rrhh-layout').then(
         (module) => module.RrhhLayout,
       ),
     children: [
@@ -24,7 +24,7 @@ export const routes: Routes = [
         path: 'employees',
         title: 'Personal',
         loadComponent: () =>
-          import('./employees/interfaces/pages/employees-page/employees-page').then(
+          import('./employees/presentation/pages/employees-page/employees.page').then(
             (module) => module.EmployeesPage,
           ),
       },
@@ -32,7 +32,7 @@ export const routes: Routes = [
         path: 'employees/:employeeId/assignments',
         title: 'Asignaciones',
         loadComponent: () =>
-          import('./employees/interfaces/pages/employee-assignments-page/employee-assignments-page').then(
+          import('./employees/presentation/pages/employee-assignments-page/employee-assignments.page').then(
             (module) => module.EmployeeAssignmentsPage,
           ),
       },
@@ -40,7 +40,7 @@ export const routes: Routes = [
         path: 'certificates',
         title: 'Certificados',
         loadComponent: () =>
-          import('./certificates/interfaces/pages/certificates-page/certificates-page').then(
+          import('./certificates/presentation/pages/certificates-page/certificates.page').then(
             (module) => module.CertificatesPage,
           ),
       },
@@ -48,7 +48,7 @@ export const routes: Routes = [
         path: 'catalog',
         title: 'Catálogos',
         loadComponent: () =>
-          import('./catalog/interfaces/pages/catalog-page/catalog-page').then(
+          import('./catalog/presentation/pages/catalog-page/catalog.page').then(
             (module) => module.CatalogPage,
           ),
       },
