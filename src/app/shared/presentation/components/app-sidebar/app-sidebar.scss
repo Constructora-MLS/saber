@@ -62,7 +62,7 @@
   }
 }
 
-.rrhh-sidebar {
+.app-sidebar {
   position: sticky;
   top: 0;
   display: flex;
@@ -353,7 +353,7 @@ app-switcher {
 
 /* Responsive compacto: el sidebar se convierte en header + drawer */
 @media (max-width: 60rem) {
-  .rrhh-sidebar {
+  .app-sidebar {
     --rrhh-mobile-header-height: 3.5rem;
 
     z-index: 30;

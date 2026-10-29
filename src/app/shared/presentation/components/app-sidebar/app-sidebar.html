@@ -1,4 +1,4 @@
-<aside class="rrhh-sidebar" [class.is-drawer-open]="isDrawerOpen()">
+<aside class="app-sidebar" [class.is-drawer-open]="isDrawerOpen()">
   <header class="sidebar-header">
     <app-mls-icon class="brand-logo" size="1.9rem" />
     <span class="brand-title">CONSTRUCTORA MLS</span>
@@ -25,7 +25,7 @@
         type="button"
         class="module-selector"
         aria-haspopup="menu"
-        aria-controls="rrhh-app-switcher"
+        aria-controls="app-switcher"
         [attr.title]="isCollapsed() ? moduleLabel() : null"
         [attr.aria-expanded]="isAppSwitcherOpen()"
         (click)="toggleAppSwitcher()"
@@ -44,14 +44,15 @@
         ></button>
 
         <app-switcher
-          [applications]="applications"
+          id="app-switcher"
+          [applications]="applications()"
           (applicationSelected)="onApplicationSelected($event)"
         />
       }
     </div>
 
     <nav class="sidebar-nav" [attr.aria-label]="moduleLabel()">
-      @for (item of navigation; track item.label) {
+      @for (item of navigation(); track item.label) {
         @if (item.path; as path) {
           <a
             class="nav-item"

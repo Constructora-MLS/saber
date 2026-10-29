@@ -1,4 +1,7 @@
-import { Routes } from '@angular/router';
+import { CanMatchFn, Routes } from '@angular/router';
+
+const isAdministrationRoute: CanMatchFn = (_route, segments) =>
+  ['users', 'groups'].includes(segments[0]?.path ?? '');
 
 export const routes: Routes = [
   {
@@ -12,6 +15,35 @@ export const routes: Routes = [
   },
   // Keep QR links in previously issued PDFs working.
   { path: 'verificar/:code', pathMatch: 'full', redirectTo: 'verify/:code' },
+  {
+    // Users and Groups share one route configuration and layout instance, so
+    // the administration sidebar keeps its state when switching sections.
+    path: '',
+    canMatch: [isAdministrationRoute],
+    loadComponent: () =>
+      import('./iam/presentation/layouts/iam-layout/iam-layout').then((module) => module.IamLayout),
+    children: [
+      {
+        path: 'users',
+        pathMatch: 'full',
+        title: 'Usuarios',
+        loadComponent: () =>
+          import('./iam/presentation/pages/users-page/users.page').then(
+            (module) => module.UsersPage,
+          ),
+      },
+      {
+        path: 'groups',
+        pathMatch: 'full',
+        title: 'Grupos',
+        loadComponent: () =>
+          import('./iam/presentation/pages/groups-page/groups.page').then(
+            (module) => module.GroupsPage,
+          ),
+      },
+      { path: '**', redirectTo: '/users' },
+    ],
+  },
   {
     path: '',
     loadComponent: () =>

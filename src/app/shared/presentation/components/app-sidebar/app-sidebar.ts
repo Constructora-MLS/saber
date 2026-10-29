@@ -1,29 +1,50 @@
-import { Component, DestroyRef, inject, input, output, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, input, output, signal } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
-import { IsActiveMatchOptions, RouterLink, RouterLinkActive } from '@angular/router';
+import { IsActiveMatchOptions, Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AppSwitcher, AppSwitcherOption } from '../app-switcher/app-switcher';
+import { APPLICATION_CATALOG } from '../app-switcher/application-catalog';
 import { MlsIcon } from '../icons/mls-icon/mls-icon';
 
-interface RrhhNavigationItem {
+/**
+ * NavigationItem is a section of the navigation of a context.
+ *
+ * The path is null when the section is not available yet.
+ */
+export interface NavigationItem {
   readonly label: string;
   readonly icon: string;
   readonly path: string | null;
 }
 
+/**
+ * AppSidebar is the lateral navigation of the platform.
+ *
+ * The same component serves every context: the context gives the name of its
+ * module, its sections and the application that owns it, and the sidebar
+ * draws the same header, the same switcher and the same user profile in
+ * every one of them.
+ */
 @Component({
   imports: [AppSwitcher, MlsIcon, MatIconModule, RouterLink, RouterLinkActive],
-  selector: 'app-rrhh-sidebar',
-  styleUrl: './rrhh-sidebar.scss',
-  templateUrl: './rrhh-sidebar.html',
+  selector: 'app-sidebar',
+  styleUrl: './app-sidebar.scss',
+  templateUrl: './app-sidebar.html',
   host: {
     '[class.is-collapsed]': 'isCollapsed()',
     '[class.is-drawer-open]': 'isDrawerOpen()',
     '(document:keydown.escape)': 'onEscape($event)',
   },
 })
-export class RrhhSidebar {
+export class AppSidebar {
   private readonly destroyRef = inject(DestroyRef);
-  readonly moduleLabel = input('Recursos Humanos');
+  private readonly router = inject(Router);
+
+  /** The name of the module that owns the sidebar. */
+  readonly moduleLabel = input.required<string>();
+  /** The sections of the module. */
+  readonly navigation = input.required<readonly NavigationItem[]>();
+  /** The id of the application that owns the module. */
+  readonly currentApplicationId = input.required<string>();
   readonly userInitials = input('UA');
   readonly userName = input('Usuario actual');
   readonly userRole = input('Cuenta de RR. HH.');
@@ -33,6 +54,20 @@ export class RrhhSidebar {
   protected readonly isAppSwitcherOpen = signal(false);
   protected readonly isCompact = signal(false);
   protected readonly isDrawerOpen = signal(false);
+
+  /**
+   * The applications of the platform, with the one of the current module
+   * marked as the current application.
+   *
+   * The application is recognized by its id and not by its path, because the
+   * sections of an application can live in more than one route.
+   */
+  protected readonly applications = computed<readonly AppSwitcherOption[]>(() =>
+    APPLICATION_CATALOG.map(({ id, ...application }) => ({
+      ...application,
+      isCurrent: id === this.currentApplicationId(),
+    })),
+  );
 
   /**
    * activeLinkOptions decides when a navigation item is the current one.
@@ -49,19 +84,6 @@ export class RrhhSidebar {
     fragment: 'ignored',
     matrixParams: 'ignored',
   };
-
-  protected readonly applications: readonly AppSwitcherOption[] = [
-    { label: 'Recursos Humanos', icon: 'groups', status: 'active', dividerAfter: true },
-    { label: 'Administración', icon: 'admin_panel_settings', status: 'soon' },
-    { label: 'Logística', icon: 'local_shipping', status: 'soon' },
-    { label: 'Inventario', icon: 'inventory_2', status: 'soon' },
-  ];
-
-  protected readonly navigation: readonly RrhhNavigationItem[] = [
-    { label: 'Personal', icon: 'badge', path: '/employees' },
-    { label: 'Certificados', icon: 'description', path: '/certificates' },
-    { label: 'Catálogo', icon: 'list_alt', path: '/catalog' },
-  ];
 
   constructor() {
     if (typeof window === 'undefined') {
@@ -114,9 +136,22 @@ export class RrhhSidebar {
     this.isAppSwitcherOpen.set(false);
   }
 
+  /**
+   * Opens the application that the user chose in the switcher.
+   *
+   * The application that is already open is not navigated, so the page that
+   * the user is reading is kept, and the applications that are still coming
+   * do nothing.
+   */
   protected onApplicationSelected(application: AppSwitcherOption): void {
-    if (application.status === 'active') {
-      this.closeAppSwitcher();
+    if (application.status === 'soon') {
+      return;
+    }
+
+    this.closeAppSwitcher();
+
+    if (!application.isCurrent && application.path) {
+      void this.router.navigateByUrl(application.path);
     }
   }
 
