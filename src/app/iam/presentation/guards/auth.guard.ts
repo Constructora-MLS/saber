@@ -9,10 +9,10 @@ import { AuthSessionStore } from '../../application/session/auth-session.store';
  * authGuard protects the private routes of the platform.
  *
  * A request without a session renews it with the refresh token of the
- * cookie. When there is no valid session, the user is sent to the sign in
- * and the route he wanted is kept, so he returns to it after signing in.
+ * cookie. When there is no valid session, the user is sent to the sign in,
+ * and the platform opens the session that he was asking for.
  */
-export const authGuard: CanActivateFn = async (_route, state) => {
+export const authGuard: CanActivateFn = async () => {
   const session = inject(AuthSessionStore);
   const router = inject(Router);
 
@@ -24,8 +24,6 @@ export const authGuard: CanActivateFn = async (_route, state) => {
     await session.restore();
     return true;
   } catch {
-    return router.createUrlTree(['/sign-in'], {
-      queryParams: { returnUrl: state.url },
-    });
+    return router.createUrlTree(['/sign-in']);
   }
 };

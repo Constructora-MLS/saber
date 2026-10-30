@@ -1,7 +1,7 @@
 import '@angular/compiler';
 import { Injector, runInInjectionContext } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import { describe, expect, it, vi } from 'vitest';
 import { AuthSessionStore } from '../../../application/session/auth-session.store';
 import { AuthApiError } from '../../../infrastructure/errors/auth-api.error';
@@ -20,7 +20,6 @@ describe('SignInPage', () => {
   function setup(
     options: {
       signIn?: () => Promise<void>;
-      returnUrl?: string;
       authenticated?: boolean;
     } = {},
   ) {
@@ -38,12 +37,6 @@ describe('SignInPage', () => {
         },
         { provide: Router, useValue: { navigateByUrl } },
         { provide: MatSnackBar, useValue: { open: notify } },
-        {
-          provide: ActivatedRoute,
-          useValue: {
-            snapshot: { queryParamMap: convertToParamMap({ returnUrl: options.returnUrl ?? '' }) },
-          },
-        },
       ],
     });
     const page = runInInjectionContext(injector, () => new Page());
@@ -60,14 +53,6 @@ describe('SignInPage', () => {
       password: 'the-password',
     });
     expect(navigateByUrl).toHaveBeenCalledWith('/');
-  });
-
-  it('vuelve a la ruta que el usuario quería antes de las credenciales', async () => {
-    const { page, navigateByUrl } = setup({ returnUrl: '/certificates' });
-
-    await page.send({ email: 'admin@akame.local', password: 'the-password' });
-
-    expect(navigateByUrl).toHaveBeenCalledWith('/certificates');
   });
 
   it('avisa con la notificación de Material cuando las credenciales no son válidas', async () => {

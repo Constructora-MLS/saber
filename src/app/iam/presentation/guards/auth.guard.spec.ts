@@ -14,11 +14,12 @@ describe('authGuard', () => {
         { provide: Router, useValue: { createUrlTree } },
       ],
     });
-    const route = {} as ActivatedRouteSnapshot;
-    const state = { url: '/employees' } as RouterStateSnapshot;
     return {
       createUrlTree,
-      run: () => runInInjectionContext(injector, () => authGuard(route, state)),
+      run: () =>
+        runInInjectionContext(injector, () =>
+          authGuard({} as ActivatedRouteSnapshot, { url: '/employees' } as RouterStateSnapshot),
+        ),
     };
   }
 
@@ -45,8 +46,6 @@ describe('authGuard', () => {
     });
 
     await expect(run()).resolves.toBe('the-url-tree');
-    expect(createUrlTree).toHaveBeenCalledWith(['/sign-in'], {
-      queryParams: { returnUrl: '/employees' },
-    });
+    expect(createUrlTree).toHaveBeenCalledWith(['/sign-in']);
   });
 });

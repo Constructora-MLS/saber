@@ -1,6 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import { SignInCommand } from '../../../application/commands/iam-commands';
 import { AuthSessionStore } from '../../../application/session/auth-session.store';
 import { AuthValidationError } from '../../../domain/model/errors/auth-errors';
@@ -23,7 +23,6 @@ import { MlsIcon } from '../../../../shared/presentation/components/icons/mls-ic
 export class SignInPage {
   private readonly session = inject(AuthSessionStore);
   private readonly router = inject(Router);
-  private readonly route = inject(ActivatedRoute);
   private readonly snackBar = inject(MatSnackBar);
 
   protected readonly submitting = signal(false);
@@ -31,7 +30,7 @@ export class SignInPage {
   constructor() {
     // A browser that already holds a session does not sign in twice.
     if (this.session.authenticated()) {
-      void this.router.navigateByUrl(this.returnUrl());
+      void this.router.navigateByUrl('/');
     }
   }
 
@@ -45,21 +44,12 @@ export class SignInPage {
 
     try {
       await this.session.signIn(command);
-      await this.router.navigateByUrl(this.returnUrl());
+      await this.router.navigateByUrl('/');
     } catch (error) {
       this.notify(this.describe(error));
     } finally {
       this.submitting.set(false);
     }
-  }
-
-  /**
-   * returnUrl is the route the user wanted before the platform asked for the
-   * credentials.
-   */
-  private returnUrl(): string {
-    const requested = this.route.snapshot.queryParamMap.get('returnUrl');
-    return requested && requested.startsWith('/') ? requested : '/';
   }
 
   private describe(error: unknown): string {

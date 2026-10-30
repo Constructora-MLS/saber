@@ -86,7 +86,8 @@ src/app/iam/
 - **Verify:** `GET /api/v1/auth/verify` con el access token devuelve la identidad del
   usuario (`uuid`, `email`, `firstName`, `lastName`).
 - **Protección:** `authGuard` protege las rutas de RR. HH. y de Administración. Sin una
-  sesión válida el usuario va a `/sign-in` y vuelve a la ruta que pedía (`returnUrl`).
+  sesión válida el usuario va a `/sign-in` y, después de iniciar sesión, entra a la
+  portada de la plataforma.
 - **Excepción pública:** `/verify/:code` (la verificación de un certificado) y
   `/sign-in` no están protegidas: el QR de un certificado se abre sin credenciales.
 - **Validación:** el formulario usa los componentes de Material 3 (`mat-form-field`,
