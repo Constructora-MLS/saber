@@ -280,14 +280,14 @@ app-switcher {
 
 .user-avatar {
   display: grid;
-  width: 1.9rem;
-  height: 1.9rem;
+  width: 1.75rem;
+  height: 1.75rem;
   flex: 0 0 auto;
   place-items: center;
   border-radius: 50%;
   background: var(--rrhh-avatar-container);
   color: var(--rrhh-active-on-container);
-  font-size: 1.1rem;
+  font-size: 1rem;
 }
 
 .user-copy {
@@ -299,9 +299,10 @@ app-switcher {
 
 .user-name {
   overflow: hidden;
+  max-width: 9rem;
   color: var(--rrhh-text);
-  font-size: 0.8rem;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 600;
   text-overflow: ellipsis;
   white-space: nowrap;
 }

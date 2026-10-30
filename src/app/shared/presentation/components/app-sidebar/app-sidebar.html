@@ -85,7 +85,7 @@
       <mat-icon>person</mat-icon>
     </span>
     <span class="user-copy">
-      <strong class="user-name">{{ userName() }}</strong>
+      <strong class="user-name" [attr.title]="userName()">{{ userName() }}</strong>
     </span>
     <div class="footer-actions">
       <button type="button" class="footer-action" aria-label="Notificaciones">

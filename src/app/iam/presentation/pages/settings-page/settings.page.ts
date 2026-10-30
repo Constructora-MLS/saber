@@ -1,5 +1,7 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { Location } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { AuthSessionStore } from '../../../application/session/auth-session.store';
@@ -11,7 +13,7 @@ import { AuthSessionStore } from '../../../application/session/auth-session.stor
  * session of the user when he asks for it.
  */
 @Component({
-  imports: [MatButtonModule, MatSnackBarModule],
+  imports: [MatButtonModule, MatIconModule, MatSnackBarModule],
   selector: 'app-settings-page',
   styleUrl: './settings.page.scss',
   templateUrl: './settings.page.html',
@@ -19,6 +21,7 @@ import { AuthSessionStore } from '../../../application/session/auth-session.stor
 export class SettingsPage {
   private readonly session = inject(AuthSessionStore);
   private readonly router = inject(Router);
+  private readonly location = inject(Location);
   private readonly snackBar = inject(MatSnackBar);
 
   protected readonly closing = signal(false);
@@ -36,6 +39,11 @@ export class SettingsPage {
 
   /** The address of the authenticated user. */
   protected readonly userEmail = computed(() => this.session.identity()?.email ?? '');
+
+  /** goBack takes the user back to the page he came from. */
+  protected goBack(): void {
+    this.location.back();
+  }
 
   /** logout closes the session and takes the user back to the sign in. */
   protected async logout(): Promise<void> {

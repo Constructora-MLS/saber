@@ -1,5 +1,6 @@
 import '@angular/compiler';
 import { Injector, runInInjectionContext } from '@angular/core';
+import { Location } from '@angular/common';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { describe, expect, it, vi } from 'vitest';
@@ -19,12 +20,16 @@ class Page extends SettingsPage {
   close() {
     return this.logout();
   }
+  back() {
+    return this.goBack();
+  }
 }
 
 describe('SettingsPage', () => {
   function setup(logout: () => Promise<void> = async () => {}) {
     const navigateByUrl = vi.fn().mockResolvedValue(true);
     const notify = vi.fn();
+    const back = vi.fn();
     const injector = Injector.create({
       providers: [
         {
@@ -40,11 +45,12 @@ describe('SettingsPage', () => {
           },
         },
         { provide: Router, useValue: { navigateByUrl } },
+        { provide: Location, useValue: { back } },
         { provide: MatSnackBar, useValue: { open: notify } },
       ],
     });
     const page = runInInjectionContext(injector, () => new Page());
-    return { page, navigateByUrl, notify };
+    return { page, navigateByUrl, notify, back };
   }
 
   it('muestra el nombre y el correo del usuario autenticado', () => {
@@ -52,6 +58,14 @@ describe('SettingsPage', () => {
 
     expect(page.name).toBe('Admin Akame');
     expect(page.email).toBe('admin@akame.local');
+  });
+
+  it('vuelve a la página anterior', () => {
+    const { page, back } = setup();
+
+    page.back();
+
+    expect(back).toHaveBeenCalled();
   });
 
   it('cierra la sesión y vuelve al sign in', async () => {

@@ -1,13 +1,22 @@
 <main class="settings" aria-labelledby="settings-title">
-  <section class="settings__card">
+  <div class="settings__page">
     <header class="settings__header">
-      <p class="settings__eyebrow">Cuenta</p>
-      <h1 id="settings-title" class="settings__title">Configuración</h1>
+      <button
+        matIconButton
+        type="button"
+        class="settings__back"
+        aria-label="Volver"
+        (click)="goBack()"
+      >
+        <mat-icon aria-hidden="true">arrow_back</mat-icon>
+      </button>
+      <div class="settings__heading">
+        <h1 id="settings-title" class="settings__title">Configuración</h1>
+      </div>
     </header>
 
-    <section class="settings__section" aria-labelledby="settings-session-title">
-      <h2 id="settings-session-title" class="settings__section-title">Sesión</h2>
-
+    <section class="settings__card" aria-labelledby="settings-account-title">
+      <h2 id="settings-account-title" class="settings__card-title">Tu cuenta</h2>
       <dl class="settings__identity">
         <div class="settings__field">
           <dt class="settings__label">Nombre</dt>
@@ -18,7 +27,14 @@
           <dd class="settings__value">{{ userEmail() }}</dd>
         </div>
       </dl>
+    </section>
 
+    <section class="settings__card" aria-labelledby="settings-session-title">
+      <h2 id="settings-session-title" class="settings__card-title">Sesión</h2>
+      <p class="settings__copy">
+        Cierra la sesión de este navegador. Tendrás que volver a iniciar sesión para entrar de
+        nuevo.
+      </p>
       <button
         matButton="filled"
         class="settings__logout"
@@ -29,5 +45,5 @@
         {{ closing() ? 'Cerrando sesión…' : 'Cerrar sesión' }}
       </button>
     </section>
-  </section>
+  </div>
 </main>
