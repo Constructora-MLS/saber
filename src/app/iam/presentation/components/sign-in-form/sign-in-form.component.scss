@@ -1,0 +1,35 @@
+/*
+ * The form of the credentials of a user.
+ *
+ * The fields are the components of Material 3 with the palette of the brand
+ * of the platform, the same ones that the rest of the application uses.
+ */
+.sign-in-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sign-in-form mat-form-field {
+  width: 100%;
+}
+
+.sign-in-form__forgot {
+  display: block;
+  margin-top: -8px;
+  text-align: right;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--mat-sys-on-primary-container);
+}
+
+.sign-in-form__error {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--mat-sys-error);
+}
+
+.sign-in-form__submit {
+  width: 100%;
+  min-height: 44px;
+}

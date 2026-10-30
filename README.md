@@ -53,6 +53,51 @@ Trabajo**, **Cargos** y **Regímenes**. Cada vista lista los registros del catá
 diálogo que los registra contra la API real (`POST /api/v1/services`, `/work-units`,
 `/positions`, `/regimes`).
 
+## Autenticación (bounded context IAM)
+
+El contexto delimitado de **IAM** del backend Go (`akame`) protege la plataforma.
+Saber implementa el inicio de sesión, la renovación de la sesión y la verificación
+del usuario, y protege las rutas privadas con un guard:
+
+```text
+src/app/iam/
+  domain/model/value-objects/   # Email, Password, AuthIdentity
+  domain/model/errors/           # AuthValidationError
+  application/commands/          # SignInCommand
+  application/command-services/  # SignInCommandService
+  application/session/           # AuthSessionStore (señales) y AuthSession
+  infrastructure/contracts/      # contrato REST del API de IAM
+  infrastructure/errors/         # AuthApiError (problem details)
+  infrastructure/gateways/       # AuthGateway (sign-in, refresh, verify)
+  infrastructure/http/           # authInterceptor (cabecera Bearer)
+  presentation/components/       # SignInForm (el formulario de Material 3)
+  presentation/guards/           # authGuard
+  presentation/pages/sign-in-page/
+```
+
+- **Sign-in:** `POST /api/v1/auth/sign-in` con el correo y la contraseña. La respuesta
+  lleva el access token y la cookie `akame_refresh` (HttpOnly) que el navegador envía
+  sola.
+- **Refresh:** `POST /api/v1/auth/refresh` renueva la sesión con la cookie. El guard la
+  llama cuando la página no tiene un access token en memoria, así que una recarga no
+  obliga a volver a iniciar sesión. La renovación se comparte entre navegaciones
+  simultáneas: el token nunca se rota dos veces por la misma sesión.
+- **Verify:** `GET /api/v1/auth/verify` con el access token devuelve la identidad del
+  usuario (`uuid`, `email`, `firstName`, `lastName`).
+- **Protección:** `authGuard` protege las rutas de RR. HH. y de Administración. Sin una
+  sesión válida el usuario va a `/sign-in` y vuelve a la ruta que pedía (`returnUrl`).
+- **Excepción pública:** `/verify/:code` (la verificación de un certificado) y
+  `/sign-in` no están protegidas: el QR de un certificado se abre sin credenciales.
+- **Validación:** el formulario usa los componentes de Material 3 (`mat-form-field`,
+  `matInput`, `matButton`) y los límites viven en el dominio (`Email` hasta 254
+  caracteres, `Password` entre 8 y 128). La contraseña se puede mostrar con el
+  botón del ojo.
+
+El access token vive **solo en la memoria** del navegador: nunca se escribe en el
+almacenamiento local. El interceptor añade la cabecera `Authorization: Bearer` a las
+peticiones privadas y no la añade a las rutas públicas (sign-in, refresh y la
+verificación pública de certificados).
+
 ## Variables de entorno
 
 Copia `.env.template` a `.env` y configura `API_PROXY_TARGET` con la dirección del backend.

@@ -1,0 +1,27 @@
+<main class="login" aria-labelledby="sign-in-title">
+  <section class="login__card">
+    <section class="login__brand" aria-label="Constructora MLS">
+      <app-mls-icon size="3.75rem" label="Constructora MLS" />
+      <div>
+        <h2 class="login__brand-name">CONSTRUCTORA MLS</h2>
+        <p class="login__brand-copy">Plataforma de gestión de personas</p>
+      </div>
+    </section>
+
+    <section class="login__form">
+      <p class="login__eyebrow">Espacio de trabajo</p>
+      <h1 id="sign-in-title" class="login__title">Iniciar sesión</h1>
+      <p class="login__intro">Ingresa con las credenciales de tu organización.</p>
+
+      <app-sign-in-form
+        [submitting]="submitting()"
+        [errorMessage]="errorMessage()"
+        (signIn)="signIn($event)"
+      />
+
+      <p class="login__help">
+        ¿Aún no tienes acceso? Solicita una invitación al administrador de tu organización.
+      </p>
+    </section>
+  </section>
+</main>

@@ -1,0 +1,71 @@
+<form class="sign-in-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <mat-form-field appearance="outline">
+    <mat-label>Correo electrónico</mat-label>
+    <input
+      id="email"
+      matInput
+      type="email"
+      formControlName="email"
+      autocomplete="username"
+      [maxLength]="emailMaxLength"
+      required
+      autofocus
+    />
+    @if (form.controls.email.hasError('required')) {
+      <mat-error>El correo electrónico es obligatorio.</mat-error>
+    }
+    @if (form.controls.email.hasError('email')) {
+      <mat-error>El correo electrónico no es válido.</mat-error>
+    }
+    @if (form.controls.email.hasError('maxlength')) {
+      <mat-error>
+        El correo electrónico no puede superar los {{ emailMaxLength }} caracteres.
+      </mat-error>
+    }
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Contraseña</mat-label>
+    <input
+      id="password"
+      matInput
+      [type]="showPassword() ? 'text' : 'password'"
+      formControlName="password"
+      autocomplete="current-password"
+      [maxLength]="passwordMaxLength"
+      required
+    />
+    <button
+      matIconButton
+      matSuffix
+      type="button"
+      (click)="togglePassword()"
+      [attr.aria-label]="showPassword() ? 'Ocultar la contraseña' : 'Mostrar la contraseña'"
+    >
+      <mat-icon aria-hidden="true">
+        {{ showPassword() ? 'visibility_off' : 'visibility' }}
+      </mat-icon>
+    </button>
+    @if (form.controls.password.hasError('required')) {
+      <mat-error>La contraseña es obligatoria.</mat-error>
+    }
+    @if (form.controls.password.hasError('minlength')) {
+      <mat-error> La contraseña debe tener al menos {{ passwordMinLength }} caracteres. </mat-error>
+    }
+    @if (form.controls.password.hasError('maxlength')) {
+      <mat-error>
+        La contraseña no puede superar los {{ passwordMaxLength }} caracteres.
+      </mat-error>
+    }
+  </mat-form-field>
+
+  <span class="sign-in-form__forgot">¿Olvidaste tu contraseña?</span>
+
+  @if (errorMessage(); as message) {
+    <p class="sign-in-form__error" role="alert">{{ message }}</p>
+  }
+
+  <button matButton="filled" class="sign-in-form__submit" type="submit" [disabled]="submitting()">
+    {{ submitting() ? 'Entrando…' : 'Continuar' }}
+  </button>
+</form>

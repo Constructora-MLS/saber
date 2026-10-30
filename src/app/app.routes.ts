@@ -1,11 +1,24 @@
 import { CanMatchFn, Routes } from '@angular/router';
+import { authGuard } from './iam/presentation/guards/auth.guard';
 
 const isAdministrationRoute: CanMatchFn = (_route, segments) =>
   ['users', 'groups'].includes(segments[0]?.path ?? '');
 
 export const routes: Routes = [
   {
+    // The sign in is the only way into the platform, so it answers without a
+    // session.
+    path: 'sign-in',
+    title: 'Iniciar sesión',
+    loadComponent: () =>
+      import('./iam/presentation/pages/sign-in-page/sign-in.page').then(
+        (module) => module.SignInPage,
+      ),
+  },
+  {
     // A QR opens this route directly, outside the HR navigation shell.
+    // The verification of a certificate is public: any person can read a
+    // certificate without signing in.
     path: 'verify/:code',
     title: 'Certificado de trabajo',
     loadComponent: () =>
@@ -20,6 +33,7 @@ export const routes: Routes = [
     // the administration sidebar keeps its state when switching sections.
     path: '',
     canMatch: [isAdministrationRoute],
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./iam/presentation/layouts/iam-layout/iam-layout').then((module) => module.IamLayout),
     children: [
@@ -46,6 +60,7 @@ export const routes: Routes = [
   },
   {
     path: '',
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./shared/presentation/layouts/rrhh-layout/rrhh-layout').then(
         (module) => module.RrhhLayout,
