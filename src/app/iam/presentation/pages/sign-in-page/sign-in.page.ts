@@ -1,4 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router } from '@angular/router';
 import { SignInCommand } from '../../../application/commands/iam-commands';
 import { AuthSessionStore } from '../../../application/session/auth-session.store';
@@ -14,7 +15,7 @@ import { MlsIcon } from '../../../../shared/presentation/components/icons/mls-ic
  * page opens the session and returns the user to the route he wanted.
  */
 @Component({
-  imports: [MlsIcon, SignInForm],
+  imports: [MatSnackBarModule, MlsIcon, SignInForm],
   selector: 'app-sign-in-page',
   styleUrl: './sign-in.page.scss',
   templateUrl: './sign-in.page.html',
@@ -23,9 +24,9 @@ export class SignInPage {
   private readonly session = inject(AuthSessionStore);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly snackBar = inject(MatSnackBar);
 
   protected readonly submitting = signal(false);
-  protected readonly errorMessage = signal<string | null>(null);
 
   constructor() {
     // A browser that already holds a session does not sign in twice.
@@ -41,13 +42,12 @@ export class SignInPage {
     }
 
     this.submitting.set(true);
-    this.errorMessage.set(null);
 
     try {
       await this.session.signIn(command);
       await this.router.navigateByUrl(this.returnUrl());
     } catch (error) {
-      this.errorMessage.set(this.describe(error));
+      this.notify(this.describe(error));
     } finally {
       this.submitting.set(false);
     }
@@ -70,5 +70,13 @@ export class SignInPage {
       return 'Las credenciales no son válidas. Revisa tu correo y tu contraseña.';
     }
     return 'No se pudo iniciar sesión. Inténtalo nuevamente.';
+  }
+
+  /**
+   * notify shows the outcome of the sign in, the same way the rest of the
+   * platform shows the outcome of its actions.
+   */
+  private notify(message: string): void {
+    this.snackBar.open(message, 'Cerrar', { duration: 4000 });
   }
 }

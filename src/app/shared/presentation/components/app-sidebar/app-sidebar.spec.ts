@@ -4,6 +4,12 @@ import { Router } from '@angular/router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AppSidebar } from './app-sidebar';
 
+class Sidebar extends AppSidebar {
+  openSettings() {
+    return super.openSettings();
+  }
+}
+
 afterEach(() => vi.unstubAllGlobals());
 
 describe('AppSidebar', () => {
@@ -36,7 +42,7 @@ describe('AppSidebar', () => {
         return undefined;
       },
     } as unknown as Injector;
-    runInInjectionContext(injector, () => new AppSidebar());
+    runInInjectionContext(injector, () => new Sidebar());
     const callback = [...listeners][0];
     expect(callback).toBeDefined();
     expect(callbacks.length).toBeGreaterThan(0);
@@ -44,5 +50,28 @@ describe('AppSidebar', () => {
     expect(addEventListener).toHaveBeenCalledWith('change', callback);
     expect(removeEventListener).toHaveBeenCalledWith('change', callback);
     expect(listeners.size).toBe(0);
+  });
+
+  it('takes the user to the configuration of the account', () => {
+    const navigateByUrl = vi.fn();
+    const destroyRef = { onDestroy: () => {} } as DestroyRef;
+    const injector = {
+      get: (token: unknown) => {
+        if (token === DestroyRef) {
+          return destroyRef;
+        }
+
+        if (token === Router) {
+          return { navigateByUrl } as unknown as Router;
+        }
+
+        return undefined;
+      },
+    } as unknown as Injector;
+    const sidebar = runInInjectionContext(injector, () => new Sidebar());
+
+    sidebar.openSettings();
+
+    expect(navigateByUrl).toHaveBeenCalledWith('/settings');
   });
 });

@@ -64,4 +64,18 @@ export class AuthSessionStore {
     const identity = await this.gateway.verify();
     this.session.update((session) => (session ? { ...session, identity } : session));
   }
+
+  /**
+   * logout closes the session of the user.
+   *
+   * The session is closed in the platform and forgotten in the browser, so
+   * the access token never travels again.
+   */
+  async logout(): Promise<void> {
+    try {
+      await this.gateway.logout();
+    } finally {
+      this.session.set(null);
+    }
+  }
 }

@@ -5,7 +5,7 @@ import { AuthValidationError } from '../errors/auth-errors';
 
 /** The boundaries of the password of a user. */
 export const PASSWORD_MIN_LENGTH = 8;
-export const PASSWORD_MAX_LENGTH = 128;
+export const PASSWORD_MAX_LENGTH = 30;
 
 /** Password is a validated password of a user. */
 export type Password = string & { readonly __password: unique symbol };

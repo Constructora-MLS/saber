@@ -16,6 +16,16 @@ export const routes: Routes = [
       ),
   },
   {
+    // The configuration of the account of the user.
+    path: 'settings',
+    title: 'Configuración',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./iam/presentation/pages/settings-page/settings.page').then(
+        (module) => module.SettingsPage,
+      ),
+  },
+  {
     // A QR opens this route directly, outside the HR navigation shell.
     // The verification of a certificate is public: any person can read a
     // certificate without signing in.

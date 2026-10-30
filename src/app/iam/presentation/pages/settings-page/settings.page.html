@@ -1,0 +1,33 @@
+<main class="settings" aria-labelledby="settings-title">
+  <section class="settings__card">
+    <header class="settings__header">
+      <p class="settings__eyebrow">Cuenta</p>
+      <h1 id="settings-title" class="settings__title">Configuración</h1>
+    </header>
+
+    <section class="settings__section" aria-labelledby="settings-session-title">
+      <h2 id="settings-session-title" class="settings__section-title">Sesión</h2>
+
+      <dl class="settings__identity">
+        <div class="settings__field">
+          <dt class="settings__label">Nombre</dt>
+          <dd class="settings__value">{{ userName() }}</dd>
+        </div>
+        <div class="settings__field">
+          <dt class="settings__label">Correo electrónico</dt>
+          <dd class="settings__value">{{ userEmail() }}</dd>
+        </div>
+      </dl>
+
+      <button
+        matButton="filled"
+        class="settings__logout"
+        type="button"
+        [disabled]="closing()"
+        (click)="logout()"
+      >
+        {{ closing() ? 'Cerrando sesión…' : 'Cerrar sesión' }}
+      </button>
+    </section>
+  </section>
+</main>

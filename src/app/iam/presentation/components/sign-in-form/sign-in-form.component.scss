@@ -14,6 +14,12 @@
   width: 100%;
 }
 
+.sign-in-form__reveal {
+  /* The button of the eye breathes against the border of the field. */
+  margin-inline-end: 10px;
+  color: var(--mat-sys-on-surface-variant);
+}
+
 .sign-in-form__forgot {
   display: block;
   margin-top: -8px;
@@ -21,12 +27,6 @@
   font-size: 0.6875rem;
   font-weight: 600;
   color: var(--mat-sys-on-primary-container);
-}
-
-.sign-in-form__error {
-  margin: 0;
-  font-size: 0.75rem;
-  color: var(--mat-sys-error);
 }
 
 .sign-in-form__submit {

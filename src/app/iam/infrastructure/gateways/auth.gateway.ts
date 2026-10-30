@@ -59,6 +59,20 @@ export class AuthGateway {
     );
   }
 
+  /**
+   * logout closes the session of the refresh token of the cookie.
+   *
+   * The platform answers 204 without a body: the session is gone and the
+   * cookie is removed.
+   */
+  async logout(): Promise<void> {
+    await firstValueFrom(
+      this.http
+        .post<null>(`${this.baseUrl}/auth/logout`, {})
+        .pipe(catchError((error: HttpErrorResponse) => this.toFailure(error))),
+    );
+  }
+
   private toSession(resource: TokenResponseResource): AuthSession {
     return {
       accessToken: resource.accessToken,

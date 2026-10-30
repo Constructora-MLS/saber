@@ -2,7 +2,7 @@ import '@angular/compiler';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injector, runInInjectionContext } from '@angular/core';
 import { of, throwError } from 'rxjs';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { API_BASE_URL } from '../../../api.config';
 import { AuthGateway } from './auth.gateway';
 
@@ -59,6 +59,21 @@ describe('AuthGateway', () => {
     const gateway = gatewayFor(user);
 
     await expect(gateway.verify()).resolves.toEqual(user);
+  });
+
+  it('cierra la sesión con el endpoint de logout', async () => {
+    const post = vi.fn(() => of(null));
+    const injector = Injector.create({
+      providers: [
+        { provide: API_BASE_URL, useValue: '/api/v1' },
+        { provide: HttpClient, useValue: { post } },
+      ],
+    });
+    const gateway = runInInjectionContext(injector, () => new AuthGateway());
+
+    await gateway.logout();
+
+    expect(post).toHaveBeenCalledWith('/api/v1/auth/logout', {});
   });
 
   it('traduce el rechazo de las credenciales en el error del contexto', async () => {

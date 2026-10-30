@@ -7,7 +7,7 @@ import { AuthValidationError } from '../errors/auth-errors';
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/;
 
 /** The longest address that the platform accepts. */
-export const EMAIL_MAX_LENGTH = 254;
+export const EMAIL_MAX_LENGTH = 120;
 
 /** Email is the address that identifies a user of the platform. */
 export type Email = string & { readonly __email: unique symbol };

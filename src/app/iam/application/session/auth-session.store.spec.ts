@@ -17,14 +17,15 @@ describe('AuthSessionStore', () => {
   function setup(refresh: () => Promise<{ accessToken: string; identity: AuthIdentity }>) {
     const signIn = vi.fn().mockResolvedValue({ accessToken: 'the-access-token', identity });
     const verify = vi.fn().mockResolvedValue({ ...identity, firstName: 'Administrador' });
+    const logout = vi.fn().mockResolvedValue(undefined);
     const injector = Injector.create({
       providers: [
-        { provide: AuthGateway, useValue: { refresh, verify } },
+        { provide: AuthGateway, useValue: { refresh, verify, logout } },
         { provide: SignInCommandService, useValue: { execute: signIn } },
       ],
     });
     const store = runInInjectionContext(injector, () => new AuthSessionStore());
-    return { store, signIn, verify };
+    return { store, signIn, verify, logout };
   }
 
   it('guarda la sesión del sign in', async () => {
@@ -78,6 +79,27 @@ describe('AuthSessionStore', () => {
     expect(verify).toHaveBeenCalled();
     expect(store.identity()?.firstName).toBe('Administrador');
     expect(store.accessToken()).toBe('the-access-token');
+  });
+
+  it('cierra la sesión y la olvida en el navegador', async () => {
+    const { store, logout } = setup(async () => ({ accessToken: 'the-access-token', identity }));
+    await store.signIn({ email: 'admin@akame.local', password: 'the-password' });
+
+    await store.logout();
+
+    expect(logout).toHaveBeenCalled();
+    expect(store.authenticated()).toBe(false);
+    expect(store.accessToken()).toBeNull();
+    expect(store.identity()).toBeNull();
+  });
+
+  it('olvida la sesión aunque la plataforma falle al cerrarla', async () => {
+    const { store, logout } = setup(async () => ({ accessToken: 'the-access-token', identity }));
+    await store.signIn({ email: 'admin@akame.local', password: 'the-password' });
+    logout.mockRejectedValue(new Error('the platform is down'));
+
+    await expect(store.logout()).rejects.toThrow();
+    expect(store.authenticated()).toBe(false);
   });
 
   it('no deja una sesión cuando la renovación falla', async () => {

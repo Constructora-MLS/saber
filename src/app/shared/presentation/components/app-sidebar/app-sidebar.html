@@ -81,16 +81,22 @@
   </div>
 
   <footer class="sidebar-footer">
-    <span class="user-avatar" aria-hidden="true">{{ userInitials() }}</span>
+    <span class="user-avatar" aria-hidden="true">
+      <mat-icon>person</mat-icon>
+    </span>
     <span class="user-copy">
       <strong class="user-name">{{ userName() }}</strong>
-      <span class="user-role">{{ userRole() }}</span>
     </span>
     <div class="footer-actions">
       <button type="button" class="footer-action" aria-label="Notificaciones">
         <mat-icon aria-hidden="true">notifications_none</mat-icon>
       </button>
-      <button type="button" class="footer-action footer-action-more" aria-label="Más opciones">
+      <button
+        type="button"
+        class="footer-action footer-action-more"
+        aria-label="Más opciones"
+        (click)="openSettings()"
+      >
         <mat-icon aria-hidden="true">more_horiz</mat-icon>
       </button>
     </div>

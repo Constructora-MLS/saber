@@ -287,9 +287,7 @@ app-switcher {
   border-radius: 50%;
   background: var(--rrhh-avatar-container);
   color: var(--rrhh-active-on-container);
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
+  font-size: 1.1rem;
 }
 
 .user-copy {
@@ -304,14 +302,6 @@ app-switcher {
   color: var(--rrhh-text);
   font-size: 0.8rem;
   font-weight: 700;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.user-role {
-  overflow: hidden;
-  color: var(--rrhh-text-muted);
-  font-size: 0.72rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }

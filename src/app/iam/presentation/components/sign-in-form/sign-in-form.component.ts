@@ -5,6 +5,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { SignInCommand } from '../../../application/commands/iam-commands';
+import { FieldCounter } from '../../../../shared/presentation/components/field-counter/field-counter';
 import { EMAIL_MAX_LENGTH } from '../../../domain/model/value-objects/email';
 import {
   PASSWORD_MAX_LENGTH,
@@ -20,6 +21,7 @@ import {
 @Component({
   selector: 'app-sign-in-form',
   imports: [
+    FieldCounter,
     MatButtonModule,
     MatFormFieldModule,
     MatIconModule,
@@ -32,8 +34,6 @@ import {
 export class SignInForm {
   /** Whether the credentials are being sent to the platform. */
   readonly submitting = input(false);
-  /** The message of the last failure. */
-  readonly errorMessage = input<string | null>(null);
   /** The credentials that the user wrote. */
   readonly signIn = output<SignInCommand>();
 

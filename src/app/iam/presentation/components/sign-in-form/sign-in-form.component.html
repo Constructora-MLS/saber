@@ -22,6 +22,7 @@
         El correo electrónico no puede superar los {{ emailMaxLength }} caracteres.
       </mat-error>
     }
+    <mat-hint align="end" appFieldCounter [control]="form.controls.email" [max]="emailMaxLength" />
   </mat-form-field>
 
   <mat-form-field appearance="outline">
@@ -38,6 +39,7 @@
     <button
       matIconButton
       matSuffix
+      class="sign-in-form__reveal"
       type="button"
       (click)="togglePassword()"
       [attr.aria-label]="showPassword() ? 'Ocultar la contraseña' : 'Mostrar la contraseña'"
@@ -57,13 +59,15 @@
         La contraseña no puede superar los {{ passwordMaxLength }} caracteres.
       </mat-error>
     }
+    <mat-hint
+      align="end"
+      appFieldCounter
+      [control]="form.controls.password"
+      [max]="passwordMaxLength"
+    />
   </mat-form-field>
 
   <span class="sign-in-form__forgot">¿Olvidaste tu contraseña?</span>
-
-  @if (errorMessage(); as message) {
-    <p class="sign-in-form__error" role="alert">{{ message }}</p>
-  }
 
   <button matButton="filled" class="sign-in-form__submit" type="submit" [disabled]="submitting()">
     {{ submitting() ? 'Entrando…' : 'Continuar' }}

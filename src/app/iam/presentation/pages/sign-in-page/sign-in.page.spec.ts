@@ -1,5 +1,6 @@
 import '@angular/compiler';
 import { Injector, runInInjectionContext } from '@angular/core';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
 import { describe, expect, it, vi } from 'vitest';
 import { AuthSessionStore } from '../../../application/session/auth-session.store';
@@ -7,9 +8,6 @@ import { AuthApiError } from '../../../infrastructure/errors/auth-api.error';
 import { SignInPage } from './sign-in.page';
 
 class Page extends SignInPage {
-  get message() {
-    return this.errorMessage();
-  }
   get busy() {
     return this.submitting();
   }
@@ -28,6 +26,7 @@ describe('SignInPage', () => {
   ) {
     const signIn = vi.fn(options.signIn ?? (async () => {}));
     const navigateByUrl = vi.fn().mockResolvedValue(true);
+    const notify = vi.fn();
     const injector = Injector.create({
       providers: [
         {
@@ -38,6 +37,7 @@ describe('SignInPage', () => {
           },
         },
         { provide: Router, useValue: { navigateByUrl } },
+        { provide: MatSnackBar, useValue: { open: notify } },
         {
           provide: ActivatedRoute,
           useValue: {
@@ -47,7 +47,7 @@ describe('SignInPage', () => {
       ],
     });
     const page = runInInjectionContext(injector, () => new Page());
-    return { page, signIn, navigateByUrl };
+    return { page, signIn, navigateByUrl, notify };
   }
 
   it('abre la sesión con las credenciales del formulario', async () => {
@@ -70,8 +70,8 @@ describe('SignInPage', () => {
     expect(navigateByUrl).toHaveBeenCalledWith('/certificates');
   });
 
-  it('muestra el mensaje de la plataforma cuando las credenciales no son válidas', async () => {
-    const { page } = setup({
+  it('avisa con la notificación de Material cuando las credenciales no son válidas', async () => {
+    const { page, notify } = setup({
       signIn: async () => {
         throw new AuthApiError(401, 'invalid_credentials', 'The credentials are not valid.');
       },
@@ -79,7 +79,11 @@ describe('SignInPage', () => {
 
     await page.send({ email: 'admin@akame.local', password: 'wrong' });
 
-    expect(page.message).toBe('Las credenciales no son válidas. Revisa tu correo y tu contraseña.');
+    expect(notify).toHaveBeenCalledWith(
+      'Las credenciales no son válidas. Revisa tu correo y tu contraseña.',
+      'Cerrar',
+      { duration: 4000 },
+    );
     expect(page.busy).toBe(false);
   });
 

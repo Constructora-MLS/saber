@@ -1,0 +1,84 @@
+/*
+ * The configuration of the account of the user.
+ *
+ * The page follows the identity of the platform: the surface of Material 3
+ * with the palette of the brand and the tokens of the platform.
+ */
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+.settings {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--app-background);
+}
+
+.settings__card {
+  width: min(560px, 100%);
+  padding: 40px;
+  background: var(--mat-sys-surface);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 28px;
+  box-shadow: 0 16px 50px rgba(38, 66, 56, 0.07);
+}
+
+.settings__eyebrow {
+  margin: 0;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mat-sys-on-primary-container);
+}
+
+.settings__title {
+  margin: 8px 0 0;
+  font-size: 1.875rem;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+}
+
+.settings__section {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--mat-sys-outline-variant);
+}
+
+.settings__section-title {
+  margin: 0 0 16px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.settings__identity {
+  display: grid;
+  gap: 12px;
+  margin: 0 0 24px;
+}
+
+.settings__field {
+  display: grid;
+  gap: 2px;
+}
+
+.settings__label {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.settings__value {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.settings__logout {
+  width: 100%;
+  min-height: 44px;
+  --mat-button-filled-container-color: var(--mat-sys-error);
+  --mat-button-filled-label-text-color: var(--mat-sys-on-error);
+}

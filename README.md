@@ -73,6 +73,7 @@ src/app/iam/
   presentation/components/       # SignInForm (el formulario de Material 3)
   presentation/guards/           # authGuard
   presentation/pages/sign-in-page/
+  presentation/pages/settings-page/  # Configuración de la cuenta
 ```
 
 - **Sign-in:** `POST /api/v1/auth/sign-in` con el correo y la contraseña. La respuesta
@@ -90,8 +91,17 @@ src/app/iam/
   `/sign-in` no están protegidas: el QR de un certificado se abre sin credenciales.
 - **Validación:** el formulario usa los componentes de Material 3 (`mat-form-field`,
   `matInput`, `matButton`) y los límites viven en el dominio (`Email` hasta 254
-  caracteres, `Password` entre 8 y 128). La contraseña se puede mostrar con el
-  botón del ojo.
+  caracteres, `Password` entre 8 y 128). El contador compartido (`FieldCounter`)
+  muestra el límite de cada campo. La contraseña se puede mostrar con el botón
+  del ojo.
+- **Perfil del lateral:** el sidebar muestra el ícono de usuario y el nombre real
+  del usuario autenticado, que lee de la sesión publicada por el contexto IAM.
+- **Configuración:** los tres puntos del perfil llevan a `/settings`, la página
+  de configuración de la cuenta. Su botón **Cerrar sesión** llama a
+  `POST /api/v1/auth/logout`, olvida la sesión en el navegador y vuelve al
+  inicio de sesión. Los fallos se avisan con la notificación de Material
+  (`MatSnackBar` con la acción "Cerrar"), el mismo patrón que el resto de la
+  plataforma.
 
 El access token vive **solo en la memoria** del navegador: nunca se escribe en el
 almacenamiento local. El interceptor añade la cabecera `Authorization: Bearer` a las

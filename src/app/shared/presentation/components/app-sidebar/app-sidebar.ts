@@ -45,9 +45,7 @@ export class AppSidebar {
   readonly navigation = input.required<readonly NavigationItem[]>();
   /** The id of the application that owns the module. */
   readonly currentApplicationId = input.required<string>();
-  readonly userInitials = input('UA');
-  readonly userName = input('Usuario actual');
-  readonly userRole = input('Cuenta de RR. HH.');
+  readonly userName = input('');
   readonly collapsedChange = output<boolean>();
 
   protected readonly isCollapsed = signal(false);
@@ -160,5 +158,13 @@ export class AppSidebar {
       this.closeAppSwitcher();
       this.closeDrawer();
     }
+  }
+
+  /**
+   * openSettings takes the user to the configuration of the account.
+   */
+  protected openSettings(): void {
+    this.closeDrawer();
+    void this.router.navigateByUrl('/settings');
   }
 }
