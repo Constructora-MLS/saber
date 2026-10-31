@@ -105,6 +105,20 @@ export class AcceptInvitationPage implements OnInit {
   }
 
   /**
+   * retry reads the invitation again.
+   */
+  protected retry(): void {
+    const token = this.route.snapshot.queryParamMap.get('token');
+    if (!token) {
+      this.expired.set(true);
+      return;
+    }
+
+    this.errorMessage.set(null);
+    void this.load(token);
+  }
+
+  /**
    * load reads the address that the invitation bound.
    */
   private async load(token: string): Promise<void> {

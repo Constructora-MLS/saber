@@ -24,6 +24,13 @@
   line-height: 1.5;
 }
 
+/* The address of the invitation is part of the sentence, so it never
+   breaks the invitation on a narrow screen. */
+.accept__email {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
 .accept__action {
   width: 100%;
   min-height: 44px;

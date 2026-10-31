@@ -122,8 +122,10 @@ src/app/iam/
 - **Aceptar invitación:** la ruta `/accept-invitation` es pública, como el inicio de
   sesión, porque la persona invitada llega desde el correo. La página lee el
   correo de la invitación con `GET /api/v1/invitations/{token}` (sin consumirla) y
-  lo muestra en un campo que no se puede editar, escribe los nombres, los apellidos
-  y la contraseña (12 a 30 caracteres) y activa la cuenta con
+  lo muestra en el texto de la invitación ("Invitación válida para el correo
+  ..."), nunca como un campo del formulario: el correo lo pone la plataforma y no
+  se puede cambiar. La persona escribe sus nombres, sus apellidos y su contraseña
+  (12 a 30 caracteres) y activa la cuenta con
   `POST /api/v1/invitations/{token}/accept`. La invitación es de un solo uso: si
   venció o ya se usó, la página lo avisa y ofrece el inicio de sesión.
 

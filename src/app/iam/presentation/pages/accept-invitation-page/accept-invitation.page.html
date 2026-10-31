@@ -33,20 +33,29 @@
         <button matButton="filled" class="accept__action" type="button" (click)="goToSignIn()">
           Iniciar sesión
         </button>
-      } @else {
+      } @else if (email(); as address) {
         <p class="login__intro">
-          Crea tu contraseña para completar la invitación de la plataforma.
+          Invitación válida para el correo <strong class="accept__email">{{ address }}</strong
+          >. Crea tu contraseña para completar la invitación de la plataforma.
         </p>
 
         @if (errorMessage(); as message) {
           <p class="accept__error" role="alert">{{ message }}</p>
         }
 
-        <app-accept-invitation-form
-          [email]="email() ?? ''"
-          [submitting]="submitting()"
-          (accept)="accept($event)"
-        />
+        <app-accept-invitation-form [submitting]="submitting()" (accept)="accept($event)" />
+      } @else {
+        <p class="login__intro">
+          No se pudo leer la invitación. Revisa el enlace del correo e inténtalo nuevamente.
+        </p>
+
+        @if (errorMessage(); as message) {
+          <p class="accept__error" role="alert">{{ message }}</p>
+        }
+
+        <button matButton="filled" class="accept__action" type="button" (click)="retry()">
+          Reintentar
+        </button>
       }
     </section>
   </section>

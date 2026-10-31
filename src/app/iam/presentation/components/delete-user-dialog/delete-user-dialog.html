@@ -8,9 +8,10 @@
   }
 
   <div class="dialog-identity">
-    <span class="dialog-avatar" aria-hidden="true">{{ initials() }}</span>
     <span class="dialog-identity-text">
-      <span class="dialog-identity-name">{{ data.name }}</span>
+      @if (data.name) {
+        <span class="dialog-identity-name">{{ data.name }}</span>
+      }
       <span class="dialog-identity-email">{{ data.email }}</span>
     </span>
     <span class="status-badge">{{ statusLabel() }}</span>
@@ -33,7 +34,7 @@
     [disabled]="deleting() || !confirmed()"
     (click)="confirm()"
   >
-    <mat-icon aria-hidden="true">person_off</mat-icon>
+    <mat-icon aria-hidden="true">delete</mat-icon>
     {{ deleting() ? 'Borrando…' : action() }}
   </button>
 </mat-dialog-actions>

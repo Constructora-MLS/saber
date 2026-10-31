@@ -43,8 +43,6 @@ export interface AcceptInvitationData {
   styleUrl: './accept-invitation-form.component.scss',
 })
 export class AcceptInvitationForm {
-  /** The address that the invitation bound. */
-  readonly email = input.required<string>();
   /** Whether the account is being activated. */
   readonly submitting = input(false);
 

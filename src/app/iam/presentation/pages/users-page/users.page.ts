@@ -206,7 +206,7 @@ export class UsersPage implements OnInit {
   protected openDeleteDialog(row: UserRow): void {
     const account: DeletableUser = {
       id: row.id,
-      name: row.name || row.email,
+      name: row.name,
       email: row.email,
       status: row.status,
     };

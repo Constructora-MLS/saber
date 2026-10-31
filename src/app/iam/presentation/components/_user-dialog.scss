@@ -46,19 +46,6 @@
   border-radius: 0.9rem;
 }
 
-.dialog-avatar {
-  display: grid;
-  width: 2.5rem;
-  height: 2.5rem;
-  flex: 0 0 auto;
-  place-items: center;
-  border-radius: 50%;
-  background: var(--rrhh-avatar-container);
-  color: var(--rrhh-active-on-container);
-  font-size: 0.9rem;
-  font-weight: 700;
-}
-
 .dialog-identity-text {
   display: grid;
   min-width: 0;

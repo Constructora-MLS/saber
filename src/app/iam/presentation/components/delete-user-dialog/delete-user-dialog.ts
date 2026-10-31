@@ -47,21 +47,6 @@ export class DeleteUserDialog {
   protected readonly confirmed = signal(false);
 
   /**
-   * The initials of the account, shown in its avatar.
-   */
-  protected readonly initials = computed(() => {
-    const parts = this.data.name
-      .split(' ')
-      .map((part) => part.trim())
-      .filter((part) => part.length > 0);
-
-    return parts
-      .slice(0, 2)
-      .map((part) => part[0]?.toUpperCase() ?? '')
-      .join('');
-  });
-
-  /**
    * The label of the state of the account.
    */
   protected readonly statusLabel = computed(() => userStatusLabel(this.data.status));
@@ -87,8 +72,8 @@ export class DeleteUserDialog {
   /** The warning of the consequence of the operation. */
   protected readonly warning = computed(() =>
     this.pending()
-      ? 'La invitación se elimina y la cuenta queda deshabilitada. Los datos no se borran.'
-      : 'Se cerrarán sus sesiones activas al confirmar. No se borran sus datos ni el historial de acciones.',
+      ? 'La invitación se elimina y la cuenta queda deshabilitada.'
+      : 'Se cerrarán sus sesiones activas al confirmar.',
   );
 
   /** The confirmation that the administrator has to give. */
