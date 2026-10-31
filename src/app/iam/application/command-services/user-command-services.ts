@@ -7,6 +7,7 @@ import {
   DeleteUserCommand,
   InvitationCreated,
   InviteUserCommand,
+  UpdateProfileCommand,
 } from '../commands/user-commands';
 import { PlatformUser } from '../../domain/model/aggregates/platform-user';
 import { Email } from '../../domain/model/value-objects/email';
@@ -46,6 +47,24 @@ export class DeleteUserCommandService {
     const id = UserId.create(command.id);
 
     await this.gateway.deleteUser(id);
+  }
+}
+
+/**
+ * UpdateProfileCommandService changes the names of the authenticated user.
+ *
+ * The names are validated before they leave the browser, so an obvious
+ * mistake never reaches the platform.
+ */
+@Injectable({ providedIn: 'root' })
+export class UpdateProfileCommandService {
+  private readonly gateway = inject(UserGateway);
+
+  async execute(command: UpdateProfileCommand): Promise<PlatformUser> {
+    const firstName = parsePersonName(command.firstName, 'firstName');
+    const lastName = parsePersonName(command.lastName, 'lastName');
+
+    return this.gateway.updateProfile({ firstName, lastName });
   }
 }
 

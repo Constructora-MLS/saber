@@ -40,6 +40,20 @@ export interface AcceptInvitationCommand {
 }
 
 /**
+ * UpdateProfileCommand asks for the edition of the names of the account of
+ * the user.
+ *
+ * The identifier of the account never travels in the command: the platform
+ * takes it from the access token of the session.
+ */
+export interface UpdateProfileCommand {
+  /** The first name of the user. */
+  readonly firstName: string;
+  /** The last name of the user. */
+  readonly lastName: string;
+}
+
+/**
  * InvitationCreated is the outcome of a successful invitation.
  *
  * The credential of the invitation never travels to the browser: it only

@@ -80,6 +80,32 @@
   font-size: 0.875rem;
 }
 
+/*
+ * The name is the only thing that the user edits, so the row carries the
+ * affordance that opens the edition of the names.
+ */
+.settings__value--name {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.settings__name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* The tonal icon button of Material 3 Expressive: the edit is offered in
+   the color of the brand, without competing with the name itself. */
+.settings__edit {
+  flex: 0 0 auto;
+  --mat-icon-button-icon-color: var(--mat-sys-on-primary-container);
+  --mat-icon-button-state-layer-color: var(--mat-sys-on-primary-container);
+  background-color: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+}
+
 .settings__copy {
   margin: 0 0 20px;
   color: var(--mat-sys-on-surface-variant);

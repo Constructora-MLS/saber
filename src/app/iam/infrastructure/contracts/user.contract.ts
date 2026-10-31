@@ -87,6 +87,19 @@ export interface AcceptInvitationRequestResource {
 }
 
 /**
+ * The body of the edition of the profile of the authenticated user.
+ *
+ * Only the names travel in the body: the address, the state and the
+ * credential of the account never change from here.
+ */
+export interface UpdateProfileRequestResource {
+  /** The first name of the user. */
+  readonly firstName?: string;
+  /** The last name of the user. */
+  readonly lastName?: string;
+}
+
+/**
  * The representation of an account that the platform manages.
  */
 export interface ManagedUserResource {

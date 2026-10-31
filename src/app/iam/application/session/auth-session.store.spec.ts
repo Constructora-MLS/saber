@@ -2,7 +2,10 @@ import '@angular/compiler';
 import { Injector, runInInjectionContext } from '@angular/core';
 import { describe, expect, it, vi } from 'vitest';
 import { SignInCommandService } from '../command-services/auth-command-services';
+import { PlatformUser } from '../../domain/model/aggregates/platform-user';
+import { restoreEmail } from '../../domain/model/value-objects/email';
 import { AuthIdentity } from '../../domain/model/value-objects/auth-identity';
+import { UserId } from '../../domain/model/value-objects/user-id';
 import { AuthGateway } from '../../infrastructure/gateways/auth.gateway';
 import { AuthSessionStore } from './auth-session.store';
 
@@ -78,6 +81,26 @@ describe('AuthSessionStore', () => {
 
     expect(verify).toHaveBeenCalled();
     expect(store.identity()?.firstName).toBe('Administrador');
+    expect(store.accessToken()).toBe('the-access-token');
+  });
+
+  it('edita el nombre de la cuenta y lo refleja en la sesión', async () => {
+    const { store } = setup(async () => ({ accessToken: 'the-access-token', identity }));
+    await store.signIn({ email: 'admin@akame.local', password: 'the-password' });
+
+    store.applyProfile(
+      PlatformUser.restore(
+        UserId.restore('the-user'),
+        restoreEmail('admin@akame.local'),
+        'Administradora',
+        'Akame',
+        'active',
+      ),
+    );
+
+    expect(store.identity()?.firstName).toBe('Administradora');
+    expect(store.identity()?.lastName).toBe('Akame');
+    expect(store.identity()?.email).toBe('admin@akame.local');
     expect(store.accessToken()).toBe('the-access-token');
   });
 

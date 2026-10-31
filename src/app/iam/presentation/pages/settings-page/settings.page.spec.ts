@@ -1,10 +1,14 @@
 import '@angular/compiler';
 import { Injector, runInInjectionContext } from '@angular/core';
 import { Location } from '@angular/common';
+import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Router } from '@angular/router';
 import { describe, expect, it, vi } from 'vitest';
 import { AuthSessionStore } from '../../../application/session/auth-session.store';
+import { PlatformUser } from '../../../domain/model/aggregates/platform-user';
+import { restoreEmail } from '../../../domain/model/value-objects/email';
+import { UserId } from '../../../domain/model/value-objects/user-id';
 import { SettingsPage } from './settings.page';
 
 class Page extends SettingsPage {
@@ -23,19 +27,32 @@ class Page extends SettingsPage {
   back() {
     return this.goBack();
   }
+  edit() {
+    return this.openProfileDialog();
+  }
 }
 
 describe('SettingsPage', () => {
-  function setup(logout: () => Promise<void> = async () => {}) {
+  function setup(
+    logout: () => Promise<void> = async () => {},
+    answered: PlatformUser | undefined = undefined,
+  ) {
     const navigateByUrl = vi.fn().mockResolvedValue(true);
     const notify = vi.fn();
     const back = vi.fn();
+    const applyProfile = vi.fn();
+    const open = vi.fn().mockReturnValue({
+      afterClosed: () => ({
+        subscribe: (next: (user: PlatformUser | undefined) => void) => next(answered),
+      }),
+    });
     const injector = Injector.create({
       providers: [
         {
           provide: AuthSessionStore,
           useValue: {
             logout,
+            applyProfile,
             identity: () => ({
               uuid: 'the-user',
               email: 'admin@akame.local',
@@ -47,10 +64,11 @@ describe('SettingsPage', () => {
         { provide: Router, useValue: { navigateByUrl } },
         { provide: Location, useValue: { back } },
         { provide: MatSnackBar, useValue: { open: notify } },
+        { provide: MatDialog, useValue: { open } },
       ],
     });
     const page = runInInjectionContext(injector, () => new Page());
-    return { page, navigateByUrl, notify, back };
+    return { page, navigateByUrl, notify, back, applyProfile, open };
   }
 
   it('muestra el nombre y el correo del usuario autenticado', () => {
@@ -100,5 +118,42 @@ describe('SettingsPage', () => {
     await Promise.all([page.close(), page.close()]);
 
     expect(logout).toHaveBeenCalledTimes(1);
+  });
+
+  it('abre el diálogo de edición con los nombres que la plataforma publicó', () => {
+    const { page, open } = setup();
+
+    page.edit();
+
+    expect(open).toHaveBeenCalledWith(expect.anything(), {
+      data: { firstName: 'Admin', lastName: 'Akame' },
+      width: '30rem',
+      maxWidth: '94vw',
+    });
+  });
+
+  it('guarda el nombre editado en la sesión y avisa del cambio', () => {
+    const edited = PlatformUser.restore(
+      UserId.restore('the-user'),
+      restoreEmail('admin@akame.local'),
+      'Administradora',
+      'Akame',
+      'active',
+    );
+    const { page, applyProfile, notify } = setup(async () => {}, edited);
+
+    page.edit();
+
+    expect(applyProfile).toHaveBeenCalledWith(edited);
+    expect(notify).toHaveBeenCalledWith('Nombre actualizado.', 'Cerrar', { duration: 4000 });
+  });
+
+  it('no cambia la sesión cuando el usuario cancela la edición', () => {
+    const { page, applyProfile, notify } = setup(async () => {}, undefined);
+
+    page.edit();
+
+    expect(applyProfile).not.toHaveBeenCalled();
+    expect(notify).not.toHaveBeenCalled();
   });
 });

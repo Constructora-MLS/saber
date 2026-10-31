@@ -17,6 +17,7 @@ import {
   InvitationDetailsResource,
   InviteUserRequestResource,
   ManagedUserResource,
+  UpdateProfileRequestResource,
   UserListItemResource,
   UserPageResource,
   UserStatusResource,
@@ -111,6 +112,28 @@ export class UserGateway {
           `${this.baseUrl}/invitations/${encodeURIComponent(token)}/accept`,
           request,
         )
+        .pipe(catchError((error: HttpErrorResponse) => this.toFailure(error))),
+    );
+
+    return PlatformUser.restore(
+      UserId.restore(resource.uuid),
+      restoreEmail(resource.email),
+      resource.firstName,
+      resource.lastName,
+      this.status(resource.status),
+    );
+  }
+
+  /**
+   * updateProfile changes the names of the authenticated user.
+   *
+   * The platform takes the identifier of the user from the access token, so
+   * the body only carries the names that the user edits.
+   */
+  async updateProfile(request: UpdateProfileRequestResource): Promise<PlatformUser> {
+    const resource = await firstValueFrom(
+      this.http
+        .patch<ManagedUserResource>(`${this.baseUrl}/auth/profile`, request)
         .pipe(catchError((error: HttpErrorResponse) => this.toFailure(error))),
     );
 

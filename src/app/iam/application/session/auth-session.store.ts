@@ -4,6 +4,8 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { SignInCommand } from '../commands/iam-commands';
 import { SignInCommandService } from '../command-services/auth-command-services';
+import { PlatformUser } from '../../domain/model/aggregates/platform-user';
+import { restoreAuthIdentity } from '../../domain/model/value-objects/auth-identity';
 import { AuthGateway } from '../../infrastructure/gateways/auth.gateway';
 import { AuthSession } from './auth-session';
 
@@ -63,6 +65,24 @@ export class AuthSessionStore {
   async verify(): Promise<void> {
     const identity = await this.gateway.verify();
     this.session.update((session) => (session ? { ...session, identity } : session));
+  }
+
+  /**
+   * applyProfile replaces the identity of the session with the published one.
+   *
+   * The names of the user change in the platform, so the browser keeps the
+   * identity that the platform published: the name shown in the sidebar and
+   * in the settings is the new one.
+   */
+  applyProfile(user: PlatformUser): void {
+    this.session.update((session) =>
+      session
+        ? {
+            ...session,
+            identity: restoreAuthIdentity(user.id.value, user.email, user.firstName, user.lastName),
+          }
+        : session,
+    );
   }
 
   /**

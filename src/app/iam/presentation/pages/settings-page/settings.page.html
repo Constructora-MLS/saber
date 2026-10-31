@@ -20,7 +20,18 @@
       <dl class="settings__identity">
         <div class="settings__field">
           <dt class="settings__label">Nombre</dt>
-          <dd class="settings__value">{{ userName() }}</dd>
+          <dd class="settings__value settings__value--name">
+            <span class="settings__name">{{ userName() }}</span>
+            <button
+              matIconButton
+              type="button"
+              class="settings__edit"
+              aria-label="Editar nombre y apellido"
+              (click)="openProfileDialog()"
+            >
+              <mat-icon aria-hidden="true">edit</mat-icon>
+            </button>
+          </dd>
         </div>
         <div class="settings__field">
           <dt class="settings__label">Correo electrónico</dt>

@@ -118,6 +118,39 @@ describe('UserGateway', () => {
     });
   });
 
+  it('edita el nombre de la cuenta con un PATCH al perfil del usuario', async () => {
+    const patch = vi.fn(() => of({ ...account, firstName: 'Mina', lastName: 'Kato Jr.' }));
+    const gateway = gatewayFor({ patch });
+
+    const user = await gateway.updateProfile({ firstName: 'Mina', lastName: 'Kato Jr.' });
+
+    expect(user.fullName).toBe('Mina Kato Jr.');
+    expect(user.email).toBe('member@example.test');
+    expect(patch).toHaveBeenCalledWith('/api/v1/auth/profile', {
+      firstName: 'Mina',
+      lastName: 'Kato Jr.',
+    });
+  });
+
+  it('traduce el rechazo de la plataforma al editar el nombre en el error del contexto', async () => {
+    const gateway = gatewayFor({
+      patch: () =>
+        throwError(
+          () =>
+            new HttpErrorResponse({
+              status: 404,
+              error: { code: 'user_not_found', detail: 'The user is not available anymore.' },
+            }),
+        ),
+    });
+
+    await expect(gateway.updateProfile({ firstName: 'Mina' })).rejects.toMatchObject({
+      name: 'UserApiError',
+      status: 404,
+      code: 'user_not_found',
+    });
+  });
+
   it('translates the rejection of the platform into the error of the context', async () => {
     const gateway = gatewayFor({
       post: () =>
