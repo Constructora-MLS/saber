@@ -35,8 +35,8 @@ export class AppLayout {
       return '';
     }
 
-    const name = [identity.firstName, identity.lastName].filter(Boolean).join(' ').trim();
-    return name || identity.email;
+    const firstName = identity.firstName.trim();
+    return firstName || identity.email;
   });
 
   protected onSidebarCollapsedChange(collapsed: boolean): void {

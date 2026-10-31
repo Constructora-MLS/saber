@@ -1,0 +1,92 @@
+<div class="table-scroll">
+  <table class="user-table">
+    <caption class="sr-only">
+      {{
+        caption()
+      }}
+    </caption>
+    <thead>
+      <tr>
+        <th scope="col">Usuario</th>
+        <th scope="col">Estado</th>
+        <th scope="col" class="cell-actions">Acción</th>
+      </tr>
+    </thead>
+    <tbody>
+      @if (loading() && rows().length === 0) {
+        <tr class="table-message">
+          <td colspan="3">
+            <div class="table-loading" role="status">
+              <mat-spinner diameter="28" aria-hidden="true" />
+              <span>Cargando usuarios…</span>
+            </div>
+          </td>
+        </tr>
+      } @else if (rows().length === 0 && errorMessage() !== null) {
+        <tr class="table-state">
+          <td colspan="3">
+            <app-table-state
+              kind="error"
+              [title]="errorTitle()"
+              [message]="errorMessage()"
+              actionLabel="Reintentar"
+              actionIcon="refresh"
+              (actionRequested)="retryRequested.emit()"
+            />
+          </td>
+        </tr>
+      } @else if (rows().length === 0) {
+        <tr class="table-state">
+          <td colspan="3">
+            <app-table-state
+              kind="empty"
+              [icon]="emptyIcon()"
+              [title]="emptyTitle()"
+              [message]="emptyMessage()"
+              [actionLabel]="emptyActionLabel()"
+              actionIcon="person_add"
+              (actionRequested)="inviteRequested.emit()"
+            />
+          </td>
+        </tr>
+      } @else {
+        @for (row of rows(); track row.id) {
+          <tr>
+            <th scope="row" class="cell-name">
+              <span class="cell-label" aria-hidden="true">Usuario</span>
+              @if (row.name) {
+                <span class="cell-person">{{ row.name }}</span>
+              } @else {
+                <span class="cell-person is-empty">Sin nombre</span>
+              }
+              <span class="cell-email">{{ row.email }}</span>
+            </th>
+            <td>
+              <span class="cell-label" aria-hidden="true">Estado</span>
+              <span class="status-badge" [class.is-pending]="row.status === 'pending'">
+                {{ statusLabel(row.status) }}
+              </span>
+            </td>
+            <td class="cell-actions">
+              <span class="cell-label" aria-hidden="true">Acción</span>
+              <button
+                matIconButton
+                type="button"
+                [matMenuTriggerFor]="rowMenu"
+                [attr.aria-label]="'Acciones de ' + row.name"
+              >
+                <mat-icon aria-hidden="true">more_vert</mat-icon>
+              </button>
+              <mat-menu #rowMenu="matMenu" xPosition="before">
+                <button mat-menu-item type="button" (click)="deleteRequested.emit(row)">
+                  <mat-icon aria-hidden="true">delete</mat-icon>
+                  <span>Eliminar</span>
+                </button>
+              </mat-menu>
+            </td>
+          </tr>
+        }
+      }
+    </tbody>
+  </table>
+</div>

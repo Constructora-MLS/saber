@@ -1,0 +1,102 @@
+// Shared presentation of the dialogs of the accounts of the platform.
+
+.dialog-description {
+  margin: 0 0 1rem;
+  color: var(--app-text-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.dialog-error {
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 0.75rem;
+  border-left: 3px solid var(--mat-sys-error);
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+  font-size: 0.85rem;
+}
+
+.dialog-form {
+  display: grid;
+  gap: 0.25rem;
+  padding-top: 0.25rem;
+}
+
+.dialog-actions {
+  // Material already separates the actions of a dialog by 8px, so the
+  // actions are not separated twice.
+  gap: 0;
+}
+
+.dialog-actions .danger-action {
+  --mat-button-filled-container-color: var(--mat-sys-error);
+  --mat-button-filled-label-text-color: var(--mat-sys-on-error);
+  --mat-button-filled-state-layer-color: var(--mat-sys-on-error);
+}
+
+/* The identity of the account is shown before the warning of the
+   disabling, so the administrator reads whose account is at stake. */
+.dialog-identity {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--app-outline);
+  border-radius: 0.9rem;
+}
+
+.dialog-avatar {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--rrhh-avatar-container);
+  color: var(--rrhh-active-on-container);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.dialog-identity-text {
+  display: grid;
+  min-width: 0;
+  gap: 0.15rem;
+}
+
+.dialog-identity-name {
+  font-weight: 650;
+}
+
+.dialog-identity-email {
+  color: var(--app-text-muted);
+  font-size: 0.85rem;
+}
+
+/* The warning explains the consequence of the operation before the
+   administrator confirms it. */
+.dialog-warning {
+  margin: 1rem 0 0;
+  padding: 0.85rem 1rem;
+  border-left: 3px solid var(--mat-sys-error);
+  border-radius: 0.75rem;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.dialog-confirmation {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.dialog-confirmation input {
+  margin-top: 0.15rem;
+  accent-color: var(--mat-sys-error);
+}

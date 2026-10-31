@@ -36,6 +36,16 @@ export function parseEmail(raw: string): Email {
 }
 
 /**
+ * restoreEmail rebuilds an address from its stored value.
+ *
+ * The stored addresses were validated when they were written, so the
+ * reconstitution of an aggregate does not re-run the validation rules.
+ */
+export function restoreEmail(value: string): Email {
+  return value as Email;
+}
+
+/**
  * Email keeps the established factory call sites while exposing a primitive
  * branded type rather than a wrapper class.
  */

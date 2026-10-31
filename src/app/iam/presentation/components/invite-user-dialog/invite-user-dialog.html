@@ -1,0 +1,57 @@
+<h2 mat-dialog-title>Invitar usuario</h2>
+
+<mat-dialog-content>
+  <p class="dialog-description">
+    Envía una invitación de acceso a la plataforma. La persona invitada elige sus nombres y su
+    contraseña al aceptarla.
+  </p>
+
+  @if (errorMessage(); as message) {
+    <p class="dialog-error" role="alert">{{ message }}</p>
+  }
+
+  <form class="dialog-form" id="invite-user-form" [formGroup]="form" (ngSubmit)="submit()">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Correo electrónico</mat-label>
+      <input
+        matInput
+        formControlName="email"
+        type="email"
+        inputmode="email"
+        [maxLength]="emailMaxLength"
+        autocomplete="off"
+        placeholder="persona@empresa.pe"
+        required
+      />
+      @if (form.controls.email.hasError('required')) {
+        <mat-error>El correo electrónico es obligatorio.</mat-error>
+      }
+      @if (form.controls.email.hasError('email')) {
+        <mat-error>El correo electrónico no es válido.</mat-error>
+      }
+      @if (form.controls.email.hasError('maxlength')) {
+        <mat-error
+          >El correo electrónico no puede superar los {{ emailMaxLength }} caracteres.</mat-error
+        >
+      }
+      <mat-hint
+        align="end"
+        appFieldCounter
+        [control]="form.controls.email"
+        [max]="emailMaxLength"
+      />
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="dialog-actions">
+  <button matButton type="button" (click)="cancel()">Cancelar</button>
+  <button
+    matButton="filled"
+    type="submit"
+    form="invite-user-form"
+    [disabled]="submitting() || form.invalid"
+  >
+    {{ submitting() ? 'Enviando…' : 'Enviar invitación' }}
+  </button>
+</mat-dialog-actions>

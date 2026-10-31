@@ -1,8 +1,88 @@
 <section class="page" aria-labelledby="users-page-title">
   <header class="page-header">
     <div class="page-heading">
-      <p class="eyebrow">Administración</p>
+      <p class="eyebrow">Administración de la organización</p>
       <h1 id="users-page-title" class="page-title">Usuarios</h1>
+      <p class="page-subtitle">
+        Las cuentas de acceso de la plataforma y el estado de cada invitación.
+      </p>
     </div>
+
+    <button matButton="filled" type="button" class="invite-button" (click)="openInviteDialog()">
+      <mat-icon aria-hidden="true">person_add</mat-icon>
+      Invitar usuario
+    </button>
   </header>
+
+  <section class="panel" aria-labelledby="users-panel-title">
+    <header class="panel-header">
+      <div>
+        <h2 id="users-panel-title">Cuentas</h2>
+        <p class="panel-hint">Las cuentas que pueden iniciar sesión en la plataforma.</p>
+      </div>
+    </header>
+
+    <div class="filters">
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>Buscar por nombre o correo</mat-label>
+        <input
+          matInput
+          type="search"
+          autocomplete="off"
+          placeholder="Buscar por nombre o correo…"
+          [ngModel]="searchTerm()"
+          (ngModelChange)="onSearchChanged($event)"
+        />
+        @if (searchTerm()) {
+          <button
+            matIconButton
+            matSuffix
+            type="button"
+            aria-label="Limpiar la búsqueda"
+            (click)="clearSearch()"
+          >
+            <mat-icon aria-hidden="true">close</mat-icon>
+          </button>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="status-field">
+        <mat-label>Estado</mat-label>
+        <mat-select [ngModel]="statusFilter()" (ngModelChange)="onStatusChanged($event)">
+          <mat-option value="">Todos los estados</mat-option>
+          <mat-option value="active">Activo</mat-option>
+          <mat-option value="pending">Pendiente</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    @if (loading()) {
+      <mat-progress-bar mode="indeterminate" aria-label="Cargando cuentas" />
+    }
+
+    <app-user-table
+      caption="Cuentas de acceso de la plataforma"
+      [rows]="rows()"
+      [loading]="loading()"
+      [errorTitle]="loadFailure()?.title ?? null"
+      [errorMessage]="loadFailure()?.message ?? null"
+      [emptyTitle]="emptyTitle()"
+      [emptyMessage]="emptyMessage()"
+      [emptyIcon]="emptyIcon()"
+      [emptyActionLabel]="searchTerm().trim() ? null : 'Invitar usuario'"
+      (retryRequested)="retry()"
+      (inviteRequested)="openInviteDialog()"
+      (deleteRequested)="openDeleteDialog($event)"
+    />
+
+    @if (totalPages() > 1) {
+      <div class="panel-footer">
+        <app-paginator
+          [page]="page()"
+          [totalPages]="totalPages()"
+          (pageRequested)="goToPage($event)"
+        />
+      </div>
+    }
+  </section>
 </section>

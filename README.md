@@ -61,19 +61,23 @@ del usuario, y protege las rutas privadas con un guard:
 
 ```text
 src/app/iam/
-  domain/model/value-objects/   # Email, Password, AuthIdentity
+  domain/model/value-objects/   # Email, Password, AuthIdentity, UserId, UserStatus
   domain/model/errors/           # AuthValidationError
-  application/commands/          # SignInCommand
-  application/command-services/  # SignInCommandService
+  domain/model/aggregates/       # PlatformUser
+  application/commands/          # SignInCommand, InviteUserCommand, DisableUserCommand
+  application/command-services/  # SignInCommandService, InviteUserCommandService, DisableUserCommandService
+  application/queries/           # ListUsersQuery y la normalización de la búsqueda
+  application/query-services/    # ListUsersQueryService
   application/session/           # AuthSessionStore (señales) y AuthSession
   infrastructure/contracts/      # contrato REST del API de IAM
-  infrastructure/errors/         # AuthApiError (problem details)
-  infrastructure/gateways/       # AuthGateway (sign-in, refresh, verify)
+  infrastructure/errors/         # AuthApiError y UserApiError (problem details)
+  infrastructure/gateways/       # AuthGateway (sign-in, refresh, verify) y UserGateway
   infrastructure/http/           # authInterceptor (cabecera Bearer)
-  presentation/components/       # SignInForm (el formulario de Material 3)
+  presentation/components/       # SignInForm, UserTable y los diálogos de invitación y de eliminación
   presentation/guards/           # authGuard
   presentation/pages/sign-in-page/
   presentation/pages/settings-page/  # Configuración de la cuenta
+  presentation/pages/users-page/     # Administración · Usuarios
 ```
 
 - **Sign-in:** `POST /api/v1/auth/sign-in` con el correo y la contraseña. La respuesta
@@ -95,14 +99,23 @@ src/app/iam/
   caracteres, `Password` entre 8 y 128). El contador compartido (`FieldCounter`)
   muestra el límite de cada campo. La contraseña se puede mostrar con el botón
   del ojo.
-- **Perfil del lateral:** el sidebar muestra el ícono de usuario y el nombre real
-  del usuario autenticado, que lee de la sesión publicada por el contexto IAM.
+- **Perfil del lateral:** el sidebar muestra el ícono de usuario y solo el
+  primer nombre del usuario autenticado, que lee de la sesión publicada por IAM.
 - **Configuración:** los tres puntos del perfil llevan a `/settings`, la página
   de configuración de la cuenta. Su botón **Cerrar sesión** llama a
   `POST /api/v1/auth/logout`, olvida la sesión en el navegador y vuelve al
   inicio de sesión. Los fallos se avisan con la notificación de Material
   (`MatSnackBar` con la acción "Cerrar"), el mismo patrón que el resto de la
   plataforma.
+- **Usuarios (Administración):** la página `/users` lista las cuentas de acceso con
+  `GET /api/v1/users` (búsqueda por nombre o correo, filtro por estado `active` o
+  `pending` y paginación numerada), invita a una persona con
+  `POST /api/v1/users/invitations` (solo pide el correo: los nombres y la contraseña
+  los elige la persona invitada al aceptar) y elimina una cuenta con
+  `DELETE /api/v1/users/{uuid}`, que la borra lógicamente y cierra sus sesiones. La
+  acción vive en el menú de tres puntos de cada fila, igual que en Personal y en
+  Catálogos, y el diálogo de eliminación exige confirmar, porque la operación cierra
+  las sesiones activas de la cuenta.
 
 El access token vive **solo en la memoria** del navegador: nunca se escribe en el
 almacenamiento local. El interceptor añade la cabecera `Authorization: Bearer` a las
