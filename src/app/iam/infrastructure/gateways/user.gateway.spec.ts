@@ -86,9 +86,36 @@ describe('UserGateway', () => {
     const remove = vi.fn(() => of(null));
     const gateway = gatewayFor({ delete: remove });
 
-    await gateway.disableUser(UserId.restore(account.uuid));
+    await gateway.deleteUser(UserId.restore(account.uuid));
 
     expect(remove).toHaveBeenCalledWith(`/api/v1/users/${account.uuid}`);
+  });
+
+  it('reads the address that an invitation bound without consuming it', async () => {
+    const get = vi.fn(() => of({ email: 'member@example.test' }));
+    const gateway = gatewayFor({ get });
+
+    await expect(gateway.getInvitation('the-token')).resolves.toBe('member@example.test');
+    expect(get).toHaveBeenCalledWith('/api/v1/invitations/the-token');
+  });
+
+  it('activates the account of an invitation', async () => {
+    const post = vi.fn(() => of(account));
+    const gateway = gatewayFor({ post });
+
+    const user = await gateway.acceptInvitation('the-token', {
+      firstName: 'Mina',
+      lastName: 'Kato',
+      password: 'a-long-enough-password',
+    });
+
+    expect(user.fullName).toBe('Mina Kato');
+    expect(user.status).toBe('active');
+    expect(post).toHaveBeenCalledWith('/api/v1/invitations/the-token/accept', {
+      firstName: 'Mina',
+      lastName: 'Kato',
+      password: 'a-long-enough-password',
+    });
   });
 
   it('translates the rejection of the platform into the error of the context', async () => {

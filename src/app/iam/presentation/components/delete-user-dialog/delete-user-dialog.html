@@ -1,7 +1,7 @@
-<h2 mat-dialog-title>Eliminar cuenta</h2>
+<h2 mat-dialog-title>{{ title() }}</h2>
 
 <mat-dialog-content>
-  <p class="dialog-description">La persona dejará de poder iniciar sesión.</p>
+  <p class="dialog-description">{{ description() }}</p>
 
   @if (errorMessage(); as message) {
     <p class="dialog-error" role="alert">{{ message }}</p>
@@ -16,14 +16,11 @@
     <span class="status-badge">{{ statusLabel() }}</span>
   </div>
 
-  <p class="dialog-warning">
-    <strong>Se cerrarán sus sesiones activas al confirmar.</strong><br />
-    No se borran sus datos ni el historial de acciones.
-  </p>
+  <p class="dialog-warning">{{ warning() }}</p>
 
   <label class="dialog-confirmation">
     <input type="checkbox" [checked]="confirmed()" (change)="onConfirmationChanged($event)" />
-    <span>Confirmo eliminar esta cuenta y cerrar sus sesiones activas.</span>
+    <span>{{ confirmation() }}</span>
   </label>
 </mat-dialog-content>
 
@@ -37,6 +34,6 @@
     (click)="confirm()"
   >
     <mat-icon aria-hidden="true">person_off</mat-icon>
-    {{ deleting() ? 'Eliminando…' : 'Eliminar cuenta' }}
+    {{ deleting() ? 'Borrando…' : action() }}
   </button>
 </mat-dialog-actions>

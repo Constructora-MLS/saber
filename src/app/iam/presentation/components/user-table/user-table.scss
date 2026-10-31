@@ -72,13 +72,6 @@
   display: block;
 }
 
-/* A pending account has no name yet: the row shows the address below it,
-   so the empty name is never the only thing that the row carries. */
-.cell-person.is-empty {
-  color: var(--app-text-muted);
-  font-weight: 400;
-}
-
 .cell-email {
   display: block;
   margin-top: 0.15rem;
@@ -111,18 +104,6 @@
   width: 1%;
   white-space: nowrap;
   text-align: right;
-}
-
-/* The action of the row reads as a link: it is a secondary operation of the
-   listing and it never competes with the account itself. */
-.disable-action {
-  --mat-button-text-label-text-color: var(--rrhh-active-on-container);
-  --mat-button-text-label-text-size: 0.85rem;
-  --mat-button-text-container-height: 2.25rem;
-}
-
-.disable-action:disabled {
-  --mat-button-disabled-label-text-color: var(--app-text-muted);
 }
 
 /* The label of a column is only shown when the table becomes a list of

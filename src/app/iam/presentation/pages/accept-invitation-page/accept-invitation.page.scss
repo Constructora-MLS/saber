@@ -1,0 +1,30 @@
+/*
+ * The page that activates an invited account.
+ *
+ * The layout is the shell of the access of the platform, the same one that
+ * the sign in uses: the brand of the platform on the left and the form of
+ * the access on the right.
+ */
+@use '../auth-shell';
+
+.accept__state {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0;
+}
+
+.accept__error {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border-left: 3px solid var(--mat-sys-error);
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.accept__action {
+  width: 100%;
+  min-height: 44px;
+}

@@ -16,6 +16,16 @@ export const routes: Routes = [
       ),
   },
   {
+    // The acceptance of an invitation is public: the invited member arrives
+    // from the email and it has no session yet.
+    path: 'accept-invitation',
+    title: 'Aceptar invitación',
+    loadComponent: () =>
+      import('./iam/presentation/pages/accept-invitation-page/accept-invitation.page').then(
+        (module) => module.AcceptInvitationPage,
+      ),
+  },
+  {
     // The configuration of the account of the user.
     path: 'settings',
     title: 'Configuración',

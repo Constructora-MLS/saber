@@ -31,7 +31,7 @@ const PAGE_SIZE = 20;
  *
  * The page is the frontend controller of the bounded context: it reads the
  * listing through the use case and it opens the dialogs that invite and
- * disable an account. It never talks to the API directly.
+ * delete an account. It never talks to the API directly.
  */
 @Component({
   imports: [
@@ -109,6 +109,17 @@ export class UsersPage implements OnInit {
         this.searchTimer = null;
       }
     });
+
+    // The listing follows the invitations that are accepted somewhere else:
+    // when the administrator returns to the tab, the accounts are read again
+    // and the accepted account shows its new state.
+    if (typeof window !== 'undefined') {
+      const onFocus = (): void => {
+        void this.load(this.page());
+      };
+      window.addEventListener('focus', onFocus);
+      this.destroyRef.onDestroy(() => window.removeEventListener('focus', onFocus));
+    }
   }
 
   /**
@@ -205,7 +216,7 @@ export class UsersPage implements OnInit {
       .afterClosed()
       .subscribe((deleted) => {
         if (deleted) {
-          this.notify('Cuenta eliminada.');
+          this.notify('Cuenta borrada.');
           void this.reload();
         }
       });

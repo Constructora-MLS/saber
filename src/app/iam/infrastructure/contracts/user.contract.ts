@@ -63,3 +63,41 @@ export interface InvitationCreatedResource {
   /** The lifetime of the invitation, in seconds. */
   readonly expiresIn: number;
 }
+
+/**
+ * The invitation that a token addresses.
+ *
+ * The address is the one that the invitation bound: it is never written by
+ * the invited member.
+ */
+export interface InvitationDetailsResource {
+  /** The address that received the invitation. */
+  readonly email: string;
+}
+
+/**
+ * The body of the acceptance of an invitation.
+ *
+ * The address is not part of the body: the invitation already carries it.
+ */
+export interface AcceptInvitationRequestResource {
+  readonly firstName: string;
+  readonly lastName: string;
+  readonly password: string;
+}
+
+/**
+ * The representation of an account that the platform manages.
+ */
+export interface ManagedUserResource {
+  /** The identifier of the account. */
+  readonly uuid: string;
+  /** The address of the account. */
+  readonly email: string;
+  /** The first name of the account. */
+  readonly firstName: string;
+  /** The last name of the account. */
+  readonly lastName: string;
+  /** The state of the account. */
+  readonly status: UserStatusResource;
+}

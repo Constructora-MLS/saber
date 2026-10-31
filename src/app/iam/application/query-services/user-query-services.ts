@@ -3,7 +3,12 @@
 
 import { inject, Injectable } from '@angular/core';
 import { normalizeUserSearch } from '../queries/user-search';
-import { ListUsersQuery, UserCriteria, UserPage } from '../queries/user-queries';
+import {
+  GetInvitationQuery,
+  ListUsersQuery,
+  UserCriteria,
+  UserPage,
+} from '../queries/user-queries';
 import { PlatformUser } from '../../domain/model/aggregates/platform-user';
 import { UserGateway } from '../../infrastructure/gateways/user.gateway';
 
@@ -25,5 +30,17 @@ export class ListUsersQueryService {
       limit: query.limit,
       page: query.page,
     };
+  }
+}
+
+/**
+ * GetInvitationQueryService reads the address that an invitation bound.
+ */
+@Injectable({ providedIn: 'root' })
+export class GetInvitationQueryService {
+  private readonly gateway = inject(UserGateway);
+
+  async execute(query: GetInvitationQuery): Promise<string> {
+    return this.gateway.getInvitation(query.token);
   }
 }

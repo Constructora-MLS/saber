@@ -56,8 +56,6 @@
               <span class="cell-label" aria-hidden="true">Usuario</span>
               @if (row.name) {
                 <span class="cell-person">{{ row.name }}</span>
-              } @else {
-                <span class="cell-person is-empty">Sin nombre</span>
               }
               <span class="cell-email">{{ row.email }}</span>
             </th>
@@ -80,7 +78,7 @@
               <mat-menu #rowMenu="matMenu" xPosition="before">
                 <button mat-menu-item type="button" (click)="deleteRequested.emit(row)">
                   <mat-icon aria-hidden="true">delete</mat-icon>
-                  <span>Eliminar</span>
+                  <span>Borrar</span>
                 </button>
               </mat-menu>
             </td>

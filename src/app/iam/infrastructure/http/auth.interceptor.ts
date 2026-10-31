@@ -9,10 +9,11 @@ import { AuthSessionStore } from '../../application/session/auth-session.store';
  * The routes of the platform that answer without an access token.
  *
  * The sign in and the renewal authenticate with the credential of the
- * session, and the verification of a certificate is public: any person can
- * read a certificate without signing in.
+ * session, the verification of a certificate is public: any person can read
+ * a certificate without signing in, and the acceptance of an invitation is
+ * public because the invited member arrives from the email.
  */
-const PUBLIC_ROUTES = ['/auth/sign-in', '/auth/refresh', '/certificates/verify/'];
+const PUBLIC_ROUTES = ['/auth/sign-in', '/auth/refresh', '/certificates/verify/', '/invitations/'];
 
 /**
  * authInterceptor adds the access token to the private requests.

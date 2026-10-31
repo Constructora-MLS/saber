@@ -15,11 +15,28 @@ export interface InviteUserCommand {
 }
 
 /**
- * DisableUserCommand asks for the logical deletion of an account.
+ * DeleteUserCommand asks for the logical deletion of an account.
  */
-export interface DisableUserCommand {
+export interface DeleteUserCommand {
   /** The identifier of the account. */
   readonly id: string;
+}
+
+/**
+ * AcceptInvitationCommand asks for the activation of an invited account.
+ *
+ * The address is not part of the command: the invitation already carries it
+ * and the platform never lets the invited member change it.
+ */
+export interface AcceptInvitationCommand {
+  /** The credential of the invitation. */
+  readonly token: string;
+  /** The first name of the invited member. */
+  readonly firstName: string;
+  /** The last name of the invited member. */
+  readonly lastName: string;
+  /** The password that the invited member chooses. */
+  readonly password: string;
 }
 
 /**

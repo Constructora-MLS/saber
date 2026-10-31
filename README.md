@@ -73,9 +73,10 @@ src/app/iam/
   infrastructure/errors/         # AuthApiError y UserApiError (problem details)
   infrastructure/gateways/       # AuthGateway (sign-in, refresh, verify) y UserGateway
   infrastructure/http/           # authInterceptor (cabecera Bearer)
-  presentation/components/       # SignInForm, UserTable y los diálogos de invitación y de eliminación
+  presentation/components/       # SignInForm, AcceptInvitationForm, UserTable y los diálogos
   presentation/guards/           # authGuard
   presentation/pages/sign-in-page/
+  presentation/pages/accept-invitation-page/  # Aceptar la invitación (pública)
   presentation/pages/settings-page/  # Configuración de la cuenta
   presentation/pages/users-page/     # Administración · Usuarios
 ```
@@ -111,16 +112,25 @@ src/app/iam/
   `GET /api/v1/users` (búsqueda por nombre o correo, filtro por estado `active` o
   `pending` y paginación numerada), invita a una persona con
   `POST /api/v1/users/invitations` (solo pide el correo: los nombres y la contraseña
-  los elige la persona invitada al aceptar) y elimina una cuenta con
+  los elige la persona invitada al aceptar) y borra una cuenta con
   `DELETE /api/v1/users/{uuid}`, que la borra lógicamente y cierra sus sesiones. La
   acción vive en el menú de tres puntos de cada fila, igual que en Personal y en
-  Catálogos, y el diálogo de eliminación exige confirmar, porque la operación cierra
-  las sesiones activas de la cuenta.
+  Catálogos, y el diálogo de borrado exige confirmar, porque la operación cierra
+  las sesiones activas de la cuenta. El listado se vuelve a leer cuando la pestaña
+  recupera el foco, para que la cuenta invitada muestre su nuevo estado en cuanto
+  la persona acepta la invitación.
+- **Aceptar invitación:** la ruta `/accept-invitation` es pública, como el inicio de
+  sesión, porque la persona invitada llega desde el correo. La página lee el
+  correo de la invitación con `GET /api/v1/invitations/{token}` (sin consumirla) y
+  lo muestra en un campo que no se puede editar, escribe los nombres, los apellidos
+  y la contraseña (12 a 30 caracteres) y activa la cuenta con
+  `POST /api/v1/invitations/{token}/accept`. La invitación es de un solo uso: si
+  venció o ya se usó, la página lo avisa y ofrece el inicio de sesión.
 
 El access token vive **solo en la memoria** del navegador: nunca se escribe en el
 almacenamiento local. El interceptor añade la cabecera `Authorization: Bearer` a las
-peticiones privadas y no la añade a las rutas públicas (sign-in, refresh y la
-verificación pública de certificados).
+peticiones privadas y no la añade a las rutas públicas (sign-in, refresh, la
+verificación pública de certificados y la aceptación de una invitación).
 
 ## Variables de entorno
 

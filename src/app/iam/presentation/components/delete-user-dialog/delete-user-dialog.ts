@@ -2,7 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
-import { DisableUserCommandService } from '../../../application/command-services/user-command-services';
+import { DeleteUserCommandService } from '../../../application/command-services/user-command-services';
 import { AuthValidationError } from '../../../domain/model/errors/auth-errors';
 import { UserApiError } from '../../../infrastructure/errors/user-api.error';
 import { userStatusLabel } from '../../../domain/model/value-objects/user-status';
@@ -35,7 +35,7 @@ export interface DeletableUser {
   templateUrl: './delete-user-dialog.html',
 })
 export class DeleteUserDialog {
-  private readonly disableUser = inject(DisableUserCommandService);
+  private readonly deleteUser = inject(DeleteUserCommandService);
   private readonly dialogRef = inject<MatDialogRef<DeleteUserDialog, boolean>>(MatDialogRef);
 
   /** The account that is being deleted. */
@@ -67,6 +67,43 @@ export class DeleteUserDialog {
   protected readonly statusLabel = computed(() => userStatusLabel(this.data.status));
 
   /**
+   * A pending account has an invitation and no sessions: the dialog talks
+   * about the invitation, and an active one talks about the sessions.
+   */
+  private readonly pending = computed(() => this.data.status === 'pending');
+
+  /** The headline of the dialog. */
+  protected readonly title = computed(() =>
+    this.pending() ? 'Borrar invitación' : 'Borrar cuenta',
+  );
+
+  /** The supporting text of the dialog. */
+  protected readonly description = computed(() =>
+    this.pending()
+      ? 'La persona no podrá aceptar la invitación.'
+      : 'La persona dejará de poder iniciar sesión.',
+  );
+
+  /** The warning of the consequence of the operation. */
+  protected readonly warning = computed(() =>
+    this.pending()
+      ? 'La invitación se elimina y la cuenta queda deshabilitada. Los datos no se borran.'
+      : 'Se cerrarán sus sesiones activas al confirmar. No se borran sus datos ni el historial de acciones.',
+  );
+
+  /** The confirmation that the administrator has to give. */
+  protected readonly confirmation = computed(() =>
+    this.pending()
+      ? 'Confirmo borrar la invitación y deshabilitar la cuenta.'
+      : 'Confirmo borrar esta cuenta y cerrar sus sesiones activas.',
+  );
+
+  /** The label of the action of the dialog. */
+  protected readonly action = computed(() =>
+    this.pending() ? 'Borrar invitación' : 'Borrar cuenta',
+  );
+
+  /**
    * cancel closes the dialog without deleting the account.
    */
   protected cancel(): void {
@@ -92,7 +129,7 @@ export class DeleteUserDialog {
     this.errorMessage.set(null);
 
     try {
-      await this.disableUser.execute({ id: this.data.id });
+      await this.deleteUser.execute({ id: this.data.id });
       this.dialogRef.close(true);
     } catch (error) {
       this.errorMessage.set(this.describe(error));
@@ -111,6 +148,6 @@ export class DeleteUserDialog {
     if (error instanceof AuthValidationError) {
       return error.reason;
     }
-    return 'No se pudo eliminar la cuenta.';
+    return 'No se pudo borrar la cuenta.';
   }
 }

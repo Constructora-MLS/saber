@@ -38,3 +38,11 @@ export interface ListUsersQuery {
   /** The number of the requested page, starting at one. */
   readonly page?: number;
 }
+
+/**
+ * GetInvitationQuery asks for the address that an invitation bound.
+ */
+export interface GetInvitationQuery {
+  /** The credential of the invitation. */
+  readonly token: string;
+}

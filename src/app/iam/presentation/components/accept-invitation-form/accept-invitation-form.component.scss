@@ -1,0 +1,26 @@
+/*
+ * The form that activates an invited account.
+ *
+ * The fields are the components of Material 3 with the palette of the brand
+ * of the platform, the same ones that the sign in uses.
+ */
+.accept-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.accept-form mat-form-field {
+  width: 100%;
+}
+
+.accept-form__reveal {
+  /* The button of the eye breathes against the border of the field. */
+  margin-inline-end: 10px;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.accept-form__submit {
+  width: 100%;
+  min-height: 44px;
+}

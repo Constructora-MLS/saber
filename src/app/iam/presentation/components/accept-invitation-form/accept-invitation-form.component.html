@@ -1,0 +1,104 @@
+<form class="accept-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+  <mat-form-field appearance="outline">
+    <mat-label>Correo electrónico</mat-label>
+    <input matInput type="email" [value]="email()" autocomplete="username" readonly />
+    <mat-hint>El correo de la invitación no se puede cambiar.</mat-hint>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Nombres</mat-label>
+    <input
+      id="firstName"
+      matInput
+      formControlName="firstName"
+      autocomplete="given-name"
+      [maxLength]="personNameMaxLength"
+      required
+      autofocus
+    />
+    @if (form.controls.firstName.hasError('required')) {
+      <mat-error>Los nombres son obligatorios.</mat-error>
+    }
+    @if (form.controls.firstName.hasError('maxlength')) {
+      <mat-error>Los nombres no pueden superar los {{ personNameMaxLength }} caracteres.</mat-error>
+    }
+    <mat-hint
+      align="end"
+      appFieldCounter
+      [control]="form.controls.firstName"
+      [max]="personNameMaxLength"
+    />
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Apellidos</mat-label>
+    <input
+      id="lastName"
+      matInput
+      formControlName="lastName"
+      autocomplete="family-name"
+      [maxLength]="personNameMaxLength"
+      required
+    />
+    @if (form.controls.lastName.hasError('required')) {
+      <mat-error>Los apellidos son obligatorios.</mat-error>
+    }
+    @if (form.controls.lastName.hasError('maxlength')) {
+      <mat-error
+        >Los apellidos no pueden superar los {{ personNameMaxLength }} caracteres.</mat-error
+      >
+    }
+    <mat-hint
+      align="end"
+      appFieldCounter
+      [control]="form.controls.lastName"
+      [max]="personNameMaxLength"
+    />
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Contraseña</mat-label>
+    <input
+      id="password"
+      matInput
+      [type]="showPassword() ? 'text' : 'password'"
+      formControlName="password"
+      autocomplete="new-password"
+      [maxLength]="passwordMaxLength"
+      required
+    />
+    <button
+      matIconButton
+      matSuffix
+      class="accept-form__reveal"
+      type="button"
+      (click)="togglePassword()"
+      [attr.aria-label]="showPassword() ? 'Ocultar la contraseña' : 'Mostrar la contraseña'"
+    >
+      <mat-icon aria-hidden="true">
+        {{ showPassword() ? 'visibility_off' : 'visibility' }}
+      </mat-icon>
+    </button>
+    @if (form.controls.password.hasError('required')) {
+      <mat-error>La contraseña es obligatoria.</mat-error>
+    }
+    @if (form.controls.password.hasError('minlength')) {
+      <mat-error> La contraseña debe tener al menos {{ passwordMinLength }} caracteres. </mat-error>
+    }
+    @if (form.controls.password.hasError('maxlength')) {
+      <mat-error>
+        La contraseña no puede superar los {{ passwordMaxLength }} caracteres.
+      </mat-error>
+    }
+    <mat-hint
+      align="end"
+      appFieldCounter
+      [control]="form.controls.password"
+      [max]="passwordMaxLength"
+    />
+  </mat-form-field>
+
+  <button matButton="filled" class="accept-form__submit" type="submit" [disabled]="submitting()">
+    {{ submitting() ? 'Activando…' : 'Aceptar invitación' }}
+  </button>
+</form>

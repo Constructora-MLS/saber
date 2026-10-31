@@ -1,0 +1,53 @@
+<main class="login" aria-labelledby="accept-invitation-title">
+  <section class="login__card">
+    <section class="login__brand" aria-label="Constructora MLS">
+      <app-mls-icon size="3.75rem" label="Constructora MLS" />
+      <div>
+        <h2 class="login__brand-name">CONSTRUCTORA MLS</h2>
+        <p class="login__brand-copy">Plataforma de gestión operativa</p>
+      </div>
+    </section>
+
+    <section class="login__form">
+      <p class="login__eyebrow">Invitación al espacio de trabajo</p>
+      <h1 id="accept-invitation-title" class="login__title">Configura tu acceso</h1>
+
+      @if (loading()) {
+        <p class="login__intro">Comprobando la invitación…</p>
+        <div class="accept__state" role="status">
+          <mat-spinner diameter="28" aria-hidden="true" />
+        </div>
+      } @else if (expired()) {
+        <p class="login__intro">
+          La invitación no es válida, ya venció o ya fue usada. Pide una nueva invitación al
+          administrador de tu organización.
+        </p>
+        <button matButton="filled" class="accept__action" type="button" (click)="goToSignIn()">
+          Ir al inicio de sesión
+        </button>
+      } @else if (acceptedName(); as name) {
+        <p class="login__intro">
+          Tu cuenta está lista, {{ name }}. Ya puedes entrar con tu correo electrónico y tu
+          contraseña.
+        </p>
+        <button matButton="filled" class="accept__action" type="button" (click)="goToSignIn()">
+          Iniciar sesión
+        </button>
+      } @else {
+        <p class="login__intro">
+          Crea tu contraseña para completar la invitación de la plataforma.
+        </p>
+
+        @if (errorMessage(); as message) {
+          <p class="accept__error" role="alert">{{ message }}</p>
+        }
+
+        <app-accept-invitation-form
+          [email]="email() ?? ''"
+          [submitting]="submitting()"
+          (accept)="accept($event)"
+        />
+      }
+    </section>
+  </section>
+</main>

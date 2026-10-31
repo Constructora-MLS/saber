@@ -12,8 +12,11 @@ import { Email, restoreEmail } from '../../domain/model/value-objects/email';
 import { UserId } from '../../domain/model/value-objects/user-id';
 import { UserStatus } from '../../domain/model/value-objects/user-status';
 import {
+  AcceptInvitationRequestResource,
   InvitationCreatedResource,
+  InvitationDetailsResource,
   InviteUserRequestResource,
+  ManagedUserResource,
   UserListItemResource,
   UserPageResource,
   UserStatusResource,
@@ -69,13 +72,54 @@ export class UserGateway {
   }
 
   /**
-   * disableUser logically deletes an account and closes its sessions.
+   * deleteUser logically deletes an account and closes its sessions.
    */
-  async disableUser(id: UserId): Promise<void> {
+  async deleteUser(id: UserId): Promise<void> {
     await firstValueFrom(
       this.http
         .delete<void>(`${this.baseUrl}/users/${id.value}`)
         .pipe(catchError((error: HttpErrorResponse) => this.toFailure(error))),
+    );
+  }
+
+  /**
+   * getInvitation reads the address that an invitation bound.
+   *
+   * The invitation is not consumed: the invited member can still accept it
+   * after reading it.
+   */
+  async getInvitation(token: string): Promise<string> {
+    const invitation = await firstValueFrom(
+      this.http
+        .get<InvitationDetailsResource>(`${this.baseUrl}/invitations/${encodeURIComponent(token)}`)
+        .pipe(catchError((error: HttpErrorResponse) => this.toFailure(error))),
+    );
+
+    return invitation.email;
+  }
+
+  /**
+   * acceptInvitation activates the account of an invitation.
+   */
+  async acceptInvitation(
+    token: string,
+    request: AcceptInvitationRequestResource,
+  ): Promise<PlatformUser> {
+    const resource = await firstValueFrom(
+      this.http
+        .post<ManagedUserResource>(
+          `${this.baseUrl}/invitations/${encodeURIComponent(token)}/accept`,
+          request,
+        )
+        .pipe(catchError((error: HttpErrorResponse) => this.toFailure(error))),
+    );
+
+    return PlatformUser.restore(
+      UserId.restore(resource.uuid),
+      restoreEmail(resource.email),
+      resource.firstName,
+      resource.lastName,
+      this.status(resource.status),
     );
   }
 
