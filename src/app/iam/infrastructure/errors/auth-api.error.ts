@@ -2,6 +2,7 @@
 // context.
 // package errors
 
+import { HttpErrorResponse } from '@angular/common/http';
 import {
   ApiError,
   FALLBACK_ERROR_DETAIL,
@@ -51,4 +52,37 @@ export function toAuthApiError(status: number, body: unknown): AuthApiError {
     problem.detail ?? problem.title ?? FALLBACK_ERROR_DETAIL,
     problem.errors ?? [],
   );
+}
+
+/**
+ * UNAUTHORIZED_STATUS is the status of a rejected credential.
+ */
+export const UNAUTHORIZED_STATUS = 401;
+
+/**
+ * statusOf returns the status of a failure of the platform.
+ *
+ * The failure travels as it comes from the HTTP boundary — the response of
+ * the client — or already translated into the error of the context.
+ */
+export function statusOf(error: unknown): number | null {
+  if (error instanceof HttpErrorResponse) {
+    return error.status;
+  }
+
+  if (error instanceof ApiError) {
+    return error.status;
+  }
+
+  return null;
+}
+
+/**
+ * isUnauthorized tells whether a failure is the rejection of the credential.
+ *
+ * The platform answers 401 when the credential is dead: it removes the
+ * cookie of the refresh token and the access token stops being accepted.
+ */
+export function isUnauthorized(error: unknown): boolean {
+  return statusOf(error) === UNAUTHORIZED_STATUS;
 }

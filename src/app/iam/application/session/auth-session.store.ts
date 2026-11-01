@@ -7,6 +7,7 @@ import { SignInCommandService } from '../command-services/auth-command-services'
 import { PlatformUser } from '../../domain/model/aggregates/platform-user';
 import { restoreAuthIdentity } from '../../domain/model/value-objects/auth-identity';
 import { AuthGateway } from '../../infrastructure/gateways/auth.gateway';
+import { isUnauthorized } from '../../infrastructure/errors/auth-api.error';
 import { AuthSession } from './auth-session';
 
 /**
@@ -89,13 +90,44 @@ export class AuthSessionStore {
    * logout closes the session of the user.
    *
    * The session is closed in the platform and forgotten in the browser, so
-   * the access token never travels again.
+   * the access token never travels again. The browser forgets the session
+   * only when the platform confirms the closure: when the platform does not
+   * answer, the session of the cookie may still be alive, and a browser
+   * that forgot it would show a closed session that a reload of the page
+   * opens again.
    */
   async logout(): Promise<void> {
-    try {
-      await this.gateway.logout();
-    } finally {
-      this.session.set(null);
-    }
+    await this.gateway.logout();
+    this.clear();
+  }
+
+  /**
+   * clear forgets the session of the browser.
+   *
+   * The session is not closed in the platform: the method abandons a session
+   * that is already dead, so the browser stops sending a token that the
+   * platform rejects.
+   */
+  clear(): void {
+    this.session.set(null);
+  }
+
+  /**
+   * credentialIsDead reports whether a failure of the platform killed the
+   * credential of the session.
+   *
+   * This is the single rule of the policy, so the boundary and the
+   * presentation share one rule: the interceptor asks the store, and nobody
+   * reads the status of the failure by itself.
+   *
+   * The platform answers 401 when the credential is dead — the access token
+   * expired or the refresh token of the cookie was revoked — and 503 when its
+   * store of sessions is unreachable, where the cookie and the session
+   * survive. Any other failure says nothing about the session, so the
+   * session is kept: a platform that fails for an unknown reason must not
+   * throw the user out of the application.
+   */
+  credentialIsDead(error: unknown): boolean {
+    return isUnauthorized(error);
   }
 }

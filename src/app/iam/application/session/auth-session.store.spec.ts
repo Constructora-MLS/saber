@@ -7,6 +7,7 @@ import { restoreEmail } from '../../domain/model/value-objects/email';
 import { AuthIdentity } from '../../domain/model/value-objects/auth-identity';
 import { UserId } from '../../domain/model/value-objects/user-id';
 import { AuthGateway } from '../../infrastructure/gateways/auth.gateway';
+import { AuthApiError } from '../../infrastructure/errors/auth-api.error';
 import { AuthSessionStore } from './auth-session.store';
 
 const identity: AuthIdentity = {
@@ -104,7 +105,7 @@ describe('AuthSessionStore', () => {
     expect(store.accessToken()).toBe('the-access-token');
   });
 
-  it('cierra la sesión y la olvida en el navegador', async () => {
+  it('olvida la sesión cuando la plataforma confirma el cierre', async () => {
     const { store, logout } = setup(async () => ({ accessToken: 'the-access-token', identity }));
     await store.signIn({ email: 'admin@akame.local', password: 'the-password' });
 
@@ -116,13 +117,42 @@ describe('AuthSessionStore', () => {
     expect(store.identity()).toBeNull();
   });
 
-  it('olvida la sesión aunque la plataforma falle al cerrarla', async () => {
+  it('conserva la sesión cuando la plataforma no confirma el cierre', async () => {
     const { store, logout } = setup(async () => ({ accessToken: 'the-access-token', identity }));
     await store.signIn({ email: 'admin@akame.local', password: 'the-password' });
     logout.mockRejectedValue(new Error('the platform is down'));
 
     await expect(store.logout()).rejects.toThrow();
+    expect(store.authenticated()).toBe(true);
+    expect(store.accessToken()).toBe('the-access-token');
+  });
+
+  it('abandona la sesión sin cerrarla en la plataforma', async () => {
+    const { store } = setup(async () => ({ accessToken: 'the-access-token', identity }));
+    await store.signIn({ email: 'admin@akame.local', password: 'the-password' });
+
+    store.clear();
+
     expect(store.authenticated()).toBe(false);
+    expect(store.accessToken()).toBeNull();
+  });
+
+  it('reconoce la credencial que la plataforma rechazó', () => {
+    const { store } = setup(async () => ({ accessToken: 'the-access-token', identity }));
+
+    expect(store.credentialIsDead(new AuthApiError(401, 'invalid_refresh_token', 'dead'))).toBe(
+      true,
+    );
+  });
+
+  it('no confunde la plataforma que no está disponible con una credencial muerta', () => {
+    const { store } = setup(async () => ({ accessToken: 'the-access-token', identity }));
+
+    expect(store.credentialIsDead(new AuthApiError(503, 'service_unavailable', 'down'))).toBe(
+      false,
+    );
+    expect(store.credentialIsDead(new AuthApiError(500, 'unexpected_error', 'boom'))).toBe(false);
+    expect(store.credentialIsDead(new Error('the network is down'))).toBe(false);
   });
 
   it('no deja una sesión cuando la renovación falla', async () => {
