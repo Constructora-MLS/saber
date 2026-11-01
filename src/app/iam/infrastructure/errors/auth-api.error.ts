@@ -80,8 +80,15 @@ export function statusOf(error: unknown): number | null {
 /**
  * isUnauthorized tells whether a failure is the rejection of the credential.
  *
- * The platform answers 401 when the credential is dead: it removes the
- * cookie of the refresh token and the access token stops being accepted.
+ * The platform answers 401 when it rejects the credential, and what that
+ * means depends on the route that was called: the renewal of the session
+ * removes the cookie of the refresh token, so the credential is dead for
+ * good, while the 401 of a private route leaves the cookie of the session
+ * alive, so the session is renewed once.
+ *
+ * The predicate only reports the status of the failure: the policy of each
+ * route belongs to the store of the session, which is the layer that knows
+ * the session of the browser.
  */
 export function isUnauthorized(error: unknown): boolean {
   return statusOf(error) === UNAUTHORIZED_STATUS;

@@ -4,12 +4,46 @@ import { authGuard } from './iam/presentation/guards/auth.guard';
 const isAdministrationRoute: CanMatchFn = (_route, segments) =>
   ['users', 'groups'].includes(segments[0]?.path ?? '');
 
+/**
+ * isPublicRoute reports whether a URL of the application belongs to a route
+ * that answers without a session.
+ *
+ * The public flows of the platform — the sign in, the acceptance of an
+ * invitation and the verification of a certificate — answer without a
+ * credential, so a death of the credential must not interrupt them.
+ */
+export function isPublicRoute(url: string): boolean {
+  return PUBLIC_ROUTE_PATHS.some((path) => matchesPath(url, path));
+}
+
+/**
+ * matchesPath reports whether a URL of the browser belongs to a path of a
+ * route.
+ *
+ * The parameters of the path — the code of a certificate — match any
+ * segment, and the comparison ignores the query string of the URL.
+ */
+function matchesPath(url: string, path: string): boolean {
+  const segments = url
+    .split('?')[0]
+    .split('/')
+    .filter((segment) => segment.length > 0);
+  const pattern = path.split('/').filter((segment) => segment.length > 0);
+
+  if (pattern.length > segments.length) {
+    return false;
+  }
+
+  return pattern.every((segment, index) => segment.startsWith(':') || segment === segments[index]);
+}
+
 export const routes: Routes = [
   {
     // The sign in is the only way into the platform, so it answers without a
     // session.
     path: 'sign-in',
     title: 'Iniciar sesión',
+    data: { public: true },
     loadComponent: () =>
       import('./iam/presentation/pages/sign-in-page/sign-in.page').then(
         (module) => module.SignInPage,
@@ -20,6 +54,7 @@ export const routes: Routes = [
     // from the email and it has no session yet.
     path: 'accept-invitation',
     title: 'Aceptar invitación',
+    data: { public: true },
     loadComponent: () =>
       import('./iam/presentation/pages/accept-invitation-page/accept-invitation.page').then(
         (module) => module.AcceptInvitationPage,
@@ -41,13 +76,19 @@ export const routes: Routes = [
     // certificate without signing in.
     path: 'verify/:code',
     title: 'Certificado de trabajo',
+    data: { public: true },
     loadComponent: () =>
       import('./certificates/presentation/pages/credential-page/credential.page').then(
         (module) => module.CredentialPage,
       ),
   },
   // Keep QR links in previously issued PDFs working.
-  { path: 'verificar/:code', pathMatch: 'full', redirectTo: 'verify/:code' },
+  {
+    path: 'verificar/:code',
+    pathMatch: 'full',
+    redirectTo: 'verify/:code',
+    data: { public: true },
+  },
   {
     // Users and Groups share one route configuration and layout instance, so
     // the administration sidebar keeps its state when switching sections.
@@ -123,3 +164,17 @@ export const routes: Routes = [
     ],
   },
 ];
+
+/**
+ * PUBLIC_ROUTE_PATHS are the paths of the routes that answer without a
+ * session.
+ *
+ * The list is read from the routes themselves: a route declares that it is
+ * public and the presentation that navigates on a death of the credential
+ * reads the same source, so the public flows of the platform are declared
+ * once and never drift apart.
+ */
+export const PUBLIC_ROUTE_PATHS: readonly string[] = routes
+  .filter((route) => route.data?.['public'] === true)
+  .map((route) => route.path)
+  .filter((path): path is string => path !== undefined);
