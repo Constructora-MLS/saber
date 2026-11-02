@@ -196,7 +196,15 @@ export class ResetPasswordPage implements OnInit {
     afterNextRender(
       () => {
         const outcome = this.invalidOutcome() ?? this.expiredOutcome() ?? this.savedOutcome();
-        outcome?.nativeElement.focus();
+        if (!outcome) {
+          return;
+        }
+
+        outcome.nativeElement.focus();
+        // The browser selects the text of the element that receives the
+        // focus, so the message would appear highlighted: the selection is
+        // taken away.
+        window.getSelection()?.removeAllRanges();
       },
       { injector: this.injector },
     );

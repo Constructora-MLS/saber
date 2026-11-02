@@ -10,6 +10,7 @@ import {
   EditableProfile,
   EditProfileDialog,
 } from '../../components/edit-profile-dialog/edit-profile-dialog';
+import { RequestPasswordRecoveryDialog } from '../../components/request-password-recovery-dialog/request-password-recovery-dialog';
 
 /**
  * SettingsPage is the configuration of the account of the user.
@@ -101,13 +102,37 @@ export class SettingsPage {
   }
 
   /**
-   * changePassword takes the user to the recovery of the password.
+   * changePassword asks for a link that recovers the password of the account.
    *
-   * The recovery sends a link to the address of the account, so the address
-   * never travels in the address bar of the browser.
+   * The address of the account is the one of the session, so the member
+   * never writes it again and the page never leaves the settings: the dialog
+   * asks the platform for the link and the page publishes the outcome.
    */
   protected changePassword(): void {
-    void this.router.navigateByUrl('/forgot-password');
+    const email = this.session.identity()?.email;
+    if (!email) {
+      return;
+    }
+
+    this.dialog
+      .open(RequestPasswordRecoveryDialog, {
+        data: { email },
+        autoFocus: 'first-heading',
+        width: '30rem',
+        maxWidth: '94vw',
+      })
+      .afterClosed()
+      .subscribe((confirmed) => {
+        if (!confirmed) {
+          return;
+        }
+
+        // The copy is neutral: the platform answers the same for every
+        // address, so the page never says that the account exists.
+        this.notify(
+          `Si el correo corresponde a una cuenta activa, recibirás un enlace para restablecer tu contraseña en ${email}.`,
+        );
+      });
   }
 
   /**

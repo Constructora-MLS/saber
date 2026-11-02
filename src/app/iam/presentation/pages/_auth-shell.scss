@@ -84,6 +84,19 @@
   line-height: 1.5;
 }
 
+/*
+ * The message that a page of the shell publishes when it changes its state.
+ *
+ * The page moves the focus to the message so the assistive technologies
+ * announce it, and the message must not paint a box around itself: it is a
+ * reading, not a control. The browser also selects the text of the element
+ * that receives the focus, so the page takes the selection away.
+ */
+.login__outcome:focus,
+.login__outcome:focus-visible {
+  outline: none;
+}
+
 .login__help {
   margin: 18px 0 0;
   text-align: center;

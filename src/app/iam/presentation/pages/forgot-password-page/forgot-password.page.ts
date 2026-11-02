@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { Router } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { ForgotPasswordCommandService } from '../../../application/command-services/auth-command-services';
 import { ForgotPasswordCommand } from '../../../application/commands/iam-commands';
 import { AuthSessionStore } from '../../../application/session/auth-session.store';
@@ -33,7 +33,7 @@ import { describeRecoveryFailure, fieldFailure } from '../password-failures';
  * message.
  */
 @Component({
-  imports: [MatButtonModule, MatProgressSpinnerModule, MlsIcon, RecoveryLinkForm],
+  imports: [MatButtonModule, MatProgressSpinnerModule, MlsIcon, RecoveryLinkForm, RouterLink],
   selector: 'app-forgot-password-page',
   styleUrl: './forgot-password.page.scss',
   templateUrl: './forgot-password.page.html',
@@ -41,7 +41,6 @@ import { describeRecoveryFailure, fieldFailure } from '../password-failures';
 export class ForgotPasswordPage {
   private readonly forgotPassword = inject(ForgotPasswordCommandService);
   private readonly session = inject(AuthSessionStore);
-  private readonly router = inject(Router);
   private readonly injector = inject(Injector);
 
   /** Whether the link is being requested. */
@@ -55,8 +54,8 @@ export class ForgotPasswordPage {
   /**
    * The address that the platform answered for.
    *
-   * The page keeps it so the member can ask for the link again without
-   * writing the address one more time.
+   * The page keeps it so the member that failed to ask for the link finds
+   * the address already written when the form comes back.
    */
   protected readonly requestedEmail = signal<string | null>(null);
 
@@ -67,6 +66,15 @@ export class ForgotPasswordPage {
    * member does not write it again. It never travels in the address bar.
    */
   protected readonly email = computed(() => this.session.identity()?.email ?? '');
+
+  /**
+   * The address that the form starts with.
+   *
+   * The address of the session comes first, and the address that the member
+   * wrote comes second: a member that asked for a link with another address
+   * finds that address when the form comes back.
+   */
+  protected readonly initialEmail = computed(() => this.requestedEmail() || this.email());
 
   /**
    * Whether the page publishes the message that says the link was sent.
@@ -88,37 +96,20 @@ export class ForgotPasswordPage {
     this.sending.set(true);
     this.errorMessage.set(null);
     this.emailError.set(null);
+    this.requestedEmail.set(command.email);
 
     try {
       await this.forgotPassword.execute(command);
-      this.requestedEmail.set(command.email);
       this.sent.set(true);
       this.focusOutcome();
     } catch (error) {
+      // The form comes back with the address that the member wrote, so a
+      // failure of the platform never makes the member write it again.
+      this.sent.set(false);
       this.describe(error);
     } finally {
       this.sending.set(false);
     }
-  }
-
-  /**
-   * resend asks the platform for the link again.
-   *
-   * The answer of the platform is the same one, so the page shows the same
-   * message: the member never learns whether the account exists.
-   */
-  protected async resend(): Promise<void> {
-    const address = this.requestedEmail();
-    if (!address) {
-      return;
-    }
-
-    await this.request({ email: address });
-  }
-
-  /** goToSignIn takes the member back to the sign in. */
-  protected goToSignIn(): void {
-    void this.router.navigateByUrl('/sign-in');
   }
 
   /**
@@ -147,8 +138,8 @@ export class ForgotPasswordPage {
    *
    * The button that the member used disappears from the DOM when the page
    * changes its state, so the focus would fall on the body of the document
-   * and the assistive technologies would announce nothing. The page moves the
-   * focus to the message that it publishes.
+   * and the assistive technologies would announce nothing. The page moves
+   * the focus to the message that it publishes.
    */
   private focusOutcome(): void {
     // The application owns the render cycle: the tests never render the page.
@@ -156,6 +147,20 @@ export class ForgotPasswordPage {
       return;
     }
 
-    afterNextRender(() => this.outcome()?.nativeElement.focus(), { injector: this.injector });
+    afterNextRender(
+      () => {
+        const message = this.outcome()?.nativeElement;
+        if (!message) {
+          return;
+        }
+
+        message.focus();
+        // The browser selects the text of the element that receives the
+        // focus, so the message would appear highlighted: the selection is
+        // taken away.
+        window.getSelection()?.removeAllRanges();
+      },
+      { injector: this.injector },
+    );
   }
 }

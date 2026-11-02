@@ -20,9 +20,6 @@ class Form extends SignInForm {
   toggle() {
     return this.togglePassword();
   }
-  recover() {
-    this.recoveryRequested.emit();
-  }
 }
 
 describe('SignInForm', () => {
@@ -35,9 +32,7 @@ describe('SignInForm', () => {
     // The output is a signal: the tests read the values that it published.
     const published: unknown[] = [];
     form.signIn.subscribe((command) => published.push(command));
-    const recovery: unknown[] = [];
-    form.recoveryRequested.subscribe(() => recovery.push(true));
-    return { form, signIn, published, recovery };
+    return { form, signIn, published };
   }
 
   it('no entrega las credenciales cuando el formulario está vacío', () => {
@@ -84,13 +79,5 @@ describe('SignInForm', () => {
     expect(form.visible).toBe(true);
     form.toggle();
     expect(form.visible).toBe(false);
-  });
-
-  it('anuncia que el usuario quiere recuperar su contraseña', () => {
-    const { form, recovery } = setup();
-
-    form.recover();
-
-    expect(recovery).toHaveLength(1);
   });
 });

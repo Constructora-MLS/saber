@@ -9,6 +9,7 @@ import { AuthSessionStore } from '../../../application/session/auth-session.stor
 import { PlatformUser } from '../../../domain/model/aggregates/platform-user';
 import { restoreEmail } from '../../../domain/model/value-objects/email';
 import { UserId } from '../../../domain/model/value-objects/user-id';
+import { RequestPasswordRecoveryDialog } from '../../components/request-password-recovery-dialog/request-password-recovery-dialog';
 import { SettingsPage } from './settings.page';
 
 class Page extends SettingsPage {
@@ -39,16 +40,19 @@ describe('SettingsPage', () => {
   function setup(
     logout: () => Promise<void> = async () => {},
     answered: PlatformUser | undefined = undefined,
+    options: { confirmed?: boolean; authenticated?: boolean } = {},
   ) {
     const navigateByUrl = vi.fn().mockResolvedValue(true);
     const notify = vi.fn();
     const back = vi.fn();
     const applyProfile = vi.fn();
-    const open = vi.fn().mockReturnValue({
+    const confirmed = options.confirmed ?? true;
+    const open = vi.fn((dialog: unknown) => ({
       afterClosed: () => ({
-        subscribe: (next: (user: PlatformUser | undefined) => void) => next(answered),
+        subscribe: (next: (value: unknown) => void) =>
+          next(dialog === RequestPasswordRecoveryDialog ? confirmed : answered),
       }),
-    });
+    }));
     const injector = Injector.create({
       providers: [
         {
@@ -56,12 +60,15 @@ describe('SettingsPage', () => {
           useValue: {
             logout,
             applyProfile,
-            identity: () => ({
-              uuid: 'the-user',
-              email: 'admin@akame.local',
-              firstName: 'Admin',
-              lastName: 'Akame',
-            }),
+            identity: () =>
+              options.authenticated === false
+                ? null
+                : {
+                    uuid: 'the-user',
+                    email: 'admin@akame.local',
+                    firstName: 'Admin',
+                    lastName: 'Akame',
+                  },
           },
         },
         { provide: Router, useValue: { navigateByUrl } },
@@ -160,11 +167,52 @@ describe('SettingsPage', () => {
     expect(notify).not.toHaveBeenCalled();
   });
 
-  it('lleva al usuario a la recuperación de la contraseña', () => {
+  it('abre el diálogo de restablecimiento con la dirección de la cuenta', () => {
+    const { page, open } = setup();
+
+    page.change();
+
+    expect(open).toHaveBeenCalledWith(RequestPasswordRecoveryDialog, {
+      data: { email: 'admin@akame.local' },
+      autoFocus: 'first-heading',
+      width: '30rem',
+      maxWidth: '94vw',
+    });
+  });
+
+  it('no lleva al usuario a la recuperación de la contraseña', () => {
     const { page, navigateByUrl } = setup();
 
     page.change();
 
-    expect(navigateByUrl).toHaveBeenCalledWith('/forgot-password');
+    expect(navigateByUrl).not.toHaveBeenCalled();
+  });
+
+  it('avisa del envío del enlace cuando el diálogo confirma', () => {
+    const { page, notify } = setup();
+
+    page.change();
+
+    expect(notify).toHaveBeenCalledWith(
+      'Si el correo corresponde a una cuenta activa, recibirás un enlace para restablecer tu contraseña en admin@akame.local.',
+      'Cerrar',
+      { duration: 4000 },
+    );
+  });
+
+  it('no avisa del envío del enlace cuando el miembro cancela el diálogo', () => {
+    const { page, notify } = setup(async () => {}, undefined, { confirmed: false });
+
+    page.change();
+
+    expect(notify).not.toHaveBeenCalled();
+  });
+
+  it('no abre el diálogo de restablecimiento cuando la sesión no tiene identidad', () => {
+    const { page, open } = setup(async () => {}, undefined, { authenticated: false });
+
+    page.change();
+
+    expect(open).not.toHaveBeenCalled();
   });
 });

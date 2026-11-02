@@ -1,6 +1,5 @@
 import '@angular/compiler';
 import { Injector, runInInjectionContext } from '@angular/core';
-import { Router } from '@angular/router';
 import { describe, expect, it, vi } from 'vitest';
 import { ForgotPasswordCommandService } from '../../../application/command-services/auth-command-services';
 import { AuthSessionStore } from '../../../application/session/auth-session.store';
@@ -27,17 +26,11 @@ class Page extends ForgotPasswordPage {
   get address() {
     return this.email();
   }
-  get asked() {
-    return this.requestedEmail();
+  get start() {
+    return this.initialEmail();
   }
   send(command: { email: string }) {
     return this.request(command);
-  }
-  sendAgain() {
-    return this.resend();
-  }
-  back() {
-    return this.goToSignIn();
   }
 }
 
@@ -49,7 +42,6 @@ describe('ForgotPasswordPage', () => {
     } = {},
   ) {
     const execute = vi.fn(options.execute ?? (async () => {}));
-    const navigateByUrl = vi.fn().mockResolvedValue(true);
     const injector = Injector.create({
       providers: [
         { provide: ForgotPasswordCommandService, useValue: { execute } },
@@ -67,11 +59,10 @@ describe('ForgotPasswordPage', () => {
                   },
           },
         },
-        { provide: Router, useValue: { navigateByUrl } },
       ],
     });
     const page = runInInjectionContext(injector, () => new Page());
-    return { page, execute, navigateByUrl };
+    return { page, execute };
   }
 
   it('prellena el formulario con el correo de la sesión', () => {
@@ -111,6 +102,19 @@ describe('ForgotPasswordPage', () => {
     expect(page.done).toBe(false);
     expect(page.error).toBe('No se pudo completar la operación. Inténtalo nuevamente.');
     expect(page.busy).toBe(false);
+  });
+
+  it('devuelve el formulario con la dirección escrita cuando la plataforma falla', async () => {
+    const { page } = setup({
+      execute: async () => {
+        throw new Error('the platform is down');
+      },
+    });
+
+    await page.send({ email: 'worker@akame.local' });
+
+    expect(page.done).toBe(false);
+    expect(page.start).toBe('worker@akame.local');
   });
 
   it('muestra junto al campo el fallo de la dirección que la plataforma rechazó', async () => {
@@ -154,39 +158,6 @@ describe('ForgotPasswordPage', () => {
     expect(page.error).not.toContain('enlace');
   });
 
-  it('avisa cuando el reenvío del enlace falla y no afirma que el enlace se envió', async () => {
-    let attempts = 0;
-    const { page } = setup({
-      execute: async () => {
-        attempts += 1;
-        if (attempts > 1) {
-          throw new Error('the platform is down');
-        }
-      },
-    });
-
-    await page.send({ email: 'admin@akame.local' });
-    expect(page.claimsSent).toBe(true);
-
-    await page.sendAgain();
-
-    expect(page.error).not.toBeNull();
-    expect(page.error).toBe('No se pudo completar la operación. Inténtalo nuevamente.');
-    expect(page.claimsSent).toBe(false);
-  });
-
-  it('vuelve a enviar el enlace con la misma dirección', async () => {
-    const { page, execute } = setup();
-
-    await page.send({ email: 'admin@akame.local' });
-    await page.sendAgain();
-
-    expect(execute).toHaveBeenCalledTimes(2);
-    expect(execute).toHaveBeenLastCalledWith({ email: 'admin@akame.local' });
-    expect(page.asked).toBe('admin@akame.local');
-    expect(page.done).toBe(true);
-  });
-
   it('no pide el enlace dos veces mientras está en marcha', async () => {
     const { page, execute } = setup();
 
@@ -196,13 +167,5 @@ describe('ForgotPasswordPage', () => {
     ]);
 
     expect(execute).toHaveBeenCalledTimes(1);
-  });
-
-  it('vuelve al inicio de sesión', () => {
-    const { page, navigateByUrl } = setup();
-
-    page.back();
-
-    expect(navigateByUrl).toHaveBeenCalledWith('/sign-in');
   });
 });
