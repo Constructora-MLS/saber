@@ -4,6 +4,9 @@ import { Injector, runInInjectionContext } from '@angular/core';
 import { of, throwError } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { API_BASE_URL } from '../../../api.config';
+import { Email } from '../../domain/model/value-objects/email';
+import { parseAccountPassword } from '../../domain/model/value-objects/password';
+import { RecoveryToken } from '../../domain/model/value-objects/recovery-token';
 import { AuthGateway } from './auth.gateway';
 
 const user = {
@@ -74,6 +77,81 @@ describe('AuthGateway', () => {
     await gateway.logout();
 
     expect(post).toHaveBeenCalledWith('/api/v1/auth/logout', {});
+  });
+
+  it('pide el enlace de recuperación con la dirección del cuerpo', async () => {
+    const post = vi.fn(() => of({ status: 'accepted' }));
+    const injector = Injector.create({
+      providers: [
+        { provide: API_BASE_URL, useValue: '/api/v1' },
+        { provide: HttpClient, useValue: { post } },
+      ],
+    });
+    const gateway = runInInjectionContext(injector, () => new AuthGateway());
+
+    await gateway.forgotPassword(Email.create('admin@akame.local'));
+
+    expect(post).toHaveBeenCalledWith('/api/v1/auth/forgot-password', {
+      email: 'admin@akame.local',
+    });
+  });
+
+  it('cambia la contraseña con el token y la contraseña del cuerpo', async () => {
+    const post = vi.fn(() => of(null));
+    const injector = Injector.create({
+      providers: [
+        { provide: API_BASE_URL, useValue: '/api/v1' },
+        { provide: HttpClient, useValue: { post } },
+      ],
+    });
+    const gateway = runInInjectionContext(injector, () => new AuthGateway());
+
+    const token = RecoveryToken.create('a'.repeat(43));
+    const password = parseAccountPassword('a-long-enough-password');
+
+    await gateway.resetPassword(token, password);
+
+    expect(post).toHaveBeenCalledWith('/api/v1/auth/reset-password', {
+      token: 'a'.repeat(43),
+      password: 'a-long-enough-password',
+    });
+  });
+
+  it('traduce el rechazo del enlace de recuperación en el error del contexto', async () => {
+    const injector = Injector.create({
+      providers: [
+        { provide: API_BASE_URL, useValue: '/api/v1' },
+        {
+          provide: HttpClient,
+          useValue: {
+            post: () =>
+              throwError(
+                () =>
+                  new HttpErrorResponse({
+                    status: 404,
+                    error: {
+                      code: 'password_reset_not_found',
+                      detail: 'The token does not exist.',
+                    },
+                  }),
+              ),
+          },
+        },
+      ],
+    });
+    const gateway = runInInjectionContext(injector, () => new AuthGateway());
+
+    await expect(
+      gateway.resetPassword(
+        RecoveryToken.create('a'.repeat(43)),
+        parseAccountPassword('a-long-enough-password'),
+      ),
+    ).rejects.toMatchObject({
+      name: 'AuthApiError',
+      status: 404,
+      code: 'password_reset_not_found',
+      detail: 'The token does not exist.',
+    });
   });
 
   it('traduce el rechazo de las credenciales en el error del contexto', async () => {

@@ -84,12 +84,45 @@
   line-height: 1.5;
 }
 
+/*
+ * The message that a page of the shell publishes when it changes its state.
+ *
+ * The page moves the focus to the message so the assistive technologies
+ * announce it, and the message must not paint a box around itself: it is a
+ * reading, not a control. The browser also selects the text of the element
+ * that receives the focus, so the page takes the selection away.
+ */
+.login__outcome:focus,
+.login__outcome:focus-visible {
+  outline: none;
+}
+
 .login__help {
   margin: 18px 0 0;
   text-align: center;
   font-size: 0.6875rem;
   color: var(--mat-sys-outline);
   line-height: 1.5;
+}
+
+/*
+ * The banner of a failure of the pages of the access.
+ *
+ * The banner is the same in every page of the shell: the acceptance of an
+ * invitation, the recovery of the password and the writing of a new
+ * password.
+ */
+.login__error {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-radius: var(--mat-sys-corner-small);
+  border-left: 3px solid var(--mat-sys-error);
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  /* A long message never overflows the card of the shell. */
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 700px) {

@@ -4,6 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { RouterLink } from '@angular/router';
 import { SignInCommand } from '../../../application/commands/iam-commands';
 import { FieldCounter } from '../../../../shared/presentation/components/field-counter/field-counter';
 import { EMAIL_MAX_LENGTH } from '../../../domain/model/value-objects/email';
@@ -27,6 +28,7 @@ import {
     MatIconModule,
     MatInputModule,
     ReactiveFormsModule,
+    RouterLink,
   ],
   templateUrl: './sign-in-form.component.html',
   styleUrl: './sign-in-form.component.scss',

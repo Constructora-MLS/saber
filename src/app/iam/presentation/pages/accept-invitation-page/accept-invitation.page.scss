@@ -13,17 +13,6 @@
   padding: 12px 0;
 }
 
-.accept__error {
-  margin: 0 0 16px;
-  padding: 12px 14px;
-  border-radius: 12px;
-  border-left: 3px solid var(--mat-sys-error);
-  background: var(--mat-sys-error-container);
-  color: var(--mat-sys-on-error-container);
-  font-size: 0.8125rem;
-  line-height: 1.5;
-}
-
 /* The address of the invitation is part of the sentence, so it never
    breaks the invitation on a narrow screen. */
 .accept__email {

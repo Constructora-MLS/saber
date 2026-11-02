@@ -40,6 +40,17 @@
       </dl>
     </section>
 
+    <section class="settings__card" aria-labelledby="settings-password-title">
+      <h2 id="settings-password-title" class="settings__card-title">Contraseña</h2>
+      <p class="settings__copy">
+        Solicitaremos un enlace a {{ userEmail() }} para que elijas una nueva contraseña. Tendrás
+        que abrir ese correo para continuar.
+      </p>
+      <button matButton="tonal" class="settings__action" type="button" (click)="changePassword()">
+        Cambiar contraseña
+      </button>
+    </section>
+
     <section class="settings__card" aria-labelledby="settings-session-title">
       <h2 id="settings-session-title" class="settings__card-title">Sesión</h2>
       <p class="settings__copy">

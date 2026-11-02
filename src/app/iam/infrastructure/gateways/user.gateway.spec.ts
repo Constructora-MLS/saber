@@ -1,5 +1,5 @@
 import '@angular/compiler';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Injector, runInInjectionContext } from '@angular/core';
 import { of, throwError } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
@@ -17,18 +17,22 @@ const account = {
 };
 
 describe('UserGateway', () => {
-  function gatewayFor(client: Partial<HttpClient>): UserGateway {
+  function gatewayFor(client: Record<string, unknown>): UserGateway {
     const injector = Injector.create({
       providers: [
         { provide: API_BASE_URL, useValue: '/api/v1' },
-        { provide: HttpClient, useValue: client },
+        // The fake keeps the type link with HttpClient: the compiler still
+        // checks the shape of the client that the gateway uses.
+        { provide: HttpClient, useValue: client as Partial<HttpClient> as HttpClient },
       ],
     });
     return runInInjectionContext(injector, () => new UserGateway());
   }
 
   it('reads a page of accounts and hands the domain its users', async () => {
-    const get = vi.fn(() => of({ items: [account], page: 2, totalPages: 3, total: 42 }));
+    const get = vi.fn((_url: string, _options?: { params?: HttpParams }) =>
+      of({ items: [account], page: 2, totalPages: 3, total: 42 }),
+    );
     const gateway = gatewayFor({ get });
 
     const page = await gateway.listUsers({ search: 'mina', status: 'active', page: 2, limit: 20 });
@@ -40,14 +44,11 @@ describe('UserGateway', () => {
     expect(page.items[0]?.status).toBe('active');
     expect(page.items[0]?.email).toBe('member@example.test');
 
-    const [url, options] = get.mock.calls[0] as [
-      string,
-      { params: { get(key: string): string | null } },
-    ];
+    const [url, options] = get.mock.calls[0];
     expect(url).toBe('/api/v1/users');
-    expect(options.params.get('search')).toBe('mina');
-    expect(options.params.get('status')).toBe('active');
-    expect(options.params.get('page')).toBe('2');
+    expect(options?.params?.get('search')).toBe('mina');
+    expect(options?.params?.get('status')).toBe('active');
+    expect(options?.params?.get('page')).toBe('2');
   });
 
   it('leaves a pending account without name, because it was never activated', async () => {

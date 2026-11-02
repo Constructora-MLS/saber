@@ -78,10 +78,49 @@ export function statusOf(error: unknown): number | null {
 }
 
 /**
+ * NOT_FOUND_STATUS is the status of a credential that the platform does not
+ * know.
+ */
+export const NOT_FOUND_STATUS = 404;
+
+/**
+ * The codes of the failures that mean that the credential of a recovery link
+ * is not valid anymore.
+ */
+const RESET_NOT_FOUND_CODES: readonly string[] = ['password_reset_not_found', 'user_not_found'];
+
+/**
+ * isResetNotFound tells whether a failure is the absence of the credential of
+ * a recovery link.
+ *
+ * The platform answers 404 when the credential of a link does not exist
+ * anymore: it expired, it was already used or it was never published.
+ *
+ * The predicate reads the code of the failure and not only its status, so a
+ * 404 that says something else is never reported as an expired link. A
+ * failure that does not come from the platform is never a missing credential
+ * either.
+ */
+export function isResetNotFound(error: unknown): boolean {
+  if (!(error instanceof ApiError)) {
+    return false;
+  }
+
+  return RESET_NOT_FOUND_CODES.includes(error.code);
+}
+
+/**
  * isUnauthorized tells whether a failure is the rejection of the credential.
  *
- * The platform answers 401 when the credential is dead: it removes the
- * cookie of the refresh token and the access token stops being accepted.
+ * The platform answers 401 when it rejects the credential, and what that
+ * means depends on the route that was called: the renewal of the session
+ * removes the cookie of the refresh token, so the credential is dead for
+ * good, while the 401 of a private route leaves the cookie of the session
+ * alive, so the session is renewed once.
+ *
+ * The predicate only reports the status of the failure: the policy of each
+ * route belongs to the store of the session, which is the layer that knows
+ * the session of the browser.
  */
 export function isUnauthorized(error: unknown): boolean {
   return statusOf(error) === UNAUTHORIZED_STATUS;

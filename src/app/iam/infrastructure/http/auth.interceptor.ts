@@ -3,7 +3,6 @@
 
 import { HttpEvent, HttpHandlerFn, HttpInterceptorFn, HttpRequest } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { Router } from '@angular/router';
 import { catchError, from, Observable, switchMap, throwError } from 'rxjs';
 import { AuthSessionStore } from '../../application/session/auth-session.store';
 
@@ -16,12 +15,16 @@ import { AuthSessionStore } from '../../application/session/auth-session.store';
  * the cookie is the credential that the platform revokes. The verification of
  * a certificate is public: any person can read a certificate without
  * signing in, and the acceptance of an invitation is public because the
- * invited member arrives from the email.
+ * invited member arrives from the email. The recovery of the password is
+ * public too: the link of the email arrives in a browser that may not hold
+ * a session, and the credential of the recovery is the token of the link.
  */
 const PUBLIC_ROUTES = [
   '/auth/sign-in',
   '/auth/refresh',
   '/auth/logout',
+  '/auth/forgot-password',
+  '/auth/reset-password',
   '/certificates/verify/',
   '/invitations/',
 ];
@@ -37,9 +40,14 @@ const PUBLIC_ROUTES = [
  * quarter of an hour and the session of the cookie outlives it, so a request
  * that arrives with an old token deserves a new session instead of a
  * failure. When the renewal fails, the store of the session decides: a dead
- * credential makes the browser forget the session and the user sign in
- * again, and an unavailable platform keeps the session alive, because the
- * cookie of the session is still valid on the platform.
+ * credential makes the browser forget the session, and an unavailable
+ * platform keeps the session alive, because the cookie of the session is
+ * still valid on the platform.
+ *
+ * The boundary never navigates: it does not know the routes of the
+ * application. When the credential dies, the interceptor tells the store of
+ * the session to forget it, and the store publishes the rejection. The
+ * presentation reads that state and takes the user to the sign in.
  *
  * Known limitation: the guarantee of the policy — an unavailable platform
  * keeps the session of the cookie alive — is observable in the requests that
@@ -47,15 +55,9 @@ const PUBLIC_ROUTES = [
  * with the store of the platform down lands on the sign in anyway, because
  * after a reload the browser has no access token and the contract of the
  * platform offers no state for "the platform is unavailable".
- *
- * Deliberate exception to the layering: this interceptor navigates. The
- * rejection of the credential is detected in the HTTP boundary and the
- * session is lost there, so the redirect belongs to the same reaction and
- * the presentation stays free of the details of the HTTP.
  */
 export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const session = inject(AuthSessionStore);
-  const router = inject(Router);
 
   if (isPublicRoute(request.url)) {
     return next(request);
@@ -66,16 +68,20 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
     return next(request);
   }
 
+  // The request carries the identifier of the session that it uses, so the
+  // reaction abandons exactly that session when the credential dies.
+  const sessionId = session.sessionId();
+
   return next(withAccessToken(request, accessToken)).pipe(
     catchError((error: unknown) => {
       // The store of the session owns the policy of the credential: the
       // interceptor does not read the status of the failure, it asks the
       // session, so the boundary and the presentation share one rule.
-      if (!session.credentialIsDead(error)) {
+      if (!session.platformRejectedTheCredential(error)) {
         return throwError(() => error);
       }
 
-      return renewAndRetry(request, next, session, router);
+      return renewAndRetry(request, next, session, accessToken, sessionId);
     }),
   );
 };
@@ -97,49 +103,66 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
  * rejects again means that the credential is dead even after the renewal,
  * so the session is abandoned and the user signs in again. The reaction is
  * the same one of the failed renewal and it is idempotent.
+ *
+ * The identifier of the session of the request travels with the reaction:
+ * the store forgets only the session whose identifier is the one that the
+ * platform rejected, so a session that appeared while the renewal was
+ * failing survives.
  */
 function renewAndRetry(
   request: HttpRequest<unknown>,
   next: HttpHandlerFn,
   session: AuthSessionStore,
-  router: Router,
+  accessToken: string,
+  sessionId: number,
 ): Observable<HttpEvent<unknown>> {
   return from(session.restore()).pipe(
     catchError((error: unknown) => {
-      forgetTheDeadSession(error, session, router);
+      forgetTheDeadSession(error, session, sessionId);
 
       return throwError(() => error);
     }),
-    switchMap(() => next(withAccessToken(request, session.accessToken()))),
-    catchError((error: unknown) => {
-      // The retry is not renewed again: it only reacts. The renewal already
-      // happened, so a rejection of the retry is a credential that the
-      // platform still refuses.
-      forgetTheDeadSession(error, session, router);
+    switchMap(() => {
+      const renewedToken = session.accessToken() ?? accessToken;
+      // The renewal opened a session of its own: the retry carries the
+      // identifier of that session, and not the one of the request that
+      // failed, because the credential that the platform refuses now is the
+      // renewed one.
+      const renewedSessionId = session.sessionId();
 
-      return throwError(() => error);
+      return next(withAccessToken(request, renewedToken)).pipe(
+        catchError((error: unknown) => {
+          // The retry is not renewed again: it only reacts. The renewal
+          // already happened, so a rejection of the retry is a credential
+          // that the platform still refuses.
+          forgetTheDeadSession(error, session, renewedSessionId);
+
+          return throwError(() => error);
+        }),
+      );
     }),
   );
 }
 
 /**
  * forgetTheDeadSession abandons the session when the platform rejected the
- * credential and takes the user to the sign in.
+ * credential.
  *
- * The reaction is idempotent: it only acts when the store still holds a
- * session, so the first failure finds the session and abandons it, and the
- * failures that arrive at the same time find it empty and do nothing, so N
- * requests produce one navigation and not N.
+ * The reaction is idempotent: the store forgets a session only once, so the
+ * first failure finds the session and abandons it, and the failures that
+ * arrive at the same time find it empty and do nothing, so N requests
+ * produce one rejection and not N.
+ *
+ * The session is named by the identifier that the store gave to it, and not
+ * by its access token: the platform signs a deterministic token, so a token
+ * that repeats does not mean that the session repeats.
  */
-function forgetTheDeadSession(error: unknown, session: AuthSessionStore, router: Router): void {
-  if (!session.credentialIsDead(error)) {
+function forgetTheDeadSession(error: unknown, session: AuthSessionStore, sessionId: number): void {
+  if (!session.platformRejectedTheCredential(error)) {
     return;
   }
 
-  if (session.authenticated()) {
-    session.clear();
-    void router.navigate(['/sign-in']);
-  }
+  session.forget(sessionId);
 }
 
 /** withAccessToken adds the access token to the request when the browser has one. */

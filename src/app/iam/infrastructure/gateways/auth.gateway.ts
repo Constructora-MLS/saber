@@ -7,7 +7,16 @@ import { catchError, firstValueFrom, throwError } from 'rxjs';
 import { API_BASE_URL } from '../../../api.config';
 import { AuthSession } from '../../application/session/auth-session';
 import { AuthIdentity, restoreAuthIdentity } from '../../domain/model/value-objects/auth-identity';
-import { TokenResponseResource, UserResource } from '../contracts/auth.contract';
+import { Email } from '../../domain/model/value-objects/email';
+import { Password } from '../../domain/model/value-objects/password';
+import { RecoveryToken } from '../../domain/model/value-objects/recovery-token';
+import {
+  ForgotPasswordRequestResource,
+  ForgotPasswordResponseResource,
+  ResetPasswordRequestResource,
+  TokenResponseResource,
+  UserResource,
+} from '../contracts/auth.contract';
 import { toAuthApiError } from '../errors/auth-api.error';
 
 /**
@@ -56,6 +65,40 @@ export class AuthGateway {
       resource.email,
       resource.firstName,
       resource.lastName,
+    );
+  }
+
+  /**
+   * forgotPassword asks the platform for a link that recovers the password.
+   *
+   * The answer never says whether the account exists: the platform answers
+   * the same for every address, so the body carries no information and the
+   * gateway discards it.
+   */
+  async forgotPassword(email: Email): Promise<void> {
+    const request: ForgotPasswordRequestResource = { email };
+
+    await firstValueFrom(
+      this.http
+        .post<ForgotPasswordResponseResource>(`${this.baseUrl}/auth/forgot-password`, request)
+        .pipe(catchError((error: HttpErrorResponse) => this.toFailure(error))),
+    );
+  }
+
+  /**
+   * resetPassword changes the password of an account with the credential of
+   * a recovery link.
+   *
+   * The platform answers 204 without a body: the password was changed and
+   * the sessions of the member were revoked.
+   */
+  async resetPassword(token: RecoveryToken, password: Password): Promise<void> {
+    const request: ResetPasswordRequestResource = { token, password };
+
+    await firstValueFrom(
+      this.http
+        .post<null>(`${this.baseUrl}/auth/reset-password`, request)
+        .pipe(catchError((error: HttpErrorResponse) => this.toFailure(error))),
     );
   }
 

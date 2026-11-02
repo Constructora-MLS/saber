@@ -1,7 +1,6 @@
 import '@angular/compiler';
-import { HttpErrorResponse, HttpHandlerFn, HttpRequest, HttpResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpRequest, HttpResponse } from '@angular/common/http';
 import { Injector, runInInjectionContext } from '@angular/core';
-import { Router } from '@angular/router';
 import { firstValueFrom, of, throwError } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { SignInCommandService } from '../../application/command-services/auth-command-services';
@@ -37,7 +36,11 @@ function thePlatformIsDown(): AuthApiError {
 describe('authInterceptor', () => {
   async function setup(options: { refresh?: () => Promise<AuthSession>; signedIn?: boolean } = {}) {
     const refresh = vi.fn(options.refresh ?? (async () => sessionOf('the-renewed-token')));
-    const navigate = vi.fn().mockResolvedValue(true);
+    // The platform signs a deterministic access token, so every sign in
+    // publishes the very same token: a session that appears while a request
+    // is in flight can only be told apart from the session that the
+    // request carried by the identifier that the store gave to it.
+    const signIn = vi.fn().mockResolvedValue(sessionOf('the-access-token'));
     // The store of the session is the real one: the interceptor asks it the
     // single rule of the policy and never reads the status of the failure.
     const injector = Injector.create({
@@ -46,11 +49,7 @@ describe('authInterceptor', () => {
           provide: AuthGateway,
           useValue: { refresh, verify: vi.fn(), logout: vi.fn(), signIn: vi.fn() },
         },
-        {
-          provide: SignInCommandService,
-          useValue: { execute: vi.fn(async () => sessionOf('the-access-token')) },
-        },
-        { provide: Router, useValue: { navigate } },
+        { provide: SignInCommandService, useValue: { execute: signIn } },
         { provide: AuthSessionStore, useFactory: () => new AuthSessionStore(), deps: [] },
       ],
     });
@@ -60,13 +59,13 @@ describe('authInterceptor', () => {
       await store.signIn({ email: 'admin@akame.local', password: 'the-password' });
     }
 
-    const next = vi.fn(() => of(new HttpResponse({ status: 200 })));
+    // The mock is typed with its parameter, so the recorded calls keep the
+    // type of the request that the interceptor sent.
+    const next = vi.fn((_request: HttpRequest<unknown>) => of(new HttpResponse({ status: 200 })));
     const run = (url: string) =>
-      runInInjectionContext(injector, () =>
-        authInterceptor(new HttpRequest('GET', url), next as unknown as HttpHandlerFn),
-      );
+      runInInjectionContext(injector, () => authInterceptor(new HttpRequest('GET', url), next));
 
-    return { run, next, store, refresh, navigate };
+    return { run, next, store, refresh };
   }
 
   it('no adjunta el access token a las rutas que no lo necesitan', async () => {
@@ -76,15 +75,17 @@ describe('authInterceptor', () => {
       '/api/v1/auth/sign-in',
       '/api/v1/auth/refresh',
       '/api/v1/auth/logout',
+      '/api/v1/auth/forgot-password',
+      '/api/v1/auth/reset-password',
       '/api/v1/certificates/verify/the-code',
       '/api/v1/invitations/the-invitation',
     ]) {
       await firstValueFrom(run(url));
     }
 
-    expect(next).toHaveBeenCalledTimes(5);
+    expect(next).toHaveBeenCalledTimes(7);
     for (const [request] of next.mock.calls) {
-      expect((request as HttpRequest<unknown>).headers.get('Authorization')).toBeNull();
+      expect(request.headers.get('Authorization')).toBeNull();
     }
   });
 
@@ -94,9 +95,7 @@ describe('authInterceptor', () => {
     await firstValueFrom(run('/api/v1/users'));
 
     const [request] = next.mock.calls[0];
-    expect((request as HttpRequest<unknown>).headers.get('Authorization')).toBe(
-      'Bearer the-access-token',
-    );
+    expect(request.headers.get('Authorization')).toBe('Bearer the-access-token');
   });
 
   it('adjunta el access token a la verificación del usuario', async () => {
@@ -105,9 +104,7 @@ describe('authInterceptor', () => {
     await firstValueFrom(run('/api/v1/auth/verify'));
 
     const [request] = next.mock.calls[0];
-    expect((request as HttpRequest<unknown>).headers.get('Authorization')).toBe(
-      'Bearer the-access-token',
-    );
+    expect(request.headers.get('Authorization')).toBe('Bearer the-access-token');
   });
 
   it('no renueva una petición que no lleva token', async () => {
@@ -118,7 +115,7 @@ describe('authInterceptor', () => {
 
     expect(refresh).not.toHaveBeenCalled();
     const [request] = next.mock.calls[0];
-    expect((request as HttpRequest<unknown>).headers.get('Authorization')).toBeNull();
+    expect(request.headers.get('Authorization')).toBeNull();
   });
 
   it('renueva la sesión y reintenta la petición cuando la plataforma responde 401', async () => {
@@ -129,7 +126,7 @@ describe('authInterceptor', () => {
 
     expect(refresh).toHaveBeenCalledTimes(1);
     expect(next).toHaveBeenCalledTimes(2);
-    const retried = next.mock.calls[1][0] as HttpRequest<unknown>;
+    const retried = next.mock.calls[1][0];
     expect(retried.headers.get('Authorization')).toBe('Bearer the-renewed-token');
   });
 
@@ -149,12 +146,12 @@ describe('authInterceptor', () => {
 
     await firstValueFrom(run('/api/v1/users'));
 
-    const retried = next.mock.calls[1][0] as HttpRequest<unknown>;
-    expect(retried.context).toBe((next.mock.calls[0][0] as HttpRequest<unknown>).context);
+    const retried = next.mock.calls[1][0];
+    expect(retried.context).toBe(next.mock.calls[0][0].context);
   });
 
-  it('abandona la sesión y lleva al sign in cuando la credencial está muerta', async () => {
-    const { run, next, store, navigate } = await setup({
+  it('abandona la sesión y publica el rechazo cuando la credencial está muerta', async () => {
+    const { run, next, store } = await setup({
       refresh: async () => {
         throw theCredentialIsDead();
       },
@@ -164,11 +161,11 @@ describe('authInterceptor', () => {
     await expect(firstValueFrom(run('/api/v1/users'))).rejects.toBeInstanceOf(AuthApiError);
 
     expect(store.authenticated()).toBe(false);
-    expect(navigate).toHaveBeenCalledWith(['/sign-in']);
+    expect(store.credentialRejected()).toBe(true);
   });
 
   it('conserva la sesión cuando la renovación falla porque la plataforma no está disponible', async () => {
-    const { run, next, store, navigate } = await setup({
+    const { run, next, store } = await setup({
       refresh: async () => {
         throw thePlatformIsDown();
       },
@@ -179,11 +176,11 @@ describe('authInterceptor', () => {
 
     expect(store.authenticated()).toBe(true);
     expect(store.accessToken()).toBe('the-access-token');
-    expect(navigate).not.toHaveBeenCalled();
+    expect(store.credentialRejected()).toBe(false);
   });
 
-  it('limpia la sesión cuando el reintento también es rechazado', async () => {
-    const { run, next, store, navigate, refresh } = await setup();
+  it('publica el rechazo cuando el reintento también es rechazado', async () => {
+    const { run, next, store, refresh } = await setup();
     next.mockImplementation(() => throwError(() => new HttpErrorResponse({ status: 401 })));
 
     await expect(firstValueFrom(run('/api/v1/users'))).rejects.toBeInstanceOf(HttpErrorResponse);
@@ -191,7 +188,7 @@ describe('authInterceptor', () => {
     expect(refresh).toHaveBeenCalledTimes(1);
     expect(next).toHaveBeenCalledTimes(2);
     expect(store.authenticated()).toBe(false);
-    expect(navigate).toHaveBeenCalledTimes(1);
+    expect(store.credentialRejected()).toBe(true);
   });
 
   it('no intenta renovar cuando la plataforma no está disponible', async () => {
@@ -202,6 +199,7 @@ describe('authInterceptor', () => {
 
     expect(refresh).not.toHaveBeenCalled();
     expect(store.authenticated()).toBe(true);
+    expect(store.credentialRejected()).toBe(false);
   });
 
   it('renueva la sesión una sola vez cuando dos peticiones privadas fallan a la vez', async () => {
@@ -226,12 +224,13 @@ describe('authInterceptor', () => {
     expect(next).toHaveBeenCalledTimes(4);
   });
 
-  it('lleva al sign in una sola vez cuando varias peticiones fallan a la vez con una credencial muerta', async () => {
-    const { run, next, store, navigate } = await setup({
+  it('publica el rechazo una sola vez cuando varias peticiones fallan a la vez con una credencial muerta', async () => {
+    const { run, next, store } = await setup({
       refresh: async () => {
         throw theCredentialIsDead();
       },
     });
+    const forget = vi.spyOn(store, 'forget');
     next.mockImplementation(() => throwError(() => new HttpErrorResponse({ status: 401 })));
 
     await Promise.all([
@@ -239,7 +238,36 @@ describe('authInterceptor', () => {
       firstValueFrom(run('/api/v1/groups')).catch(() => undefined),
     ]);
 
+    expect(forget).toHaveBeenCalledTimes(2);
+    // Only the first failure finds the session: the reaction is idempotent.
+    expect(forget.mock.results.filter((result) => result.value === true)).toHaveLength(1);
     expect(store.authenticated()).toBe(false);
-    expect(navigate).toHaveBeenCalledTimes(1);
+    expect(store.credentialRejected()).toBe(true);
+  });
+
+  it('no descarta la sesión que aparece mientras la renovación falla', async () => {
+    // El sign in de esta misma pestaña llega mientras la renovación falla con
+    // una credencial muerta: la sesión que acaba de aparecer es válida —y
+    // lleva el mismo access token, porque el backend lo firma de forma
+    // determinista—, así que el interceptor no puede destruirla.
+    let store: AuthSessionStore | undefined;
+    const {
+      run,
+      next,
+      store: created,
+    } = await setup({
+      refresh: async () => {
+        await store?.signIn({ email: 'admin@akame.local', password: 'the-password' });
+        throw theCredentialIsDead();
+      },
+    });
+    store = created;
+    next.mockImplementationOnce(() => throwError(() => new HttpErrorResponse({ status: 401 })));
+
+    await expect(firstValueFrom(run('/api/v1/users'))).rejects.toBeInstanceOf(AuthApiError);
+
+    expect(store.authenticated()).toBe(true);
+    expect(store.accessToken()).toBe('the-access-token');
+    expect(store.credentialRejected()).toBe(false);
   });
 });

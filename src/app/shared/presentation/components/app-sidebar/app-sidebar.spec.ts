@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AppSidebar } from './app-sidebar';
 
 class Sidebar extends AppSidebar {
-  openSettings() {
+  override openSettings() {
     return super.openSettings();
   }
 }
@@ -27,7 +27,7 @@ describe('AppSidebar', () => {
     const callbacks: (() => void)[] = [];
     const destroyRef = {
       onDestroy: (callback: () => void) => callbacks.push(callback),
-    } as DestroyRef;
+    } as unknown as DestroyRef;
     const router = { navigateByUrl: vi.fn() } as unknown as Router;
     const injector = {
       get: (token: unknown) => {
@@ -54,7 +54,7 @@ describe('AppSidebar', () => {
 
   it('takes the user to the configuration of the account', () => {
     const navigateByUrl = vi.fn();
-    const destroyRef = { onDestroy: () => {} } as DestroyRef;
+    const destroyRef = { onDestroy: () => {} } as unknown as DestroyRef;
     const injector = {
       get: (token: unknown) => {
         if (token === DestroyRef) {

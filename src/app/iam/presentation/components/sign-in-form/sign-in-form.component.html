@@ -67,7 +67,11 @@
     />
   </mat-form-field>
 
-  <span class="sign-in-form__forgot">¿Olvidaste tu contraseña?</span>
+  <!-- The recovery is a navigation: the action is a link, so the browser can
+       open it in another tab and the member can come back with it. -->
+  <a matButton class="sign-in-form__forgot" routerLink="/forgot-password">
+    ¿Olvidaste tu contraseña?
+  </a>
 
   <button matButton="filled" class="sign-in-form__submit" type="submit" [disabled]="submitting()">
     {{ submitting() ? 'Entrando…' : 'Continuar' }}

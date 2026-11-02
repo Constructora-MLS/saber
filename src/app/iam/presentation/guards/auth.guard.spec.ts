@@ -111,7 +111,7 @@ describe('authGuard', () => {
   });
 
   it('no descarta la sesión que aparece mientras la renovación falla', async () => {
-    // El sign in de otro dispositivo llega mientras la renovación falla con
+    // El sign in de esta misma pestaña llega mientras la renovación falla con
     // una credencial muerta: la sesión que acaba de aparecer es válida y el
     // guard no puede destruirla, porque no es suya.
     let store: AuthSessionStore | undefined;

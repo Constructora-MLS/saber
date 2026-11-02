@@ -3,7 +3,9 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { describe, expect, it } from 'vitest';
 import {
   AuthApiError,
+  isResetNotFound,
   isUnauthorized,
+  NOT_FOUND_STATUS,
   statusOf,
   toAuthApiError,
   UNAUTHORIZED_STATUS,
@@ -40,6 +42,27 @@ describe('isUnauthorized', () => {
     expect(isUnauthorized(new HttpErrorResponse({ status: 503 }))).toBe(false);
     expect(isUnauthorized(new Error('boom'))).toBe(false);
     expect(isUnauthorized(null)).toBe(false);
+  });
+});
+
+describe('isResetNotFound', () => {
+  it('reconoce el enlace de recuperación que la plataforma no conoce', () => {
+    expect(isResetNotFound(new AuthApiError(404, 'password_reset_not_found', 'gone'))).toBe(true);
+    expect(isResetNotFound(new AuthApiError(404, 'user_not_found', 'gone'))).toBe(true);
+  });
+
+  it('no confunde otro 404 con un enlace que ya no sirve', () => {
+    expect(isResetNotFound(new AuthApiError(NOT_FOUND_STATUS, 'route_not_found', 'gone'))).toBe(
+      false,
+    );
+    expect(isResetNotFound(new HttpErrorResponse({ status: NOT_FOUND_STATUS }))).toBe(false);
+  });
+
+  it('no confunde otro fallo con un enlace que ya no sirve', () => {
+    expect(isResetNotFound(new HttpErrorResponse({ status: 401 }))).toBe(false);
+    expect(isResetNotFound(new HttpErrorResponse({ status: 503 }))).toBe(false);
+    expect(isResetNotFound(new Error('boom'))).toBe(false);
+    expect(isResetNotFound(null)).toBe(false);
   });
 });
 

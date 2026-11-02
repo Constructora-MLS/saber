@@ -15,6 +15,38 @@ export interface SignInRequestResource {
 }
 
 /**
+ * ForgotPasswordRequestResource is the body of the request of a link of
+ * recovery.
+ */
+export interface ForgotPasswordRequestResource {
+  /** The address of the account that recovers the password. */
+  readonly email: string;
+}
+
+/**
+ * ForgotPasswordResponseResource is the answer of a request of a link of
+ * recovery.
+ *
+ * The answer says nothing about the account: the platform answers the same
+ * for every address, so the body carries no information at all.
+ */
+export interface ForgotPasswordResponseResource {
+  /** The state of the request: always accepted. */
+  readonly status: 'accepted';
+}
+
+/**
+ * ResetPasswordRequestResource is the body of the request of a new
+ * password.
+ */
+export interface ResetPasswordRequestResource {
+  /** The credential of the link of recovery. */
+  readonly token: string;
+  /** The new password of the account. */
+  readonly password: string;
+}
+
+/**
  * UserResource is the public information of a user.
  */
 export interface UserResource {
