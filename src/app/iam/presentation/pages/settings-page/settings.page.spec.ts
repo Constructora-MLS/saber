@@ -30,6 +30,9 @@ class Page extends SettingsPage {
   edit() {
     return this.openProfileDialog();
   }
+  change() {
+    return this.changePassword();
+  }
 }
 
 describe('SettingsPage', () => {
@@ -155,5 +158,13 @@ describe('SettingsPage', () => {
 
     expect(applyProfile).not.toHaveBeenCalled();
     expect(notify).not.toHaveBeenCalled();
+  });
+
+  it('lleva al usuario a la recuperación de la contraseña', () => {
+    const { page, navigateByUrl } = setup();
+
+    page.change();
+
+    expect(navigateByUrl).toHaveBeenCalledWith('/forgot-password');
   });
 });

@@ -14,6 +14,9 @@ class Page extends SignInPage {
   send(command: { email: string; password: string }) {
     return this.signIn(command);
   }
+  recover() {
+    return this.recoveryRequested();
+  }
 }
 
 describe('SignInPage', () => {
@@ -81,5 +84,13 @@ describe('SignInPage', () => {
     ]);
 
     expect(signIn).toHaveBeenCalledTimes(1);
+  });
+
+  it('lleva al usuario a la recuperación de la contraseña', () => {
+    const { page, navigateByUrl } = setup();
+
+    page.recover();
+
+    expect(navigateByUrl).toHaveBeenCalledWith('/forgot-password');
   });
 });

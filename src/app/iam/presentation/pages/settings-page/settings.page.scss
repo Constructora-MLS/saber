@@ -78,6 +78,8 @@
 .settings__value {
   margin: 0;
   font-size: 0.875rem;
+  /* A long address never overflows the card. */
+  overflow-wrap: anywhere;
 }
 
 /*
@@ -111,6 +113,8 @@
   color: var(--mat-sys-on-surface-variant);
   font-size: 0.8125rem;
   line-height: 1.5;
+  /* A long address never overflows the card. */
+  overflow-wrap: anywhere;
 }
 
 .settings__logout {
@@ -118,4 +122,12 @@
   min-height: 44px;
   --mat-button-filled-container-color: var(--mat-sys-error);
   --mat-button-filled-label-text-color: var(--mat-sys-on-error);
+}
+
+/* The change of the password is a normal action of the account, so it wears
+   the tonal color of the brand and it does not compete with the action that
+   closes the session. */
+.settings__action {
+  width: 100%;
+  min-height: 44px;
 }

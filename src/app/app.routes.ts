@@ -61,6 +61,33 @@ export const routes: Routes = [
       ),
   },
   {
+    // The recovery of the password is public: the member that forgot it
+    // may have no session, and the link of the email arrives in a browser
+    // that never signed in.
+    path: 'forgot-password',
+    title: 'Recuperar contraseña',
+    data: { public: true },
+    loadComponent: () =>
+      import('./iam/presentation/pages/forgot-password-page/forgot-password.page').then(
+        (module) => module.ForgotPasswordPage,
+      ),
+  },
+  {
+    // The path of this route is the one that the link of the email points
+    // to: {FRONTEND_PUBLIC_URL}/reset-password?token=… . The link is built
+    // by the backend (akame/internal/iam/application/commandservices/
+    // token_link.go), so the path and the name of the query parameter must
+    // not be "corrected" here: the browser reads the token from the
+    // parameter "token" and removes it from the address bar right away.
+    path: 'reset-password',
+    title: 'Restablecer contraseña',
+    data: { public: true },
+    loadComponent: () =>
+      import('./iam/presentation/pages/reset-password-page/reset-password.page').then(
+        (module) => module.ResetPasswordPage,
+      ),
+  },
+  {
     // The configuration of the account of the user.
     path: 'settings',
     title: 'Configuración',

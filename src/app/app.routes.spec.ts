@@ -15,11 +15,28 @@ describe('public certificate routes', () => {
   });
 });
 
+describe('the routes of the recovery of the password', () => {
+  it('declares the path that the link of the email points to', async () => {
+    // The backend builds the link as {FRONTEND_PUBLIC_URL}/reset-password?
+    // token=… , so the path and the parameter are not negotiable.
+    const resetRoute = routes.find((route) => route.path === 'reset-password');
+    expect(resetRoute?.data?.['public']).toBe(true);
+    expect(resetRoute?.loadComponent).toBeTypeOf('function');
+    expect(await resetRoute!.loadComponent!()).toBeTruthy();
+
+    const forgotRoute = routes.find((route) => route.path === 'forgot-password');
+    expect(forgotRoute?.data?.['public']).toBe(true);
+    expect(await forgotRoute!.loadComponent!()).toBeTruthy();
+  });
+});
+
 describe('public routes', () => {
   it('declares the public flows of the platform', () => {
     expect(PUBLIC_ROUTE_PATHS).toEqual([
       'sign-in',
       'accept-invitation',
+      'forgot-password',
+      'reset-password',
       'verify/:code',
       'verificar/:code',
     ]);
@@ -28,6 +45,8 @@ describe('public routes', () => {
   it('recognizes the URLs of the public flows', () => {
     expect(isPublicRoute('/sign-in')).toBe(true);
     expect(isPublicRoute('/accept-invitation')).toBe(true);
+    expect(isPublicRoute('/forgot-password')).toBe(true);
+    expect(isPublicRoute('/reset-password')).toBe(true);
     expect(isPublicRoute('/verify/the-code')).toBe(true);
     expect(isPublicRoute('/verificar/the-code')).toBe(true);
   });

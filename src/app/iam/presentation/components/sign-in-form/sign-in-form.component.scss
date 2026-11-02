@@ -21,12 +21,20 @@
 }
 
 .sign-in-form__forgot {
-  display: block;
+  /* The action of the recovery lives at the right of the form, the same
+     place that the text of the question used to take. The inner padding of
+     the text button is compensated, so the label ends at the edge of the
+     fields. */
+  align-self: flex-end;
   margin-top: -8px;
-  text-align: right;
-  font-size: 0.6875rem;
+  margin-inline-end: -12px;
+  font-size: var(--mat-button-text-label-text-size, var(--mat-sys-label-large-size));
   font-weight: 600;
-  color: var(--mat-sys-on-primary-container);
+  /* The label, the state layer and the ripple wear the same color of the
+     brand: the button of Material paints each one with its own token. */
+  --mat-button-text-label-text-color: var(--mat-sys-primary);
+  --mat-button-text-state-layer-color: var(--mat-sys-primary);
+  --mat-button-text-ripple-color: var(--mat-sys-primary);
 }
 
 .sign-in-form__submit {

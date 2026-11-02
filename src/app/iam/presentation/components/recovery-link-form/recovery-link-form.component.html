@@ -1,0 +1,45 @@
+<form
+  class="recovery-form"
+  [formGroup]="form"
+  (ngSubmit)="submit()"
+  novalidate
+  [attr.aria-busy]="submitting()"
+>
+  <mat-form-field appearance="outline">
+    <mat-label>Correo electrónico</mat-label>
+    <input
+      id="recovery-email"
+      matInput
+      type="email"
+      formControlName="email"
+      autocomplete="email"
+      [maxLength]="emailMaxLength"
+      required
+      autofocus
+    />
+    @if (form.controls.email.hasError('required')) {
+      <mat-error>El correo electrónico es obligatorio.</mat-error>
+    }
+    @if (form.controls.email.hasError('email')) {
+      <mat-error>El correo electrónico no es válido.</mat-error>
+    }
+    @if (form.controls.email.hasError('maxlength')) {
+      <mat-error>
+        El correo electrónico no puede superar los {{ emailMaxLength }} caracteres.
+      </mat-error>
+    }
+    <!-- The rejection of the platform is an error of the field: the control
+         carries it, so the message is shown next to the address. -->
+    @if (form.controls.email.hasError(serverError)) {
+      <mat-error>{{ form.controls.email.getError(serverError) }}</mat-error>
+    }
+    <mat-hint align="end" appFieldCounter [control]="form.controls.email" [max]="emailMaxLength" />
+  </mat-form-field>
+
+  <button matButton="filled" class="recovery-form__submit" type="submit" [disabled]="submitting()">
+    @if (submitting()) {
+      <mat-spinner matButtonIcon diameter="18" aria-hidden="true" />
+    }
+    {{ submitting() ? 'Enviando…' : 'Enviar enlace' }}
+  </button>
+</form>

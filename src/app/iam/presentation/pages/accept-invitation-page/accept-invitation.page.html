@@ -40,7 +40,7 @@
         </p>
 
         @if (errorMessage(); as message) {
-          <p class="accept__error" role="alert">{{ message }}</p>
+          <p class="login__error" role="alert">{{ message }}</p>
         }
 
         <app-accept-invitation-form [submitting]="submitting()" (accept)="accept($event)" />
@@ -50,7 +50,7 @@
         </p>
 
         @if (errorMessage(); as message) {
-          <p class="accept__error" role="alert">{{ message }}</p>
+          <p class="login__error" role="alert">{{ message }}</p>
         }
 
         <button matButton="filled" class="accept__action" type="button" (click)="retry()">

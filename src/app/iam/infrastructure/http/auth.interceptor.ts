@@ -15,12 +15,16 @@ import { AuthSessionStore } from '../../application/session/auth-session.store';
  * the cookie is the credential that the platform revokes. The verification of
  * a certificate is public: any person can read a certificate without
  * signing in, and the acceptance of an invitation is public because the
- * invited member arrives from the email.
+ * invited member arrives from the email. The recovery of the password is
+ * public too: the link of the email arrives in a browser that may not hold
+ * a session, and the credential of the recovery is the token of the link.
  */
 const PUBLIC_ROUTES = [
   '/auth/sign-in',
   '/auth/refresh',
   '/auth/logout',
+  '/auth/forgot-password',
+  '/auth/reset-password',
   '/certificates/verify/',
   '/invitations/',
 ];

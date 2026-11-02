@@ -67,7 +67,9 @@
     />
   </mat-form-field>
 
-  <span class="sign-in-form__forgot">¿Olvidaste tu contraseña?</span>
+  <button matButton type="button" class="sign-in-form__forgot" (click)="recoveryRequested.emit()">
+    ¿Olvidaste tu contraseña?
+  </button>
 
   <button matButton="filled" class="sign-in-form__submit" type="submit" [disabled]="submitting()">
     {{ submitting() ? 'Entrando…' : 'Continuar' }}

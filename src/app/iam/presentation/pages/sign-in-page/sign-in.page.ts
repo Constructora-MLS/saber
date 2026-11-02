@@ -52,6 +52,15 @@ export class SignInPage {
     }
   }
 
+  /**
+   * recoveryRequested takes the user to the recovery of the password.
+   *
+   * The page owns the navigation: the form only announces the intention.
+   */
+  protected recoveryRequested(): void {
+    void this.router.navigateByUrl('/forgot-password');
+  }
+
   private describe(error: unknown): string {
     if (error instanceof AuthValidationError) {
       return error.reason;

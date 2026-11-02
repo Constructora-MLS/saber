@@ -101,6 +101,16 @@ export class SettingsPage {
   }
 
   /**
+   * changePassword takes the user to the recovery of the password.
+   *
+   * The recovery sends a link to the address of the account, so the address
+   * never travels in the address bar of the browser.
+   */
+  protected changePassword(): void {
+    void this.router.navigateByUrl('/forgot-password');
+  }
+
+  /**
    * notify shows the outcome of the action, the same way the rest of the
    * platform shows the outcome of its actions.
    */

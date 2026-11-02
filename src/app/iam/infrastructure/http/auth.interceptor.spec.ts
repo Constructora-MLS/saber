@@ -75,13 +75,15 @@ describe('authInterceptor', () => {
       '/api/v1/auth/sign-in',
       '/api/v1/auth/refresh',
       '/api/v1/auth/logout',
+      '/api/v1/auth/forgot-password',
+      '/api/v1/auth/reset-password',
       '/api/v1/certificates/verify/the-code',
       '/api/v1/invitations/the-invitation',
     ]) {
       await firstValueFrom(run(url));
     }
 
-    expect(next).toHaveBeenCalledTimes(5);
+    expect(next).toHaveBeenCalledTimes(7);
     for (const [request] of next.mock.calls) {
       expect(request.headers.get('Authorization')).toBeNull();
     }

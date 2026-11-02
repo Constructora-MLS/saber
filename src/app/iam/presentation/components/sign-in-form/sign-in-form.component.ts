@@ -36,6 +36,12 @@ export class SignInForm {
   readonly submitting = input(false);
   /** The credentials that the user wrote. */
   readonly signIn = output<SignInCommand>();
+  /**
+   * The recovery of the password was requested.
+   *
+   * The component never navigates: the page owns the navigation.
+   */
+  readonly recoveryRequested = output<void>();
 
   private readonly formBuilder = inject(FormBuilder);
 
