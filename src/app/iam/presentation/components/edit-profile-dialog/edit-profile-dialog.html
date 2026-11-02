@@ -1,0 +1,76 @@
+<h2 mat-dialog-title>Editar tu nombre</h2>
+
+<mat-dialog-content>
+  <p class="dialog-description">
+    El nombre y el apellido con los que te ve el resto de la plataforma. Tu correo electrónico y tu
+    contraseña no se cambian desde aquí.
+  </p>
+
+  @if (errorMessage(); as message) {
+    <p class="dialog-error" role="alert">{{ message }}</p>
+  }
+
+  <form class="dialog-form" id="edit-profile-form" [formGroup]="form" (ngSubmit)="submit()">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Nombre</mat-label>
+      <mat-icon matPrefix aria-hidden="true">person</mat-icon>
+      <input
+        matInput
+        formControlName="firstName"
+        type="text"
+        autocomplete="given-name"
+        [maxLength]="nameMaxLength"
+        required
+      />
+      @if (form.controls.firstName.hasError('required')) {
+        <mat-error>El nombre es obligatorio.</mat-error>
+      }
+      @if (form.controls.firstName.hasError('maxlength')) {
+        <mat-error>El nombre no puede superar los {{ nameMaxLength }} caracteres.</mat-error>
+      }
+      <mat-hint
+        align="end"
+        appFieldCounter
+        [control]="form.controls.firstName"
+        [max]="nameMaxLength"
+      />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Apellido</mat-label>
+      <mat-icon matPrefix aria-hidden="true">badge</mat-icon>
+      <input
+        matInput
+        formControlName="lastName"
+        type="text"
+        autocomplete="family-name"
+        [maxLength]="nameMaxLength"
+        required
+      />
+      @if (form.controls.lastName.hasError('required')) {
+        <mat-error>El apellido es obligatorio.</mat-error>
+      }
+      @if (form.controls.lastName.hasError('maxlength')) {
+        <mat-error>El apellido no puede superar los {{ nameMaxLength }} caracteres.</mat-error>
+      }
+      <mat-hint
+        align="end"
+        appFieldCounter
+        [control]="form.controls.lastName"
+        [max]="nameMaxLength"
+      />
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="dialog-actions">
+  <button matButton="tonal" type="button" (click)="cancel()">Cancelar</button>
+  <button
+    matButton="filled"
+    type="submit"
+    form="edit-profile-form"
+    [disabled]="submitting() || form.invalid"
+  >
+    {{ submitting() ? 'Guardando…' : 'Guardar' }}
+  </button>
+</mat-dialog-actions>

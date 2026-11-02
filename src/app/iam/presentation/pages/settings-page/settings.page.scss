@@ -1,0 +1,121 @@
+/*
+ * The configuration of the account of the user.
+ *
+ * The page follows the identity of the platform: the surface of Material 3
+ * with the palette of the brand and the tokens of the platform.
+ */
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+.settings {
+  min-height: 100vh;
+  padding: 24px;
+  background: var(--app-background);
+}
+
+.settings__page {
+  width: min(48rem, 100%);
+  margin: 0 auto;
+}
+
+.settings__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 24px;
+}
+
+.settings__back {
+  flex: 0 0 auto;
+  margin-inline-start: -0.75rem;
+}
+
+.settings__heading {
+  min-width: 0;
+}
+
+.settings__title {
+  margin: 0;
+  font-size: 1.875rem;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+}
+
+.settings__card {
+  padding: 24px;
+  margin-bottom: 16px;
+  background: var(--mat-sys-surface);
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 28px;
+  box-shadow: 0 3px 12px rgba(22, 73, 61, 0.055);
+}
+
+.settings__card-title {
+  margin: 0 0 16px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.settings__identity {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+
+.settings__field {
+  display: grid;
+  gap: 2px;
+}
+
+.settings__label {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.settings__value {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+/*
+ * The name is the only thing that the user edits, so the row carries the
+ * affordance that opens the edition of the names.
+ */
+.settings__value--name {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.settings__name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* The tonal icon button of Material 3 Expressive: the edit is offered in
+   the color of the brand, without competing with the name itself. */
+.settings__edit {
+  flex: 0 0 auto;
+  --mat-icon-button-icon-color: var(--mat-sys-on-primary-container);
+  --mat-icon-button-state-layer-color: var(--mat-sys-on-primary-container);
+  background-color: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+}
+
+.settings__copy {
+  margin: 0 0 20px;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.settings__logout {
+  width: 100%;
+  min-height: 44px;
+  --mat-button-filled-container-color: var(--mat-sys-error);
+  --mat-button-filled-label-text-color: var(--mat-sys-on-error);
+}

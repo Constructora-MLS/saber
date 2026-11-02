@@ -1,8 +1,44 @@
-import { Routes } from '@angular/router';
+import { CanMatchFn, Routes } from '@angular/router';
+import { authGuard } from './iam/presentation/guards/auth.guard';
+
+const isAdministrationRoute: CanMatchFn = (_route, segments) =>
+  ['users', 'groups'].includes(segments[0]?.path ?? '');
 
 export const routes: Routes = [
   {
+    // The sign in is the only way into the platform, so it answers without a
+    // session.
+    path: 'sign-in',
+    title: 'Iniciar sesión',
+    loadComponent: () =>
+      import('./iam/presentation/pages/sign-in-page/sign-in.page').then(
+        (module) => module.SignInPage,
+      ),
+  },
+  {
+    // The acceptance of an invitation is public: the invited member arrives
+    // from the email and it has no session yet.
+    path: 'accept-invitation',
+    title: 'Aceptar invitación',
+    loadComponent: () =>
+      import('./iam/presentation/pages/accept-invitation-page/accept-invitation.page').then(
+        (module) => module.AcceptInvitationPage,
+      ),
+  },
+  {
+    // The configuration of the account of the user.
+    path: 'settings',
+    title: 'Configuración',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./iam/presentation/pages/settings-page/settings.page').then(
+        (module) => module.SettingsPage,
+      ),
+  },
+  {
     // A QR opens this route directly, outside the HR navigation shell.
+    // The verification of a certificate is public: any person can read a
+    // certificate without signing in.
     path: 'verify/:code',
     title: 'Certificado de trabajo',
     loadComponent: () =>
@@ -13,7 +49,38 @@ export const routes: Routes = [
   // Keep QR links in previously issued PDFs working.
   { path: 'verificar/:code', pathMatch: 'full', redirectTo: 'verify/:code' },
   {
+    // Users and Groups share one route configuration and layout instance, so
+    // the administration sidebar keeps its state when switching sections.
     path: '',
+    canMatch: [isAdministrationRoute],
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./iam/presentation/layouts/iam-layout/iam-layout').then((module) => module.IamLayout),
+    children: [
+      {
+        path: 'users',
+        pathMatch: 'full',
+        title: 'Usuarios',
+        loadComponent: () =>
+          import('./iam/presentation/pages/users-page/users.page').then(
+            (module) => module.UsersPage,
+          ),
+      },
+      {
+        path: 'groups',
+        pathMatch: 'full',
+        title: 'Grupos',
+        loadComponent: () =>
+          import('./iam/presentation/pages/groups-page/groups.page').then(
+            (module) => module.GroupsPage,
+          ),
+      },
+      { path: '**', redirectTo: '/users' },
+    ],
+  },
+  {
+    path: '',
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./shared/presentation/layouts/rrhh-layout/rrhh-layout').then(
         (module) => module.RrhhLayout,

@@ -1,18 +1,28 @@
-import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
-import { RrhhSidebar } from '../../components/rrhh-sidebar/rrhh-sidebar';
+import { Component } from '@angular/core';
+import { NavigationItem } from '../../components/app-sidebar/app-sidebar';
+import { AppLayout } from '../app-layout/app-layout';
 
-/** Private HR navigation shell. Public verification routes do not use it. */
+/**
+ * RrhhLayout is the shell of the Human Resources context.
+ *
+ * The context only declares its module and its sections: the shell, the
+ * sidebar and the switcher of applications are the shared ones.
+ */
 @Component({
-  imports: [RouterOutlet, RrhhSidebar],
+  imports: [AppLayout],
   selector: 'app-rrhh-layout',
-  styleUrl: './rrhh-layout.scss',
-  templateUrl: './rrhh-layout.html',
+  template: `
+    <app-layout
+      moduleLabel="Recursos Humanos"
+      currentApplicationId="human-resources"
+      [navigation]="navigation"
+    />
+  `,
 })
 export class RrhhLayout {
-  protected readonly isSidebarCollapsed = signal(false);
-
-  protected onSidebarCollapsedChange(collapsed: boolean): void {
-    this.isSidebarCollapsed.set(collapsed);
-  }
+  protected readonly navigation: readonly NavigationItem[] = [
+    { label: 'Personal', icon: 'badge', path: '/employees' },
+    { label: 'Certificados', icon: 'description', path: '/certificates' },
+    { label: 'Catálogo', icon: 'list_alt', path: '/catalog' },
+  ];
 }
