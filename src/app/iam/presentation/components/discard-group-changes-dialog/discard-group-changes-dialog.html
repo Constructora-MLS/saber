@@ -1,0 +1,8 @@
+<h2 mat-dialog-title>Descartar cambios</h2>
+<mat-dialog-content>
+  <p>Hay cambios sin guardar. Si sales del editor, se perderán.</p>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="stay()">Seguir editando</button>
+  <button matButton="filled" type="button" (click)="discard()">Descartar cambios</button>
+</mat-dialog-actions>
