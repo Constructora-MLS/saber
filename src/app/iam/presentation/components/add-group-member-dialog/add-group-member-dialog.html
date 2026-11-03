@@ -40,9 +40,7 @@
             <span class="account-name">{{ fullName(account) }}</span>
             <span class="account-email">{{ account.email }}</span>
           </mat-checkbox>
-          @if (isMember(account.id.value)) {
-            <span class="account-tag">Ya está en el rol</span>
-          } @else if (refusal(account); as reason) {
+          @if (!isMember(account.id.value) && refusal(account); as reason) {
             <span class="account-refusal">{{ reason }}</span>
           }
         </li>
@@ -68,8 +66,5 @@
     (click)="add()"
   >
     {{ submitting() ? 'Agregando…' : 'Agregar' }}
-    @if (selected().length > 0) {
-      ({{ selected().length }})
-    }
   </button>
 </mat-dialog-actions>

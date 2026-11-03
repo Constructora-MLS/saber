@@ -50,8 +50,6 @@ export class GroupDetailPanel {
   readonly membersPage = input(1);
   /** The number of pages of the members. */
   readonly membersTotalPages = input(0);
-  /** The number of members that belong to the role. */
-  readonly membersTotal = input(0);
   /** A localized failure while saving the role. */
   readonly saveFailure = input<string | null>(null);
   /** Whether an operation is in progress. */
@@ -76,7 +74,7 @@ export class GroupDetailPanel {
   protected readonly views = computed<readonly GroupDetailViewDefinition[]>(() => [
     { id: 'datos', label: 'Datos', icon: 'badge' },
     { id: 'permisos', label: 'Permisos', icon: 'shield' },
-    { id: 'miembros', label: `Miembros (${this.membersTotal()})`, icon: 'group' },
+    { id: 'miembros', label: 'Miembros', icon: 'group' },
   ]);
 
   /** The view that the panel shows. */

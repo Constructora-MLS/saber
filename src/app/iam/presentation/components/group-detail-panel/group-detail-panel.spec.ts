@@ -39,7 +39,7 @@ describe('GroupDetailPanel', () => {
     expect(panel.views().map((view) => view.label)).toEqual([
       'Datos',
       'Permisos',
-      'Miembros (0)',
+      'Miembros',
     ]);
     expect(panel.activeView()).toBe('datos');
   });

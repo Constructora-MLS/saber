@@ -105,7 +105,6 @@ export class GroupsPage implements OnInit {
   protected readonly membersFailure = signal<string | null>(null);
   protected readonly membersPage = signal(1);
   protected readonly membersTotalPages = signal(0);
-  protected readonly membersTotal = signal(0);
   protected readonly saving = signal(false);
   protected readonly saveFailure = signal<string | null>(null);
   protected readonly pendingChanges = signal(false);
@@ -246,7 +245,6 @@ export class GroupsPage implements OnInit {
     this.membersFailure.set(null);
     this.membersPage.set(1);
     this.membersTotalPages.set(0);
-    this.membersTotal.set(0);
     this.saveFailure.set(null);
     this.pendingChanges.set(false);
 
@@ -417,7 +415,6 @@ export class GroupsPage implements OnInit {
       this.members.set(result.items.map((member) => this.toMemberRow(member)));
       this.membersPage.set(result.page);
       this.membersTotalPages.set(result.totalPages);
-      this.membersTotal.set(result.total);
     } catch (error) {
       if (request === this.membersRequest) {
         this.members.set([]);
@@ -443,7 +440,6 @@ export class GroupsPage implements OnInit {
     this.membersFailure.set(null);
     this.membersPage.set(1);
     this.membersTotalPages.set(0);
-    this.membersTotal.set(0);
     this.saveFailure.set(null);
     this.pendingChanges.set(false);
   }

@@ -56,19 +56,9 @@
   font-weight: 400;
 }
 
-/* The tag of the accounts that already belong to the role, and the reason
-   why the platform refuses the others, live next to the choice. */
-.account-tag,
 .account-refusal {
   font-size: 0.76rem;
   white-space: nowrap;
-}
-
-.account-tag {
-  color: var(--app-text-muted);
-}
-
-.account-refusal {
   color: var(--mat-sys-error);
 }
 
