@@ -5,6 +5,7 @@ import { SignInCommandService } from '../command-services/auth-command-services'
 import { PlatformUser } from '../../domain/model/aggregates/platform-user';
 import { restoreEmail } from '../../domain/model/value-objects/email';
 import { AuthIdentity } from '../../domain/model/value-objects/auth-identity';
+import { EffectivePermissions } from '../../domain/model/value-objects/effective-permissions';
 import { UserId } from '../../domain/model/value-objects/user-id';
 import { AuthGateway } from '../../infrastructure/gateways/auth.gateway';
 import { AuthApiError } from '../../infrastructure/errors/auth-api.error';
@@ -17,10 +18,27 @@ const identity: AuthIdentity = {
   lastName: 'Akame',
 };
 
+/** The permissions that the platform publishes with the identity. */
+const permissions: EffectivePermissions = {
+  manageEmployees: true,
+  manageAssignments: false,
+  manageCatalog: false,
+  manageCertificates: false,
+  manageUsers: true,
+  managePermissionsGroups: false,
+  administrator: false,
+  owner: false,
+};
+
 describe('AuthSessionStore', () => {
   function setup(refresh: () => Promise<{ accessToken: string; identity: AuthIdentity }>) {
-    const signIn = vi.fn().mockResolvedValue({ accessToken: 'the-access-token', identity });
-    const verify = vi.fn().mockResolvedValue({ ...identity, firstName: 'Administrador' });
+    const signIn = vi
+      .fn()
+      .mockResolvedValue({ accessToken: 'the-access-token', identity, permissions });
+    const verify = vi.fn().mockResolvedValue({
+      identity: { ...identity, firstName: 'Administrador' },
+      permissions,
+    });
     const logout = vi.fn().mockResolvedValue(undefined);
     const injector = Injector.create({
       providers: [
@@ -43,7 +61,8 @@ describe('AuthSessionStore', () => {
     });
     expect(store.authenticated()).toBe(true);
     expect(store.accessToken()).toBe('the-access-token');
-    expect(store.identity()).toEqual(identity);
+    // The session publishes the identity that the platform verified.
+    expect(store.identity()?.firstName).toBe('Administrador');
   });
 
   it('renueva la sesión con el refresh token de la cookie', async () => {
@@ -83,6 +102,17 @@ describe('AuthSessionStore', () => {
     expect(verify).toHaveBeenCalled();
     expect(store.identity()?.firstName).toBe('Administrador');
     expect(store.accessToken()).toBe('the-access-token');
+  });
+
+  it('publica los permisos que el platform concede al usuario', async () => {
+    const { store } = setup(async () => ({ accessToken: 'the-access-token', identity }));
+
+    await store.signIn({ email: 'admin@akame.local', password: 'the-password' });
+
+    expect(store.permissions().manageEmployees).toBe(true);
+    expect(store.permissions().manageUsers).toBe(true);
+    expect(store.permissions().manageCatalog).toBe(false);
+    expect(store.permissions().owner).toBe(false);
   });
 
   it('edita el nombre de la cuenta y lo refleja en la sesión', async () => {

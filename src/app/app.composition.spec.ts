@@ -25,10 +25,49 @@ const tokenResource = {
   },
 };
 
+/** userResource is the answer of the platform when the browser asks who it is. */
+const userResource = {
+  uuid: 'the-user',
+  email: 'admin@akame.local',
+  firstName: 'Admin',
+  lastName: 'Akame',
+  permissions: {
+    manageEmployees: false,
+    manageAssignments: false,
+    manageCatalog: false,
+    manageCertificates: false,
+    manageUsers: false,
+    managePermissionsGroups: false,
+    administrator: false,
+    owner: false,
+  },
+};
+
 /** theCredentialIsDead is the answer of the platform when it refuses the credential. */
 const THE_CREDENTIAL_IS_DEAD = {
   body: 'The refresh token is not valid.',
   init: { status: 401, statusText: 'Unauthorized' },
+};
+
+
+/** The account that the platform publishes with the identity. */
+const account = {
+  identity: {
+    uuid: 'the-user',
+    email: 'admin@akame.local',
+    firstName: 'Admin',
+    lastName: 'Akame',
+  },
+  permissions: {
+    manageEmployees: false,
+    manageAssignments: false,
+    manageCatalog: false,
+    manageCertificates: false,
+    manageUsers: false,
+    managePermissionsGroups: false,
+    administrator: false,
+    owner: false,
+  },
 };
 
 describe('the chain of a dead credential', () => {
@@ -91,7 +130,28 @@ describe('the chain of a dead credential', () => {
 
     platform.expectOne('/api/v1/auth/sign-in').flush(tokenResource);
 
+    // The session reads the permissions of the member right after the sign
+    // in: the platform publishes them with the identity.
+    await flushVerification(platform);
+
     await signing;
+  }
+
+  /**
+   * flushVerification answers the verification of the platform when it
+   * travels.
+   *
+   * The verification leaves the browser right after the sign in resolves,
+   * so the suite waits for it instead of assuming when it travels.
+   */
+  async function flushVerification(platform: HttpTestingController): Promise<void> {
+    await vi.waitFor(() => {
+      const [request] = platform.match('/api/v1/auth/verify');
+      if (!request) {
+        throw new Error('the verification has not travelled yet');
+      }
+      request.flush(userResource);
+    });
   }
 
   it('lleva al sign in una sola vez cuando la plataforma rechaza una petición privada', async () => {

@@ -4,16 +4,25 @@ import { IsActiveMatchOptions, Router, RouterLink, RouterLinkActive } from '@ang
 import { AppSwitcher, AppSwitcherOption } from '../app-switcher/app-switcher';
 import { APPLICATION_CATALOG } from '../app-switcher/application-catalog';
 import { MlsIcon } from '../icons/mls-icon/mls-icon';
+import { AuthSessionStore } from '../../../../iam/application/session/auth-session.store';
+import {
+  FunctionalPermission,
+  holdsAnyPermission,
+} from '../../../../iam/domain/model/value-objects/effective-permissions';
 
 /**
  * NavigationItem is a section of the navigation of a context.
  *
- * The path is null when the section is not available yet.
+ * The path is null when the section is not available yet, and the
+ * permissions are the ones that the platform asks for the section: the
+ * sidebar offers only the sections that the member may open.
  */
 export interface NavigationItem {
   readonly label: string;
   readonly icon: string;
   readonly path: string | null;
+  /** The permissions that the platform asks for the section. */
+  readonly permissions?: readonly FunctionalPermission[];
 }
 
 /**
@@ -38,6 +47,7 @@ export interface NavigationItem {
 export class AppSidebar {
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
+  private readonly session = inject(AuthSessionStore);
 
   /** The name of the module that owns the sidebar. */
   readonly moduleLabel = input.required<string>();
@@ -61,11 +71,36 @@ export class AppSidebar {
    * sections of an application can live in more than one route.
    */
   protected readonly applications = computed<readonly AppSwitcherOption[]>(() =>
-    APPLICATION_CATALOG.map(({ id, ...application }) => ({
+    APPLICATION_CATALOG.filter(
+      // An application that the member may not open does not appear in the
+      // switcher: the platform would refuse its routes. The applications
+      // that are still coming stay: they are not a matter of permissions.
+      (application) =>
+        application.status !== 'active' ||
+        this.mayOpen(application.sections.map((section) => section.permissions).flat()),
+    ).map(({ id, sections, ...application }) => ({
       ...application,
       isCurrent: id === this.currentApplicationId(),
     })),
   );
+
+  /** The sections of the module that the member may open. */
+  protected readonly visibleNavigation = computed<readonly NavigationItem[]>(() =>
+    this.navigation().filter(
+      (item) => item.path === null || this.mayOpen(item.permissions ?? []),
+    ),
+  );
+
+  /**
+   * mayOpen reports whether the member holds the permissions of a section.
+   *
+   * The platform grants the route of the section to the members that hold
+   * one of its permissions, so the sidebar offers the section to the same
+   * members.
+   */
+  private mayOpen(permissions: readonly FunctionalPermission[]): boolean {
+    return holdsAnyPermission(this.session.permissions(), permissions);
+  }
 
   /**
    * activeLinkOptions decides when a navigation item is the current one.

@@ -37,6 +37,7 @@ describe('public routes', () => {
       'accept-invitation',
       'forgot-password',
       'reset-password',
+      'not-found',
       'verify/:code',
       'verificar/:code',
     ]);
@@ -47,6 +48,7 @@ describe('public routes', () => {
     expect(isPublicRoute('/accept-invitation')).toBe(true);
     expect(isPublicRoute('/forgot-password')).toBe(true);
     expect(isPublicRoute('/reset-password')).toBe(true);
+    expect(isPublicRoute('/not-found')).toBe(true);
     expect(isPublicRoute('/verify/the-code')).toBe(true);
     expect(isPublicRoute('/verificar/the-code')).toBe(true);
   });

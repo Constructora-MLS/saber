@@ -36,7 +36,11 @@ describe('GroupDetailPanel', () => {
   it('offers the three views of the role and opens the data of the role', () => {
     const panel = panelOf();
 
-    expect(panel.views.map((view) => view.label)).toEqual(['Datos', 'Permisos', 'Miembros']);
+    expect(panel.views().map((view) => view.label)).toEqual([
+      'Datos',
+      'Permisos',
+      'Miembros (0)',
+    ]);
     expect(panel.activeView()).toBe('datos');
   });
 

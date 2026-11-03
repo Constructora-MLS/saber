@@ -60,9 +60,12 @@ describe('AddGroupMemberDialog', () => {
       cancel(): void;
       toggle(id: string): void;
       onSearchChanged(term: string): void;
+      requestPage(page: number): Promise<void>;
       searchTerm(): string;
       accounts(): readonly PlatformUser[];
       selected(): readonly string[];
+      page(): number;
+      totalPages(): number;
       errorMessage(): string | null;
       canJoin(account: PlatformUser): boolean;
       refusal(account: PlatformUser): string | null;
@@ -91,6 +94,17 @@ describe('AddGroupMemberDialog', () => {
     await dialog.search();
 
     expect(listUsers).toHaveBeenLastCalledWith({ search: 'Ana', limit: 20, page: 1 });
+  });
+
+  it('asks the platform for another page of the accounts', async () => {
+    const { dialog, listUsers } = setup();
+
+    dialog.ngOnInit();
+    await vi.waitFor(() => expect(dialog.accounts()).toHaveLength(1));
+
+    await dialog.requestPage(3);
+
+    expect(listUsers).toHaveBeenLastCalledWith({ limit: 20, page: 3 });
   });
 
   it('assigns the chosen accounts to the role', async () => {
@@ -149,11 +163,20 @@ describe('AddGroupMemberDialog', () => {
     expect(dialog.isSelected(userId)).toBe(false);
   });
 
-  it('does not offer to add the owner of the platform to a role', () => {
-    const { dialog } = setup();
+  it('hides the owner of the platform from the accounts that can join a role', async () => {
+    const { dialog } = setup({
+      list: async () => ({
+        items: [account('active', 'owner'), account()],
+        page: 1,
+        totalPages: 1,
+        total: 2,
+      }),
+    });
 
-    expect(dialog.canJoin(account('active', 'owner'))).toBe(false);
-    expect(dialog.refusal(account('active', 'owner'))).toContain('propietario');
+    dialog.ngOnInit();
+    await vi.waitFor(() => expect(dialog.accounts()).toHaveLength(1));
+
+    expect(dialog.accounts()[0]?.userType).toBe('member');
   });
 
   it('does not offer to add an account that never accepted its invitation', () => {

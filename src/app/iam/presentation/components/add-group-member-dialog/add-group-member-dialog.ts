@@ -11,6 +11,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AssignGroupMemberCommandService } from '../../../application/command-services/group-command-services';
 import { ListUsersQueryService } from '../../../application/query-services/user-query-services';
 import { PlatformUser } from '../../../domain/model/aggregates/platform-user';
+import { Paginator } from '../../../../shared/presentation/components/paginator/paginator';
 import { describeMembershipFailure } from '../../pages/group-failures';
 
 /**
@@ -56,6 +57,7 @@ const SEARCH_DELAY = 300;
     MatIconModule,
     MatInputModule,
     MatProgressSpinnerModule,
+    Paginator,
   ],
   selector: 'app-add-group-member-dialog',
   styleUrl: './add-group-member-dialog.scss',
@@ -73,6 +75,8 @@ export class AddGroupMemberDialog implements OnInit {
   protected readonly searchTerm = signal('');
   protected readonly accounts = signal<readonly PlatformUser[]>([]);
   protected readonly selected = signal<readonly string[]>([]);
+  protected readonly page = signal(1);
+  protected readonly totalPages = signal(0);
   protected readonly loading = signal(false);
   protected readonly submitting = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
@@ -91,6 +95,7 @@ export class AddGroupMemberDialog implements OnInit {
     }
     this.searchTimer = setTimeout(() => {
       this.searchTimer = null;
+      this.page.set(1);
       void this.load();
     }, SEARCH_DELAY);
   }
@@ -101,6 +106,13 @@ export class AddGroupMemberDialog implements OnInit {
       clearTimeout(this.searchTimer);
       this.searchTimer = null;
     }
+    this.page.set(1);
+    await this.load();
+  }
+
+  /** requestPage asks the platform for another page of the accounts. */
+  protected async requestPage(page: number): Promise<void> {
+    this.page.set(page);
     await this.load();
   }
 
@@ -123,14 +135,11 @@ export class AddGroupMemberDialog implements OnInit {
 
   /** canJoin reports whether the platform accepts the account in a role. */
   protected canJoin(account: PlatformUser): boolean {
-    return account.userType !== 'owner' && account.status === 'active';
+    return account.status === 'active';
   }
 
   /** refusal is the reason why the account cannot join the role. */
   protected refusal(account: PlatformUser): string | null {
-    if (account.userType === 'owner') {
-      return 'El propietario de la plataforma no puede pertenecer a un rol.';
-    }
     if (account.status !== 'active') {
       return 'La cuenta todavía no aceptó su invitación.';
     }
@@ -170,6 +179,7 @@ export class AddGroupMemberDialog implements OnInit {
     const term = this.searchTerm().trim();
     if (term.length > 0 && [...term].length < MIN_SEARCH_LENGTH) {
       this.accounts.set([]);
+      this.totalPages.set(0);
       return;
     }
     this.loading.set(true);
@@ -178,11 +188,15 @@ export class AddGroupMemberDialog implements OnInit {
       const result = await this.listUsers.execute({
         ...(term ? { search: term } : {}),
         limit: ACCOUNTS_PAGE,
-        page: 1,
+        page: this.page(),
       });
-      this.accounts.set(result.items);
+      // The owner of the platform never belongs to a role: it does not
+      // appear in the list of the accounts that can join one.
+      this.accounts.set(result.items.filter((account) => account.userType !== 'owner'));
+      this.totalPages.set(result.totalPages);
     } catch (error) {
       this.accounts.set([]);
+      this.totalPages.set(0);
       this.errorMessage.set(describeMembershipFailure(error));
     } finally {
       this.loading.set(false);

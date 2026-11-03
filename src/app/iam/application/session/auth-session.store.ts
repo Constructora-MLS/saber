@@ -6,6 +6,7 @@ import { SignInCommand } from '../commands/iam-commands';
 import { SignInCommandService } from '../command-services/auth-command-services';
 import { PlatformUser } from '../../domain/model/aggregates/platform-user';
 import { restoreAuthIdentity } from '../../domain/model/value-objects/auth-identity';
+import { EFFECTIVE_PERMISSIONS } from '../../domain/model/value-objects/effective-permissions';
 import { AuthGateway } from '../../infrastructure/gateways/auth.gateway';
 import { isUnauthorized } from '../../infrastructure/errors/auth-api.error';
 import { AuthSession } from './auth-session';
@@ -49,6 +50,16 @@ export class AuthSessionStore {
   readonly accessToken = computed(() => this.session()?.accessToken ?? null);
   /** The identity of the authenticated user. */
   readonly identity = computed(() => this.session()?.identity ?? null);
+  /**
+   * The permissions that the platform grants to the authenticated user.
+   *
+   * The permissions are the ones that the platform published when the
+   * session was opened, so the interface never offers a capability that the
+   * platform does not grant. The platform is the authority: it refuses the
+   * request of a capability that was revoked, and the session is renewed
+   * with the permissions that the platform grants at that moment.
+   */
+  readonly permissions = computed(() => this.session()?.permissions ?? EFFECTIVE_PERMISSIONS);
   /** Whether the browser holds a session. */
   readonly authenticated = computed(() => this.session() !== null);
   /**
@@ -84,11 +95,16 @@ export class AuthSessionStore {
 
   /** signIn authenticates a user and keeps the session of the answer. */
   async signIn(command: SignInCommand): Promise<void> {
-    this.open(await this.signInCommand.execute(command));
+    const session = await this.signInCommand.execute(command);
+    // The session is open before the permissions are read: the
+    // verification travels with the access token of the answer.
+    this.open(session);
     // A new session dismisses the rejection of the previous one: the
     // credential that died is not the credential of this session, so the
     // presentation must not react to it again.
     this.rejections.set(0);
+
+    await this.readPermissions();
   }
 
   /**
@@ -130,18 +146,41 @@ export class AuthSessionStore {
       return;
     }
 
+    // The session is open before the permissions are read: the
+    // verification travels with the renewed access token.
     this.open(session);
+
+    await this.readPermissions();
   }
 
   /**
-   * verify refreshes the identity of the user with the access token.
+   * verify refreshes the identity and the permissions of the user with the
+   * access token.
    *
-   * The identity travels in the token, so the verification never reaches the
-   * database of the platform.
+   * The identity travels in the token, but the permissions are resolved by
+   * the platform on every request, so the verification is the only way to
+   * know what the member may do right now.
    */
   async verify(): Promise<void> {
-    const identity = await this.gateway.verify();
-    this.session.update((session) => (session ? { ...session, identity } : session));
+    const account = await this.gateway.verify();
+    this.session.update((session) =>
+      session ? { ...session, identity: account.identity, permissions: account.permissions } : session,
+    );
+  }
+
+  /**
+   * readPermissions reads the permissions of the member.
+   *
+   * The failure of the verification does not close the session: the
+   * platform already opened it, so the member keeps it and the permissions
+   * are read again with the next renewal.
+   */
+  private async readPermissions(): Promise<void> {
+    try {
+      await this.verify();
+    } catch {
+      // The session survives the failure of the verification.
+    }
   }
 
   /**

@@ -22,6 +22,27 @@ function sessionOf(accessToken: string): AuthSession {
   return { accessToken, identity };
 }
 
+
+/** The account that the platform publishes with the identity. */
+const account = {
+  identity: {
+    uuid: 'the-user',
+    email: 'admin@akame.local',
+    firstName: 'Admin',
+    lastName: 'Akame',
+  },
+  permissions: {
+    manageEmployees: false,
+    manageAssignments: false,
+    manageCatalog: false,
+    manageCertificates: false,
+    manageUsers: false,
+    managePermissionsGroups: false,
+    administrator: false,
+    owner: false,
+  },
+};
+
 describe('App', () => {
   beforeAll(async () => {
     // The suite runs without a browser, so the environment of the tests is
@@ -44,7 +65,7 @@ describe('App', () => {
           // la muerte de la credencial.
           useValue: {
             refresh: vi.fn(async () => sessionOf('the-access-token')),
-            verify: vi.fn(),
+            verify: vi.fn(async () => account),
             logout: vi.fn(),
           },
         },

@@ -16,7 +16,7 @@
   </header>
 
   <nav class="views" aria-label="Vistas del rol">
-    @for (view of views; track view.id) {
+    @for (view of views(); track view.id) {
       <button
         type="button"
         class="view"

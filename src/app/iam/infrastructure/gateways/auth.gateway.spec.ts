@@ -14,6 +14,28 @@ const user = {
   email: 'admin@akame.local',
   firstName: 'Admin',
   lastName: 'Akame',
+  permissions: {
+    manageEmployees: true,
+    manageAssignments: false,
+    manageCatalog: false,
+    manageCertificates: false,
+    manageUsers: true,
+    managePermissionsGroups: false,
+    administrator: false,
+    owner: false,
+  },
+};
+
+/** The permissions that the platform publishes with the identity. */
+const permissions = {
+  manageEmployees: true,
+  manageAssignments: false,
+  manageCatalog: false,
+  manageCertificates: false,
+  manageUsers: true,
+  managePermissionsGroups: false,
+  administrator: false,
+  owner: false,
 };
 
 describe('AuthGateway', () => {
@@ -40,7 +62,22 @@ describe('AuthGateway', () => {
 
     await expect(gateway.signIn('admin@akame.local', 'the-password')).resolves.toEqual({
       accessToken: 'the-access-token',
-      identity: user,
+      identity: {
+        uuid: 'the-user',
+        email: 'admin@akame.local',
+        firstName: 'Admin',
+        lastName: 'Akame',
+      },
+      permissions: {
+        manageEmployees: false,
+        manageAssignments: false,
+        manageCatalog: false,
+        manageCertificates: false,
+        manageUsers: false,
+        managePermissionsGroups: false,
+        administrator: false,
+        owner: false,
+      },
     });
   });
 
@@ -54,14 +91,37 @@ describe('AuthGateway', () => {
 
     await expect(gateway.refresh()).resolves.toEqual({
       accessToken: 'the-renewed-token',
-      identity: user,
+      identity: {
+        uuid: 'the-user',
+        email: 'admin@akame.local',
+        firstName: 'Admin',
+        lastName: 'Akame',
+      },
+      permissions: {
+        manageEmployees: false,
+        manageAssignments: false,
+        manageCatalog: false,
+        manageCertificates: false,
+        manageUsers: false,
+        managePermissionsGroups: false,
+        administrator: false,
+        owner: false,
+      },
     });
   });
 
-  it('transforma la respuesta de la verificación en la identidad del usuario', async () => {
+  it('transforma la respuesta de la verificación en la identidad y los permisos', async () => {
     const gateway = gatewayFor(user);
 
-    await expect(gateway.verify()).resolves.toEqual(user);
+    await expect(gateway.verify()).resolves.toEqual({
+      identity: {
+        uuid: 'the-user',
+        email: 'admin@akame.local',
+        firstName: 'Admin',
+        lastName: 'Akame',
+      },
+      permissions,
+    });
   });
 
   it('cierra la sesión con el endpoint de logout', async () => {

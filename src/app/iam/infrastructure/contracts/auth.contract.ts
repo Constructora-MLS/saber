@@ -58,6 +58,26 @@ export interface UserResource {
   readonly firstName: string;
   /** The last name of the user. */
   readonly lastName: string;
+  /** The effective permissions of the user. */
+  readonly permissions: EffectivePermissionsResource;
+}
+
+/**
+ * The effective permissions of a user, as the API publishes them.
+ *
+ * The names are the names of the fields of the permissions of a group, so
+ * the permissions of a member and the permissions of the groups are one
+ * vocabulary.
+ */
+export interface EffectivePermissionsResource {
+  readonly manageEmployees: boolean;
+  readonly manageAssignments: boolean;
+  readonly manageCatalog: boolean;
+  readonly manageCertificates: boolean;
+  readonly manageUsers: boolean;
+  readonly managePermissionsGroups: boolean;
+  readonly administrator: boolean;
+  readonly owner: boolean;
 }
 
 /**
