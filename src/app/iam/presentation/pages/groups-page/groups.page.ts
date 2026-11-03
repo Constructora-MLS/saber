@@ -1,20 +1,4 @@
-import {
-  CdkDrag,
-  CdkDragDrop,
-  CdkDragHandle,
-  CdkDropList,
-  moveItemInArray,
-} from '@angular/cdk/drag-drop';
-import {
-  Component,
-  computed,
-  DestroyRef,
-  ElementRef,
-  inject,
-  OnInit,
-  signal,
-  viewChild,
-} from '@angular/core';
+import { Component, computed, DestroyRef, ElementRef, inject, OnInit, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
@@ -23,32 +7,22 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { firstValueFrom } from 'rxjs';
+import { Router } from '@angular/router';
 import {
-  CreateGroupCommandService,
   DeleteGroupCommandService,
   ReorderGroupsCommandService,
-  UpdateGroupCommandService,
 } from '../../../application/command-services/group-command-services';
-import { CreateGroupCommand, UpdateGroupCommand } from '../../../application/commands/group-commands';
-import {
-  GetGroupQueryService,
-  ListGroupsQueryService,
-} from '../../../application/query-services/group-query-services';
+import { ListGroupsQueryService } from '../../../application/query-services/group-query-services';
 import { Group } from '../../../domain/model/aggregates/group';
 import { GroupPriority } from '../../../domain/model/value-objects/group-priority';
+import { CreateGroupDialog } from '../../components/create-group-dialog/create-group-dialog';
 import {
   DeletableGroup,
   DeleteGroupDialog,
 } from '../../components/delete-group-dialog/delete-group-dialog';
-import { DiscardGroupChangesDialog } from '../../components/discard-group-changes-dialog/discard-group-changes-dialog';
-import { GroupEditor } from '../../components/group-editor/group-editor';
+import { GroupRow, GroupTable } from '../../components/group-table/group-table';
 import { TableState } from '../../../../shared/presentation/components/table-state/table-state';
-import {
-  describeGroupFailure,
-  GroupFailureMessage,
-  isGroupConflict,
-} from '../group-failures';
+import { describeGroupFailure, GroupFailureMessage, isGroupConflict } from '../group-failures';
 
 /** The API page size covers the backend's complete active-group limit. */
 const GROUP_LIST_LIMIT = 100;
@@ -58,14 +32,11 @@ const MAX_ACTIVE_GROUPS = 50;
 const MIN_SEARCH_LENGTH = 2;
 const MAX_SEARCH_LENGTH = 120;
 
-/** GroupsPage orchestrates the read and management of the group hierarchy. */
+/** GroupsPage orchestrates the read and the management of the group hierarchy. */
 @Component({
   imports: [
-    CdkDrag,
-    CdkDragHandle,
-    CdkDropList,
     FormsModule,
-    GroupEditor,
+    GroupTable,
     MatButtonModule,
     MatFormFieldModule,
     MatIconModule,
@@ -81,19 +52,15 @@ const MAX_SEARCH_LENGTH = 120;
 export class GroupsPage implements OnInit {
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
+  private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly listGroups = inject(ListGroupsQueryService);
-  private readonly createGroupCommand = inject(CreateGroupCommandService);
-  private readonly getGroup = inject(GetGroupQueryService);
-  private readonly updateGroup = inject(UpdateGroupCommandService);
   private readonly deleteGroupCommand = inject(DeleteGroupCommandService);
   private readonly reorderGroups = inject(ReorderGroupsCommandService);
 
   private listRequest = 0;
-  private detailRequest = 0;
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
   private reloadAfterMutation = false;
-  private editorTrigger: HTMLButtonElement | null = null;
   private readonly groupsHeading = viewChild<ElementRef<HTMLElement>>('groupsHeading');
 
   protected readonly searchTerm = signal('');
@@ -104,15 +71,11 @@ export class GroupsPage implements OnInit {
   protected readonly actionFailure = signal<GroupFailureMessage | null>(null);
   protected readonly reordering = signal(false);
   protected readonly deletingId = signal<string | null>(null);
-  protected readonly creatingGroup = signal(false);
 
-  protected readonly selectedGroupId = signal<string | null>(null);
-  protected readonly selectedGroup = signal<Group | null>(null);
-  protected readonly selectedGroupLoading = signal(false);
-  protected readonly selectedGroupFailure = signal<string | null>(null);
-  protected readonly saving = signal(false);
-  protected readonly saveFailure = signal<string | null>(null);
-  protected readonly editorPendingChanges = signal(false);
+  /** The roles of the hierarchy, ready to be shown in the table. */
+  protected readonly rows = computed<readonly GroupRow[]>(() =>
+    this.groups().map((group) => ({ id: group.id, name: group.name, color: group.color })),
+  );
 
   /** Whether the current search excludes some of the full hierarchy. */
   protected readonly filtered = computed(() => this.searchTerm().trim().length > 0);
@@ -127,20 +90,40 @@ export class GroupsPage implements OnInit {
     }
     return null;
   });
+  /** The headline of the state shown when the listing has no roles. */
+  protected readonly emptyTitle = computed(() => {
+    if (this.searchValidationMessage()) {
+      return 'Búsqueda no válida';
+    }
+    return this.filtered()
+      ? 'Ningún grupo coincide con la búsqueda'
+      : 'Todavía no hay grupos';
+  });
+  /** The supporting text of the state shown when the listing has no roles. */
+  protected readonly emptyMessage = computed(() => {
+    const validation = this.searchValidationMessage();
+    if (validation) {
+      return validation;
+    }
+    return this.filtered()
+      ? 'Prueba con otro nombre.'
+      : 'Crea un grupo para organizar el acceso a la plataforma.';
+  });
+  /** The emblem of the state shown when the listing has no roles. */
+  protected readonly emptyIcon = computed(() => (this.filtered() ? 'search_off' : 'group_off'));
+  /** The label of the action that offers to register a role. */
+  protected readonly emptyActionLabel = computed(() =>
+    this.filtered() || this.searchValidationMessage() ? null : 'Crear grupo',
+  );
   /** Whether a reorder request can include the entire unfiltered hierarchy. */
   protected readonly canReorder = computed(
     () =>
       !this.loading() &&
       !this.reordering() &&
-      !this.saving() &&
       this.deletingId() === null &&
       this.listComplete() &&
       !this.filtered() &&
       this.groups().length > 1,
-  );
-  /** Whether the create or edit sidebar is open. */
-  protected readonly editorOpen = computed(
-    () => this.creatingGroup() || this.selectedGroupId() !== null,
   );
 
   constructor() {
@@ -182,27 +165,21 @@ export class GroupsPage implements OnInit {
     void this.loadGroups();
   }
 
-  /** openCreateGroup opens the shared group form in registration mode. */
-  protected async openCreateGroup(event?: Event): Promise<void> {
+  /** openCreateGroup opens the dialog that registers a group. */
+  protected openCreateGroup(): void {
     if (this.isMutationInProgress()) {
       return;
     }
-    if (this.editorPendingChanges() && !(await this.confirmDiscardChanges())) {
-      return;
-    }
 
-    const trigger = event?.currentTarget as HTMLButtonElement | null;
-    if (trigger) {
-      this.editorTrigger = trigger;
-    }
-    this.detailRequest += 1;
-    this.selectedGroupId.set(null);
-    this.selectedGroup.set(null);
-    this.selectedGroupLoading.set(false);
-    this.selectedGroupFailure.set(null);
-    this.editorPendingChanges.set(false);
-    this.saveFailure.set(null);
-    this.creatingGroup.set(true);
+    this.dialog
+      .open(CreateGroupDialog, { width: '32rem', maxWidth: '94vw' })
+      .afterClosed()
+      .subscribe((created) => {
+        if (created) {
+          this.notify('Grupo creado.');
+          void this.loadGroups();
+        }
+      });
   }
 
   /** retry reloads the current group query. */
@@ -215,110 +192,22 @@ export class GroupsPage implements OnInit {
     this.actionFailure.set(null);
   }
 
-  /** openEditor fetches the current representation before editing a group. */
-  protected async openEditor(group: Group, event?: Event): Promise<void> {
-    const trigger = event?.currentTarget as HTMLButtonElement | null;
-    if (this.saving() || this.selectedGroupId() === group.id) {
-      return;
-    }
-    if (this.editorPendingChanges() && !(await this.confirmDiscardChanges())) {
-      return;
-    }
-    if (trigger) {
-      this.editorTrigger = trigger;
-    }
-    await this.loadGroupDetails(group.id);
-  }
-
-  /** requestCloseEditor protects a group edit from accidental loss. */
-  protected async requestCloseEditor(): Promise<void> {
-    if (this.saving()) {
-      return;
-    }
-    if (this.editorPendingChanges() && !(await this.confirmDiscardChanges())) {
-      return;
-    }
-    this.closeEditor();
-  }
-
-  /** retryGroupDetails repeats the read of the group currently being edited. */
-  protected retryGroupDetails(): void {
-    const id = this.selectedGroupId();
-    if (id !== null) {
-      void this.loadGroupDetails(id);
-    }
-  }
-
-  /** onPendingChangesChanged tracks the editor's net unsaved changes. */
-  protected onPendingChangesChanged(pending: boolean): void {
-    this.editorPendingChanges.set(pending);
-  }
-
-  /** createGroup registers the form intention and refreshes the current API result. */
-  protected async createGroup(command: CreateGroupCommand): Promise<void> {
-    if (!this.creatingGroup() || this.isMutationInProgress()) {
-      return;
-    }
-    this.beginMutation();
-    this.saving.set(true);
-    this.saveFailure.set(null);
-    try {
-      await this.createGroupCommand.execute(command);
-      this.editorPendingChanges.set(false);
-      this.reloadAfterMutation = true;
-      this.closeEditor();
-      this.notify('Grupo creado.');
-    } catch (error) {
-      this.saveFailure.set(describeGroupFailure(error, 'No se pudo crear el grupo').message);
-      if (isGroupConflict(error)) {
-        this.reloadAfterMutation = true;
-      }
-    } finally {
-      this.saving.set(false);
-    }
-    await this.refreshAfterMutation();
-  }
-
-  /** saveGroup sends the partial edit emitted by the editor. */
-  protected async saveGroup(command: UpdateGroupCommand): Promise<void> {
+  /** openPermissions takes the administrator to the permissions of a role. */
+  protected openPermissions(row: GroupRow): void {
     if (this.isMutationInProgress()) {
       return;
     }
-    this.beginMutation();
-    this.saving.set(true);
-    this.saveFailure.set(null);
-    try {
-      const updated = await this.updateGroup.execute(command);
-      this.groups.update((groups) =>
-        groups
-          .map((group) => (group.id === updated.id ? updated : group))
-          .sort((left, right) => left.priority - right.priority),
-      );
-      this.selectedGroup.set(updated);
-      this.editorPendingChanges.set(false);
-      this.reloadAfterMutation = true;
-      this.notify('Grupo actualizado.');
-    } catch (error) {
-      this.saveFailure.set(describeGroupFailure(error, 'No se pudo guardar el grupo').message);
-      if (isGroupConflict(error)) {
-        this.reloadAfterMutation = true;
-      }
-    } finally {
-      this.saving.set(false);
-    }
-    await this.refreshAfterMutation();
+    void this.router.navigate(['/permissions', row.id]);
   }
 
   /** requestDeleteGroup asks for confirmation before logical deletion. */
-  protected async requestDeleteGroup(group: Group): Promise<void> {
+  protected async requestDeleteGroup(row: GroupRow): Promise<void> {
     if (this.isMutationInProgress()) {
       return;
     }
-    if (
-      this.selectedGroupId() === group.id &&
-      this.editorPendingChanges() &&
-      !(await this.confirmDiscardChanges())
-    ) {
+
+    const group = this.groups().find((item) => item.id === row.id);
+    if (!group) {
       return;
     }
 
@@ -333,29 +222,16 @@ export class GroupsPage implements OnInit {
       });
   }
 
-  /** moveGroup provides a keyboard-accessible alternative to dragging. */
-  protected async moveGroup(uuid: string, direction: -1 | 1): Promise<void> {
-    if (!this.canReorder()) {
+  /** onReorder persists the order that the administrator chose. */
+  protected async onReorder(ids: readonly string[]): Promise<void> {
+    const current = this.groups();
+    const next = ids
+      .map((id) => current.find((group) => group.id === id))
+      .filter((group): group is Group => group !== undefined);
+    if (next.length !== current.length) {
       return;
     }
-    const current = [...this.groups()];
-    const from = current.findIndex((group) => group.id === uuid);
-    const to = from + direction;
-    if (from < 0 || to < 0 || to >= current.length) {
-      return;
-    }
-    moveItemInArray(current, from, to);
-    await this.persistOrder(current);
-  }
-
-  /** onDrop persists the drag order after checking its completeness. */
-  protected onDrop(event: CdkDragDrop<readonly Group[]>): void {
-    if (!this.canReorder() || event.previousIndex === event.currentIndex) {
-      return;
-    }
-    const next = [...this.groups()];
-    moveItemInArray(next, event.previousIndex, event.currentIndex);
-    void this.persistOrder(next);
+    await this.persistOrder(next);
   }
 
   private async loadGroups(): Promise<void> {
@@ -400,33 +276,6 @@ export class GroupsPage implements OnInit {
     } finally {
       if (request === this.listRequest) {
         this.loading.set(false);
-      }
-    }
-  }
-
-  private async loadGroupDetails(uuid: string): Promise<void> {
-    const request = ++this.detailRequest;
-    this.creatingGroup.set(false);
-    this.selectedGroupId.set(uuid);
-    this.selectedGroup.set(null);
-    this.selectedGroupLoading.set(true);
-    this.selectedGroupFailure.set(null);
-    this.saveFailure.set(null);
-    this.editorPendingChanges.set(false);
-    try {
-      const group = await this.getGroup.execute({ uuid });
-      if (request === this.detailRequest) {
-        this.selectedGroup.set(group);
-      }
-    } catch (error) {
-      if (request === this.detailRequest) {
-        this.selectedGroupFailure.set(
-          describeGroupFailure(error, 'No se pudieron cargar los detalles del grupo').message,
-        );
-      }
-    } finally {
-      if (request === this.detailRequest) {
-        this.selectedGroupLoading.set(false);
       }
     }
   }
@@ -480,9 +329,6 @@ export class GroupsPage implements OnInit {
     try {
       await this.deleteGroupCommand.execute({ uuid: group.id });
       deleted = true;
-      if (this.selectedGroupId() === group.id) {
-        this.closeEditor(false);
-      }
       this.reloadAfterMutation = true;
     } catch (error) {
       if (isGroupConflict(error)) {
@@ -496,38 +342,6 @@ export class GroupsPage implements OnInit {
     if (deleted) {
       this.groupsHeading()?.nativeElement.focus();
       this.notify('Grupo eliminado.');
-    }
-  }
-
-  private async confirmDiscardChanges(): Promise<boolean> {
-    return (
-      (await firstValueFrom(
-        this.dialog
-          .open(DiscardGroupChangesDialog, { width: '30rem', maxWidth: '94vw' })
-          .afterClosed(),
-      )) === true
-    );
-  }
-
-  private closeEditor(restoreFocus = true): void {
-    const trigger = this.editorTrigger;
-    this.editorTrigger = null;
-    this.detailRequest += 1;
-    this.creatingGroup.set(false);
-    this.selectedGroupId.set(null);
-    this.selectedGroup.set(null);
-    this.selectedGroupLoading.set(false);
-    this.selectedGroupFailure.set(null);
-    this.saveFailure.set(null);
-    this.editorPendingChanges.set(false);
-    if (restoreFocus) {
-      queueMicrotask(() => {
-        if (trigger?.isConnected) {
-          trigger.focus();
-        } else {
-          this.groupsHeading()?.nativeElement.focus();
-        }
-      });
     }
   }
 
@@ -549,7 +363,7 @@ export class GroupsPage implements OnInit {
   }
 
   private isMutationInProgress(): boolean {
-    return this.reordering() || this.saving() || this.deletingId() !== null;
+    return this.reordering() || this.deletingId() !== null;
   }
 
   private clearSearchTimer(): void {

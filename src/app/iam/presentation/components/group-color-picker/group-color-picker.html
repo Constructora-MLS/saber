@@ -1,0 +1,26 @@
+<div class="color-picker">
+  <span class="color-label" [id]="labelId">{{ label() }}</span>
+
+  <div class="color-palette" role="group" [attr.aria-labelledby]="labelId">
+    @for (preset of presets; track preset) {
+      <button
+        type="button"
+        class="color-swatch"
+        [class.is-selected]="color() === preset"
+        [style.background-color]="preset"
+        [attr.aria-pressed]="color() === preset"
+        [attr.aria-label]="'Color ' + preset"
+        (click)="select(preset)"
+      ></button>
+    }
+
+    <label class="color-custom" [class.is-selected]="customTone()">
+      <input
+        type="color"
+        [value]="color()"
+        [attr.aria-label]="'Otro color para ' + label()"
+        (input)="onPicked($event)"
+      />
+    </label>
+  </div>
+</div>

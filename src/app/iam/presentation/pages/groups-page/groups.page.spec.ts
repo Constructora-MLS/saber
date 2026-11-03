@@ -2,19 +2,14 @@ import '@angular/compiler';
 import { DestroyRef, Injector, runInInjectionContext } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { Router } from '@angular/router';
 import { of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import {
-  CreateGroupCommandService,
   DeleteGroupCommandService,
   ReorderGroupsCommandService,
-  UpdateGroupCommandService,
 } from '../../../application/command-services/group-command-services';
-import { CreateGroupCommand } from '../../../application/commands/group-commands';
-import {
-  GetGroupQueryService,
-  ListGroupsQueryService,
-} from '../../../application/query-services/group-query-services';
+import { ListGroupsQueryService } from '../../../application/query-services/group-query-services';
 import { Group } from '../../../domain/model/aggregates/group';
 import { GroupApiError } from '../../../infrastructure/errors/group-api.error';
 import { GroupId } from '../../../domain/model/value-objects/group-id';
@@ -22,6 +17,8 @@ import { GroupName } from '../../../domain/model/value-objects/group-name';
 import { GroupColor } from '../../../domain/model/value-objects/group-color';
 import { GroupPriority } from '../../../domain/model/value-objects/group-priority';
 import { restoreGroupStatus } from '../../../domain/model/value-objects/group-status';
+import { CreateGroupDialog } from '../../components/create-group-dialog/create-group-dialog';
+import { GroupRow } from '../../components/group-table/group-table';
 import { GroupsPage } from './groups.page';
 
 function deferred<T>() {
@@ -61,6 +58,10 @@ function listing(items: readonly Group[], total = items.length) {
   return { items, page: 1, totalPages: total > 0 ? 1 : 0, total };
 }
 
+function row(id: string, name: string): GroupRow {
+  return { id, name, color: '#13579B' };
+}
+
 function pageWith(
   options: {
     readonly list?: (query: {
@@ -68,37 +69,33 @@ function pageWith(
       limit?: number;
       page?: number;
     }) => Promise<ReturnType<typeof listing>>;
-    readonly create?: (command: CreateGroupCommand) => Promise<Group>;
     readonly get?: (query: { uuid: string }) => Promise<Group>;
-    readonly update?: (command: unknown) => Promise<Group>;
     readonly remove?: (command: unknown) => Promise<void>;
     readonly reorder?: (command: { groupIds: readonly string[] }) => Promise<void>;
     readonly discardConfirmation?: boolean;
+    readonly createdGroup?: Group;
   } = {},
 ) {
   const listGroups = vi.fn(options.list ?? (async () => listing([])));
-  const createGroup = vi.fn(options.create ?? (async () => first));
-  const getGroup = vi.fn(
-    options.get ?? (async () => group('4f4b1c66-9b4a-4f2f-9c1e-6a1f2b3c4d5e', 'Sin nombre', 1)),
-  );
-  const updateGroup = vi.fn(
-    options.update ?? (async () => group('4f4b1c66-9b4a-4f2f-9c1e-6a1f2b3c4d5e', 'Sin nombre', 1)),
-  );
   const deleteGroup = vi.fn(options.remove ?? (async () => undefined));
   const reorderGroups = vi.fn(options.reorder ?? (async () => undefined));
+  const navigate = vi.fn().mockResolvedValue(true);
+  const open = vi.fn((component: unknown) => ({
+    afterClosed: () =>
+      of(
+        component === CreateGroupDialog
+          ? options.createdGroup
+          : (options.discardConfirmation ?? false),
+      ),
+  }));
   const injector = Injector.create({
     providers: [
       { provide: ListGroupsQueryService, useValue: { execute: listGroups } },
-      { provide: CreateGroupCommandService, useValue: { execute: createGroup } },
-      { provide: GetGroupQueryService, useValue: { execute: getGroup } },
-      { provide: UpdateGroupCommandService, useValue: { execute: updateGroup } },
       { provide: DeleteGroupCommandService, useValue: { execute: deleteGroup } },
       { provide: ReorderGroupsCommandService, useValue: { execute: reorderGroups } },
-      {
-        provide: MatDialog,
-        useValue: { open: () => ({ afterClosed: () => of(options.discardConfirmation ?? false) }) },
-      },
+      { provide: MatDialog, useValue: { open } },
       { provide: MatSnackBar, useValue: { open: vi.fn() } },
+      { provide: Router, useValue: { navigate } },
       { provide: DestroyRef, useValue: { onDestroy: () => undefined } },
     ],
   });
@@ -106,25 +103,20 @@ function pageWith(
     loadGroups(): Promise<void>;
     onSearchChanged(value: string): void;
     clearSearch(): void;
-    openCreateGroup(event?: Event): Promise<void>;
-    createGroup(command: CreateGroupCommand): Promise<void>;
-    moveGroup(uuid: string, direction: -1 | 1): Promise<void>;
+    openCreateGroup(): void;
+    onReorder(ids: readonly string[]): Promise<void>;
+    openPermissions(row: GroupRow): void;
     groups(): readonly Group[];
+    rows(): readonly GroupRow[];
     loading(): boolean;
     loadFailure(): { title: string; message: string } | null;
-    saveFailure(): string | null;
-    editorOpen(): boolean;
-    creatingGroup(): boolean;
     canReorder(): boolean;
     actionFailure(): { title: string; message: string } | null;
-    selectedGroupId(): string | null;
-    openEditor(group: Group): Promise<void>;
-    onPendingChangesChanged(pending: boolean): void;
-    requestCloseEditor(): Promise<void>;
+    requestDeleteGroup(row: GroupRow): Promise<void>;
     deleteGroup(group: Group): Promise<void>;
     deletingId(): string | null;
   };
-  return { page, listGroups, createGroup, reorderGroups, deleteGroup };
+  return { page, listGroups, reorderGroups, deleteGroup, open, navigate };
 }
 
 const first = group('2f4b1c66-9b4a-4f2f-9c1e-6a1f2b3c4d5e', 'Administración', 1);
@@ -239,12 +231,12 @@ describe('GroupsPage', () => {
       await page.loadGroups();
       page.onSearchChanged('Personal');
       await vi.advanceTimersByTimeAsync(300);
-      await page.moveGroup(second.id, -1);
+      await page.onReorder([second.id, first.id]);
       expect(reorderGroups).not.toHaveBeenCalled();
 
       page.clearSearch();
       await vi.waitFor(() => expect(listGroups).toHaveBeenCalledTimes(3));
-      await page.moveGroup(second.id, -1);
+      await page.onReorder([second.id, first.id]);
 
       expect(reorderGroups).toHaveBeenCalledWith({ groupIds: [second.id, first.id] });
     } finally {
@@ -267,47 +259,54 @@ describe('GroupsPage', () => {
     }
   });
 
-  it('opens the integrated create form without adding permission fields', async () => {
-    const { page } = pageWith();
+  it('opens the dialog that registers a group', () => {
+    const { page, open } = pageWith();
 
-    await page.openCreateGroup();
+    page.openCreateGroup();
 
-    expect(page.editorOpen()).toBe(true);
-    expect(page.creatingGroup()).toBe(true);
+    expect(open).toHaveBeenCalledWith(CreateGroupDialog, expect.anything());
   });
 
-  it('creates a group and refreshes the current API listing', async () => {
-    const { page, listGroups, createGroup } = pageWith({
+  it('refreshes the listing when the dialog registers a group', async () => {
+    const { page, listGroups } = pageWith({
       list: async () => listing([first]),
-      create: async () => first,
+      createdGroup: first,
     });
 
     await page.loadGroups();
-    await page.openCreateGroup();
-    await page.createGroup({ name: 'Administración', color: '#13579B' });
+    page.openCreateGroup();
 
-    expect(createGroup).toHaveBeenCalledWith({ name: 'Administración', color: '#13579B' });
     expect(listGroups).toHaveBeenCalledTimes(2);
-    expect(page.editorOpen()).toBe(false);
+    expect(page.groups().map((item) => item.id)).toEqual([first.id]);
   });
 
-  it.each([
-    [409, 'group_limit_reached', '50 grupos activos'],
-    [409, 'group_conflict', 'El nombre ya está en uso'],
-    [403, 'forbidden', 'permisos o la jerarquía'],
-  ])('shows Spanish creation feedback for status %s / %s', async (status, code, message) => {
-    const { page } = pageWith({
-      create: async () => {
-        throw new GroupApiError(status, code, 'raw backend detail');
-      },
-    });
+  it('keeps the listing untouched when the dialog is dismissed', async () => {
+    const { page, listGroups } = pageWith({ list: async () => listing([first]) });
 
-    await page.openCreateGroup();
-    await page.createGroup({ name: 'Administración', color: '#13579B' });
+    await page.loadGroups();
+    page.openCreateGroup();
 
-    expect(page.saveFailure()).toContain(message);
-    expect(page.saveFailure()).not.toContain('raw backend detail');
-    expect(page.editorOpen()).toBe(true);
+    expect(listGroups).toHaveBeenCalledTimes(1);
+  });
+
+  it('takes the administrator to the permissions of a role', async () => {
+    const { page, navigate } = pageWith();
+
+    await page.loadGroups();
+    page.openPermissions(row(first.id, first.name));
+
+    expect(navigate).toHaveBeenCalledWith(['/permissions', first.id]);
+  });
+
+  it('shows the roles of the hierarchy in the table', async () => {
+    const { page } = pageWith({ list: async () => listing([first, second]) });
+
+    await page.loadGroups();
+
+    expect(page.rows()).toEqual([
+      { id: first.id, name: 'Administración', color: '#13579B' },
+      { id: second.id, name: 'Personal', color: '#13579B' },
+    ]);
   });
 
   it('reports a listing failure as an explicit state and keeps the failure in Spanish', async () => {
@@ -324,11 +323,11 @@ describe('GroupsPage', () => {
     expect(page.loadFailure()?.message).not.toContain('raw backend detail');
   });
 
-  it('sends the complete list in priority order and renumbers it after a keyboard move', async () => {
+  it('sends the complete list in priority order and renumbers it after the drag', async () => {
     const { page, reorderGroups } = pageWith({ list: async () => listing([first, second]) });
 
     await page.loadGroups();
-    await page.moveGroup(first.id, 1);
+    await page.onReorder([second.id, first.id]);
 
     expect(reorderGroups).toHaveBeenCalledWith({ groupIds: [second.id, first.id] });
     expect(page.groups().map((item) => [item.id, item.priority])).toEqual([
@@ -355,21 +354,11 @@ describe('GroupsPage', () => {
     });
 
     await page.loadGroups();
-    await page.moveGroup(first.id, 1);
+    await page.onReorder([second.id, first.id]);
 
     expect(list).toHaveBeenCalledTimes(2);
     expect(page.groups().map((item) => item.id)).toEqual([second.id, first.id]);
     expect(page.actionFailure()?.message).toContain('Se actualizó la lista');
-  });
-
-  it('keeps the editor open when a person rejects discarding pending changes', async () => {
-    const { page } = pageWith({ get: async () => first, discardConfirmation: false });
-
-    await page.openEditor(first);
-    page.onPendingChangesChanged(true);
-    await page.requestCloseEditor();
-
-    expect(page.selectedGroupId()).toBe(first.id);
   });
 
   it('does not permit reorder when the returned page is incomplete', async () => {
@@ -395,7 +384,7 @@ describe('GroupsPage', () => {
 
     expect(page.deletingId()).toBe(first.id);
     expect(page.canReorder()).toBe(false);
-    await page.moveGroup(first.id, 1);
+    await page.onReorder([second.id, first.id]);
     expect(reorderGroups).not.toHaveBeenCalled();
 
     finishDelete();
@@ -423,7 +412,7 @@ describe('GroupsPage', () => {
     expect(page.groups().map((item) => item.id)).toEqual([first.id, second.id]);
   });
 
-  it('focuses the hierarchy heading after deleting a non-selected group and reloading', async () => {
+  it('focuses the hierarchy heading after deleting a group and reloading', async () => {
     let finishDelete!: () => void;
     const removal = new Promise<void>((resolve) => {
       finishDelete = resolve;

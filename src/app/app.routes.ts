@@ -2,7 +2,7 @@ import { CanMatchFn, Routes } from '@angular/router';
 import { authGuard } from './iam/presentation/guards/auth.guard';
 
 const isAdministrationRoute: CanMatchFn = (_route, segments) =>
-  ['users', 'groups'].includes(segments[0]?.path ?? '');
+  ['users', 'groups', 'permissions'].includes(segments[0]?.path ?? '');
 
 /**
  * isPublicRoute reports whether a URL of the application belongs to a route
@@ -141,6 +141,17 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./iam/presentation/pages/groups-page/groups.page').then(
             (module) => module.GroupsPage,
+          ),
+      },
+      {
+        // The permissions of a role are configured in their own page: the
+        // administrator grants the capabilities of the platform to a role
+        // without leaving the hierarchy of the roles.
+        path: 'permissions/:groupId',
+        title: 'Permisos',
+        loadComponent: () =>
+          import('./iam/presentation/pages/permissions-page/permissions.page').then(
+            (module) => module.PermissionsPage,
           ),
       },
       { path: '**', redirectTo: '/users' },

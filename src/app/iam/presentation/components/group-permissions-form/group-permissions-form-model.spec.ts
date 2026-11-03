@@ -32,7 +32,7 @@ const originalValues = {
   ...group.permissions,
 };
 
-describe('group editor model', () => {
+describe('group permissions form model', () => {
   it('emits false for a permission switched off and omits unchanged fields', () => {
     const values = { ...originalValues, manageUsers: false };
 

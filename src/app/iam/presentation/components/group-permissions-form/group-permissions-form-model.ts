@@ -6,14 +6,13 @@ import {
   GroupPermissions,
 } from '../../../domain/model/value-objects/group-permissions';
 
-/** GroupEditorValues are the current editable values of the form. */
-export interface GroupEditorValues extends GroupPermissions {
+/** GroupPermissionsFormValues are the current editable values of the form. */
+export interface GroupPermissionsFormValues extends GroupPermissions {
   readonly name: string;
   readonly color: string;
 }
-
 /** hasPendingGroupChanges compares the form with its persisted group state. */
-export function hasPendingGroupChanges(group: Group, values: GroupEditorValues): boolean {
+export function hasPendingGroupChanges(group: Group, values: GroupPermissionsFormValues): boolean {
   return (
     values.name !== group.name ||
     values.color.toUpperCase() !== group.color.toUpperCase() ||
@@ -24,7 +23,7 @@ export function hasPendingGroupChanges(group: Group, values: GroupEditorValues):
 /** createGroupUpdateCommand emits only changed fields, retaining explicit false values. */
 export function createGroupUpdateCommand(
   group: Group,
-  values: GroupEditorValues,
+  values: GroupPermissionsFormValues,
 ): UpdateGroupCommand {
   const permissions: { -readonly [Key in GroupPermissionKey]?: boolean } = {};
   for (const key of GROUP_PERMISSION_KEYS) {

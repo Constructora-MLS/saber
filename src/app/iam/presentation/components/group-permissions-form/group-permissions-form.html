@@ -1,0 +1,102 @@
+<form class="permissions-form" [formGroup]="form" (ngSubmit)="save()">
+  <section class="field-section" aria-labelledby="group-details-heading">
+    <h3 id="group-details-heading">Datos del rol</h3>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Nombre</mat-label>
+      <input
+        #nameInput
+        matInput
+        formControlName="name"
+        type="text"
+        autocomplete="off"
+        required
+      />
+      @if (form.controls.name.hasError('required') && form.controls.name.touched) {
+        <mat-error>El nombre es obligatorio.</mat-error>
+      }
+      @if (form.controls.name.hasError('minlength') && form.controls.name.touched) {
+        <mat-error>El nombre debe tener al menos {{ nameMinLength }} caracteres.</mat-error>
+      }
+      @if (form.controls.name.hasError('maxlength') && form.controls.name.touched) {
+        <mat-error>El nombre no puede superar {{ nameMaxLength }} caracteres.</mat-error>
+      }
+      @if (form.controls.name.hasError('controlCharacters') && form.controls.name.touched) {
+        <mat-error>El nombre contiene caracteres no permitidos.</mat-error>
+      }
+      <mat-hint>Entre {{ nameMinLength }} y {{ nameMaxLength }} caracteres.</mat-hint>
+    </mat-form-field>
+
+    <app-group-color-picker [color]="color()" (colorChange)="selectColor($event)" />
+  </section>
+
+  <fieldset class="permission-section">
+    <legend class="permission-legend">
+      <span>Permisos</span>
+      <span class="permission-counter">
+        {{ activeCapabilities() }} de {{ capabilityOptions.length }} capacidades
+      </span>
+    </legend>
+
+    <div class="permission-full" [class.is-active]="fullAccess()">
+      <span class="permission-icon" aria-hidden="true">
+        <mat-icon>{{ fullAccessOption.icon }}</mat-icon>
+      </span>
+      <div class="permission-copy">
+        <span class="permission-label">{{ fullAccessOption.label }}</span>
+        <span class="permission-description">{{ fullAccessOption.description }}</span>
+      </div>
+      <mat-slide-toggle
+        formControlName="administrator"
+        [attr.aria-label]="fullAccessOption.label"
+      />
+    </div>
+
+    <div class="permission-group">
+      <p class="permission-group-title">Capacidades</p>
+      <div class="permission-list">
+        @for (permission of capabilityOptions; track permission.key) {
+          <div class="permission-option">
+            <span class="permission-icon" aria-hidden="true">
+              <mat-icon>{{ permission.icon }}</mat-icon>
+            </span>
+            <div class="permission-copy">
+              <span class="permission-label">{{ permission.label }}</span>
+              <span class="permission-description">{{ permission.description }}</span>
+            </div>
+            <mat-slide-toggle
+              [formControlName]="permission.key"
+              [attr.aria-label]="permission.label"
+            />
+          </div>
+        }
+      </div>
+    </div>
+
+    @if (fullAccess()) {
+      <p class="permission-note">
+        El acceso total ya incluye todas las capacidades, así que no se editan por separado.
+      </p>
+    }
+  </fieldset>
+
+  @if (saveFailure(); as failure) {
+    <p class="form-error" role="alert">{{ failure }}</p>
+  }
+
+  @if (hasPendingChanges()) {
+    <p class="pending-note" role="status">Hay cambios sin guardar.</p>
+  }
+
+  <footer class="form-actions">
+    <button matButton type="button" [disabled]="busy()" (click)="cancelRequested.emit()">
+      Cancelar
+    </button>
+    <button matButton="filled" type="submit" [disabled]="busy() || form.invalid || !hasPendingChanges()">
+      @if (busy()) {
+        Guardando…
+      } @else {
+        Guardar cambios
+      }
+    </button>
+  </footer>
+</form>

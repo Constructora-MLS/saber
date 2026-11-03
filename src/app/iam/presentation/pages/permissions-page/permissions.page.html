@@ -1,0 +1,53 @@
+<section class="page" aria-labelledby="permissions-page-title">
+  <header class="page-header">
+    <button
+      matIconButton
+      type="button"
+      class="back"
+      aria-label="Volver a los roles"
+      [disabled]="saving()"
+      (click)="cancel()"
+    >
+      <mat-icon aria-hidden="true">arrow_back</mat-icon>
+    </button>
+    <div class="page-heading">
+      <p class="eyebrow">Administración de la organización</p>
+      <h1 id="permissions-page-title" class="page-title">Permisos</h1>
+      <p class="page-subtitle">
+        @if (group(); as currentGroup) {
+          Configura los permisos que el rol {{ currentGroup.name }} otorga.
+        } @else {
+          Elige un rol para configurar sus permisos.
+        }
+      </p>
+    </div>
+  </header>
+
+  <section class="panel" aria-labelledby="permissions-panel-title">
+    <h2 id="permissions-panel-title" class="sr-only">Permisos del rol</h2>
+
+    @if (loading()) {
+      <div class="panel-state" role="status">
+        <mat-progress-bar mode="indeterminate" aria-label="Cargando los permisos del rol" />
+        <p>Cargando los permisos del rol…</p>
+      </div>
+    } @else if (loadFailure(); as failure) {
+      <div class="panel-state" role="alert">
+        <p>{{ failure }}</p>
+        <button matButton type="button" (click)="retry()">
+          <mat-icon aria-hidden="true">refresh</mat-icon>
+          Reintentar
+        </button>
+      </div>
+    } @else if (group(); as currentGroup) {
+      <app-group-permissions-form
+        [group]="currentGroup"
+        [saveFailure]="saveFailure()"
+        [busy]="saving()"
+        (saveRequested)="save($event)"
+        (cancelRequested)="cancel()"
+        (pendingChangesChange)="onPendingChangesChanged($event)"
+      />
+    }
+  </section>
+</section>

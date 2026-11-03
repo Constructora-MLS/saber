@@ -11,234 +11,137 @@
     <button
       matButton="filled"
       type="button"
-      [disabled]="reordering() || saving() || deletingId() !== null"
-      (click)="openCreateGroup($event)"
+      [disabled]="reordering() || deletingId() !== null"
+      (click)="openCreateGroup()"
     >
       <mat-icon aria-hidden="true">add</mat-icon>
       Crear grupo
     </button>
   </header>
 
-  <div class="workspace" [class.has-editor]="editorOpen()">
-    <section class="group-panel" aria-labelledby="groups-list-title">
-      <header class="panel-header">
-        <div>
-          <h2 id="groups-list-title" #groupsHeading tabindex="-1">Roles</h2>
-          <p class="panel-hint">Organiza los permisos de acceso mediante grupos.</p>
-        </div>
-      </header>
-
-      <div class="filters">
-        <mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic">
-          <mat-label>Buscar grupos por nombre</mat-label>
-          <input
-            matInput
-            type="search"
-            autocomplete="off"
-            placeholder="Nombre del grupo…"
-            [ngModel]="searchTerm()"
-            (ngModelChange)="onSearchChanged($event)"
-          />
-          @if (searchTerm()) {
-            <button
-              matIconButton
-              matSuffix
-              type="button"
-              aria-label="Limpiar la búsqueda"
-              (click)="clearSearch()"
-            >
-              <mat-icon aria-hidden="true">close</mat-icon>
-            </button>
-          }
-        </mat-form-field>
+  <section class="group-panel" aria-labelledby="groups-list-title">
+    <header class="panel-header">
+      <div>
+        <h2 id="groups-list-title" #groupsHeading tabindex="-1">Roles</h2>
+        <p class="panel-hint">Organiza los permisos de acceso mediante grupos.</p>
       </div>
+    </header>
 
-      @if (loading() && groups().length > 0) {
-        <mat-progress-bar mode="indeterminate" aria-label="Actualizando grupos" />
-      }
-
-      @if (loadFailure() && groups().length > 0) {
-        <div class="inline-error" role="alert">
-          <div>
-            <strong>{{ loadFailure()?.title }}</strong>
-            <p>{{ loadFailure()?.message }}</p>
-          </div>
-          <button matButton type="button" (click)="retry()">Reintentar</button>
-        </div>
-      }
-
-      @if (actionFailure(); as failure) {
-        <div class="inline-error" role="alert">
-          <div>
-            <strong>{{ failure.title }}</strong>
-            <p>{{ failure.message }}</p>
-          </div>
+    <div class="filters">
+      <mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic">
+        <mat-label>Buscar grupos por nombre</mat-label>
+        <input
+          matInput
+          type="search"
+          autocomplete="off"
+          placeholder="Nombre del grupo…"
+          [ngModel]="searchTerm()"
+          (ngModelChange)="onSearchChanged($event)"
+        />
+        @if (searchTerm()) {
           <button
             matIconButton
+            matSuffix
             type="button"
-            aria-label="Cerrar aviso"
-            (click)="dismissActionFailure()"
+            aria-label="Limpiar la búsqueda"
+            (click)="clearSearch()"
           >
             <mat-icon aria-hidden="true">close</mat-icon>
           </button>
-        </div>
-      }
-
-      @if (!loading() && loadFailure() && groups().length === 0) {
-        <app-table-state
-          kind="error"
-          [title]="loadFailure()?.title ?? 'No se pudieron cargar los grupos'"
-          [message]="loadFailure()?.message ?? 'Inténtalo nuevamente.'"
-          actionLabel="Reintentar"
-          actionIcon="refresh"
-          (actionRequested)="retry()"
-        />
-      } @else if (loading() && groups().length === 0) {
-        <div class="list-state" role="status">
-          <mat-progress-bar mode="indeterminate" aria-label="Cargando grupos" />
-          <p>Cargando grupos…</p>
-        </div>
-      } @else if (searchValidationMessage(); as validationMessage) {
-        <app-table-state
-          kind="empty"
-          icon="search"
-          title="Búsqueda no válida"
-          [message]="validationMessage"
-        />
-      } @else if (groups().length === 0) {
-        <app-table-state
-          kind="empty"
-          [icon]="filtered() ? 'search_off' : 'group_off'"
-          [title]="filtered() ? 'Ningún grupo coincide con la búsqueda' : 'Todavía no hay grupos'"
-          [message]="filtered() ? 'Prueba con otro nombre.' : 'Crea un grupo para organizar el acceso a la plataforma.'"
-          [actionLabel]="filtered() ? null : 'Crear grupo'"
-          actionIcon="add"
-          (actionRequested)="openCreateGroup()"
-        />
-      } @else {
-        @if (filtered()) {
-          <p class="reorder-notice" role="status">
-            Limpia la búsqueda para cambiar el orden de toda la jerarquía.
-          </p>
-        } @else if (!listComplete() && !loadFailure()) {
-          <p class="reorder-notice" role="status">
-            La respuesta no incluye todos los grupos. Actualiza la lista antes de reordenar.
-          </p>
         }
+      </mat-form-field>
+    </div>
 
-        <ol
-          class="groups-list"
-          cdkDropList
-          [cdkDropListData]="groups()"
-          [cdkDropListDisabled]="!canReorder()"
-          aria-labelledby="groups-list-title"
-          (cdkDropListDropped)="onDrop($event)"
-        >
-          @for (group of groups(); track group.id; let index = $index) {
-            <li class="group-row" cdkDrag [cdkDragData]="group" [cdkDragDisabled]="!canReorder()">
-              <span class="priority-number">
-                {{ group.priority }}
-              </span>
-              <span class="drag-handle" cdkDragHandle aria-hidden="true">
-                <mat-icon>drag_indicator</mat-icon>
-              </span>
-              <span
-                class="color-swatch"
-                [style.background-color]="group.color"
-                aria-hidden="true"
-              ></span>
-              <div class="group-details">
-                <h3>{{ group.name }}</h3>
-                <span class="group-color-label">{{ group.color }}</span>
-              </div>
-              <div
-                class="reorder-actions"
-                role="group"
-                [attr.aria-label]="'Cambiar prioridad de ' + group.name"
-              >
-                <button
-                  matIconButton
-                  type="button"
-                  [disabled]="!canReorder() || index === 0"
-                  [attr.aria-label]="'Subir ' + group.name + ' de prioridad'"
-                  (click)="moveGroup(group.id, -1)"
-                >
-                  <mat-icon aria-hidden="true">arrow_upward</mat-icon>
-                </button>
-                <button
-                  matIconButton
-                  type="button"
-                  [disabled]="!canReorder() || index === groups().length - 1"
-                  [attr.aria-label]="'Bajar ' + group.name + ' de prioridad'"
-                  (click)="moveGroup(group.id, 1)"
-                >
-                  <mat-icon aria-hidden="true">arrow_downward</mat-icon>
-                </button>
-              </div>
-              <div class="row-actions">
-                <button
-                  matIconButton
-                  type="button"
-                  [disabled]="reordering() || saving() || deletingId() !== null"
-                  [attr.aria-label]="'Editar ' + group.name"
-                  (click)="openEditor(group, $event)"
-                >
-                  <mat-icon aria-hidden="true">edit</mat-icon>
-                </button>
-                <button
-                  matIconButton
-                  type="button"
-                  [disabled]="reordering() || saving() || deletingId() !== null"
-                  [attr.aria-label]="'Eliminar ' + group.name"
-                  (click)="requestDeleteGroup(group)"
-                >
-                  <mat-icon aria-hidden="true">delete</mat-icon>
-                </button>
-              </div>
-            </li>
-          }
-        </ol>
-      }
-
-      <footer class="panel-footer">
-        @if (filtered()) {
-          <p>Reordenar está deshabilitado mientras la búsqueda está activa.</p>
-        } @else if (groups().length > 1 && !listComplete() && !loading()) {
-          <p>Reordenar está deshabilitado porque la lista puede estar incompleta.</p>
-        } @else if (groups().length > 1) {
-          <p>Arrastra un grupo o usa los botones de prioridad para moverlo.</p>
-        } @else if (groups().length === 1) {
-          <p>El orden de este grupo no se puede cambiar mientras está solo.</p>
-        }
-        @if (groups().length > 0) {
-          <button
-            matButton
-            type="button"
-            [disabled]="loading() || reordering() || saving() || deletingId() !== null"
-            (click)="retry()"
-          >
-            <mat-icon aria-hidden="true">refresh</mat-icon>
-            Actualizar lista
-          </button>
-        }
-      </footer>
-    </section>
-
-    @if (editorOpen()) {
-      <app-group-editor
-        class="editor-sidebar"
-        [group]="selectedGroup()"
-        [creating]="creatingGroup()"
-        [loading]="selectedGroupLoading()"
-        [loadFailure]="selectedGroupFailure()"
-        [saveFailure]="saveFailure()"
-        [busy]="saving()"
-        (createRequested)="createGroup($event)"
-        (saveRequested)="saveGroup($event)"
-        (closeRequested)="requestCloseEditor()"
-        (pendingChangesChange)="onPendingChangesChanged($event)"
-        (retryRequested)="retryGroupDetails()"
-      />
+    @if (loading() && groups().length > 0) {
+      <mat-progress-bar mode="indeterminate" aria-label="Actualizando grupos" />
     }
-  </div>
+
+    @if (loadFailure() && groups().length > 0) {
+      <div class="inline-error" role="alert">
+        <div>
+          <strong>{{ loadFailure()?.title }}</strong>
+          <p>{{ loadFailure()?.message }}</p>
+        </div>
+        <button matButton type="button" (click)="retry()">Reintentar</button>
+      </div>
+    }
+
+    @if (actionFailure(); as failure) {
+      <div class="inline-error" role="alert">
+        <div>
+          <strong>{{ failure.title }}</strong>
+          <p>{{ failure.message }}</p>
+        </div>
+        <button
+          matIconButton
+          type="button"
+          aria-label="Cerrar aviso"
+          (click)="dismissActionFailure()"
+        >
+          <mat-icon aria-hidden="true">close</mat-icon>
+        </button>
+      </div>
+    }
+
+    @if (!loading() && loadFailure() && groups().length === 0) {
+      <app-table-state
+        kind="error"
+        [title]="loadFailure()?.title ?? 'No se pudieron cargar los grupos'"
+        [message]="loadFailure()?.message ?? 'Inténtalo nuevamente.'"
+        actionLabel="Reintentar"
+        actionIcon="refresh"
+        (actionRequested)="retry()"
+      />
+    } @else if (loading() && groups().length === 0) {
+      <div class="list-state" role="status">
+        <mat-progress-bar mode="indeterminate" aria-label="Cargando grupos" />
+        <p>Cargando grupos…</p>
+      </div>
+    } @else if (searchValidationMessage(); as validationMessage) {
+      <app-table-state
+        kind="empty"
+        icon="search"
+        title="Búsqueda no válida"
+        [message]="validationMessage"
+      />
+    } @else if (groups().length === 0) {
+      <app-table-state
+        kind="empty"
+        [icon]="filtered() ? 'search_off' : 'group_off'"
+        [title]="filtered() ? 'Ningún grupo coincide con la búsqueda' : 'Todavía no hay grupos'"
+        [message]="filtered() ? 'Prueba con otro nombre.' : 'Crea un grupo para organizar el acceso a la plataforma.'"
+        [actionLabel]="filtered() ? null : 'Crear grupo'"
+        actionIcon="add"
+        (actionRequested)="openCreateGroup()"
+      />
+    } @else {
+      @if (filtered()) {
+        <p class="reorder-notice" role="status">
+          Limpia la búsqueda para cambiar el orden de toda la jerarquía.
+        </p>
+      } @else if (!listComplete() && !loadFailure()) {
+        <p class="reorder-notice" role="status">
+          La respuesta no incluye todos los grupos. Actualiza la lista antes de reordenar.
+        </p>
+      }
+    }
+
+    <app-group-table
+      [rows]="rows()"
+      [loading]="loading()"
+      [errorTitle]="loadFailure()?.title ?? null"
+      [errorMessage]="loadFailure()?.message ?? null"
+      [emptyTitle]="emptyTitle()"
+      [emptyMessage]="emptyMessage()"
+      [emptyIcon]="emptyIcon()"
+      [emptyActionLabel]="emptyActionLabel()"
+      [canReorder]="canReorder()"
+      [busy]="reordering() || deletingId() !== null"
+      (editRequested)="openPermissions($event)"
+      (deleteRequested)="requestDeleteGroup($event)"
+      (reorderRequested)="onReorder($event)"
+      (retryRequested)="retry()"
+      (createRequested)="openCreateGroup()"
+    />
+  </section>
 </section>
