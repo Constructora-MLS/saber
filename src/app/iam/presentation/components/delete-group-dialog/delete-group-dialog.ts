@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
@@ -21,22 +21,14 @@ export class DeleteGroupDialog {
 
   /** The group that the person chose to delete. */
   protected readonly data = inject<DeletableGroup>(MAT_DIALOG_DATA);
-  protected readonly confirmed = signal(false);
 
   /** cancel closes the confirmation without deleting the group. */
   protected cancel(): void {
     this.dialogRef.close(false);
   }
 
-  /** onConfirmationChanged records explicit consent to the deletion. */
-  protected onConfirmationChanged(event: Event): void {
-    this.confirmed.set((event.target as HTMLInputElement).checked);
-  }
-
   /** confirm returns the deletion intention to the page. */
   protected confirm(): void {
-    if (this.confirmed()) {
-      this.dialogRef.close(true);
-    }
+    this.dialogRef.close(true);
   }
 }

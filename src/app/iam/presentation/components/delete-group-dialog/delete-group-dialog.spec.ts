@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { DeleteGroupDialog } from './delete-group-dialog';
 
 describe('DeleteGroupDialog', () => {
-  it('requires explicit confirmation before returning the delete intention', () => {
+  it('returns the deletion intention when the group is deleted', () => {
     const close = vi.fn();
     const injector = Injector.create({
       providers: [
@@ -14,18 +14,30 @@ describe('DeleteGroupDialog', () => {
       ],
     });
     const dialog = runInInjectionContext(injector, () => new DeleteGroupDialog()) as unknown as {
-      confirmed(): boolean;
-      onConfirmationChanged(event: Event): void;
       confirm(): void;
+      cancel(): void;
     };
 
     dialog.confirm();
-    expect(close).not.toHaveBeenCalled();
-
-    dialog.onConfirmationChanged({ target: { checked: true } } as unknown as Event);
-    expect(dialog.confirmed()).toBe(true);
-    dialog.confirm();
 
     expect(close).toHaveBeenCalledWith(true);
+  });
+
+  it('closes the dialog without deleting the group when it is cancelled', () => {
+    const close = vi.fn();
+    const injector = Injector.create({
+      providers: [
+        { provide: MatDialogRef, useValue: { close } },
+        { provide: MAT_DIALOG_DATA, useValue: { name: 'Supervisión' } },
+      ],
+    });
+    const dialog = runInInjectionContext(injector, () => new DeleteGroupDialog()) as unknown as {
+      confirm(): void;
+      cancel(): void;
+    };
+
+    dialog.cancel();
+
+    expect(close).toHaveBeenCalledWith(false);
   });
 });

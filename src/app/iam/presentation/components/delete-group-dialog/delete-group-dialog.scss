@@ -1,19 +1,5 @@
-p {
-  line-height: 1.55;
-}
+@use '../group-dialog';
 
-.confirmation {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.65rem;
-  margin-top: 1rem;
-  line-height: 1.45;
-}
-
-.confirmation input {
-  flex: none;
-  width: 1.1rem;
-  height: 1.1rem;
-  margin: 0.15rem 0 0;
-  accent-color: var(--mat-sys-primary);
+:host {
+  display: block;
 }

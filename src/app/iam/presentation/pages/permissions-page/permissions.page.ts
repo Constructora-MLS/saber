@@ -1,12 +1,12 @@
-import { Component, effect, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { Component, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router } from '@angular/router';
-import { firstValueFrom, map } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import { UpdateGroupCommandService } from '../../../application/command-services/group-command-services';
 import { UpdateGroupCommand } from '../../../application/commands/group-commands';
 import { GetGroupQueryService } from '../../../application/query-services/group-query-services';
@@ -56,27 +56,26 @@ export class PermissionsPage {
   protected readonly pendingChanges = signal(false);
 
   /** The identifier of the role that the route carries. */
-  private readonly groupId = toSignal(
-    this.route.paramMap.pipe(map((params) => params.get('groupId'))),
-    { initialValue: null },
-  );
+  private currentGroupId: string | null = null;
 
   private request = 0;
 
   constructor() {
-    effect(() => {
-      const id = this.groupId();
-      if (id !== null) {
-        void this.loadGroup(id);
+    // The route carries the role that the page configures: the page reads
+    // it again when the administrator opens another role.
+    this.route.paramMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+      const uuid = params.get('groupId');
+      this.currentGroupId = uuid;
+      if (uuid !== null) {
+        void this.loadGroup(uuid);
       }
     });
   }
 
   /** retry reads the role again. */
   protected retry(): void {
-    const id = this.groupId();
-    if (id !== null) {
-      void this.loadGroup(id);
+    if (this.currentGroupId !== null) {
+      void this.loadGroup(this.currentGroupId);
     }
   }
 

@@ -101,7 +101,7 @@ describe('PermissionsPage', () => {
 
     await vi.waitFor(() => expect(page.loading()).toBe(false));
 
-    expect(page.loadFailure()).toContain('El servicio de grupos no está disponible');
+    expect(page.loadFailure()).toContain('El servidor no está disponible');
     expect(page.loadFailure()).not.toContain('raw backend detail');
 
     page.retry();

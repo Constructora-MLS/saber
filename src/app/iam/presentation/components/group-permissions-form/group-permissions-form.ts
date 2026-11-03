@@ -13,7 +13,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { UpdateGroupCommand } from '../../../application/commands/group-commands';
@@ -28,8 +27,8 @@ import {
 } from '../../../domain/model/value-objects/group-name';
 import { GroupColorPicker } from '../group-color-picker/group-color-picker';
 import {
-  FULL_ACCESS_PERMISSION,
   GROUP_CAPABILITY_PERMISSIONS,
+  GROUP_PERMISSION_OPTIONS,
   GroupPermissionOption,
 } from '../group-form/group-permission-options';
 import { groupNameLengthValidator } from '../group-form/group-name-validator';
@@ -46,7 +45,6 @@ import { groupNameLengthValidator } from '../group-form/group-name-validator';
     GroupColorPicker,
     MatButtonModule,
     MatFormFieldModule,
-    MatIconModule,
     MatInputModule,
     MatSlideToggleModule,
     ReactiveFormsModule,
@@ -72,9 +70,9 @@ export class GroupPermissionsForm {
   /** The form has a net change from the role that the platform published. */
   readonly pendingChangesChange = output<boolean>();
 
-  /** The permission that grants the access to every resource of the platform. */
-  protected readonly fullAccessOption: GroupPermissionOption = FULL_ACCESS_PERMISSION;
-  /** The capabilities that the role grants, each one with its own symbol. */
+  /** All the permissions of the role, in the order they are offered. */
+  protected readonly permissionOptions: readonly GroupPermissionOption[] = GROUP_PERMISSION_OPTIONS;
+  /** The capabilities that the role grants, each one with its own name. */
   protected readonly capabilityOptions: readonly GroupPermissionOption[] =
     GROUP_CAPABILITY_PERMISSIONS;
 
@@ -105,11 +103,6 @@ export class GroupPermissionsForm {
   protected readonly fullAccess = computed(() => {
     this.formRevision();
     return this.form.controls.administrator.value;
-  });
-  /** The capabilities that the role grants right now. */
-  protected readonly activeCapabilities = computed(() => {
-    this.formRevision();
-    return this.capabilityOptions.filter((option) => this.form.controls[option.key].value).length;
   });
   /** Whether any current value differs from the published role. */
   protected readonly hasPendingChanges = computed(() => {

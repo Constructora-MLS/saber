@@ -8,65 +8,62 @@ export interface GroupPermissionOption {
   readonly label: string;
   /** The consequence of granting the permission. */
   readonly description: string;
-  /** The symbol that represents the permission. */
-  readonly icon: string;
 }
-
-/**
- * FULL_ACCESS_PERMISSION is the advanced permission of the platform.
- *
- * The administrator is not a seventh functional permission: it is the
- * permission that grants access to every resource and every functionality,
- * so it is presented apart from the capabilities it makes unnecessary.
- */
-export const FULL_ACCESS_PERMISSION: GroupPermissionOption = {
-  key: 'administrator',
-  label: 'Administrador',
-  description: 'Acceso a todos los recursos y funcionalidades de la plataforma.',
-  icon: 'shield',
-};
 
 /**
  * GROUP_CAPABILITY_PERMISSIONS are the capabilities that a group grants.
  *
  * The capabilities are independent from each other, so each one is offered
- * with its own consequence and its own symbol.
+ * with its own consequence.
  */
 export const GROUP_CAPABILITY_PERMISSIONS: readonly GroupPermissionOption[] = [
   {
     key: 'manageEmployees',
-    label: 'Administrar personal',
-    description: 'Gestionar los registros de personal.',
-    icon: 'badge',
+    label: 'Gestionar personal',
+    description: 'Registra y edita los datos del personal.',
   },
   {
     key: 'manageAssignments',
-    label: 'Administrar asignaciones',
-    description: 'Gestionar las asignaciones de trabajo.',
-    icon: 'assignment',
+    label: 'Asignar personal',
+    description: 'Asigna el personal a las obras y a los proyectos.',
   },
   {
     key: 'manageCatalog',
-    label: 'Administrar catálogos',
-    description: 'Gestionar los catálogos de la plataforma.',
-    icon: 'inventory_2',
+    label: 'Gestionar catálogos',
+    description: 'Mantén los catálogos de regímenes, posiciones y servicios.',
   },
   {
     key: 'manageCertificates',
-    label: 'Administrar certificados',
-    description: 'Gestionar los certificados de trabajo.',
-    icon: 'workspace_premium',
+    label: 'Emitir certificados',
+    description: 'Genera y anula los certificados de trabajo.',
   },
   {
     key: 'manageUsers',
-    label: 'Administrar usuarios',
-    description: 'Gestionar las invitaciones y las cuentas.',
-    icon: 'manage_accounts',
+    label: 'Gestionar usuarios',
+    description: 'Invita a las personas y administra sus cuentas.',
   },
   {
     key: 'managePermissionsGroups',
-    label: 'Administrar permisos y grupos',
-    description: 'Gestionar grupos, permisos y membresías.',
-    icon: 'admin_panel_settings',
+    label: 'Gestionar permisos',
+    description: 'Crea los roles y concede sus permisos.',
   },
+];
+
+/**
+ * FULL_ACCESS_PERMISSION is the advanced permission of the platform.
+ *
+ * The administrator is not a seventh capability: it is the permission that
+ * grants access to every resource and every functionality, so it closes the
+ * list of the permissions of the role.
+ */
+export const FULL_ACCESS_PERMISSION: GroupPermissionOption = {
+  key: 'administrator',
+  label: 'Administrador',
+  description: 'Acceso a todos los recursos y funcionalidades de la plataforma.',
+};
+
+/** GROUP_PERMISSION_OPTIONS are all the permissions of a role, in order. */
+export const GROUP_PERMISSION_OPTIONS: readonly GroupPermissionOption[] = [
+  ...GROUP_CAPABILITY_PERMISSIONS,
+  FULL_ACCESS_PERMISSION,
 ];

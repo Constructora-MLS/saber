@@ -21,7 +21,6 @@ import {
   DeleteGroupDialog,
 } from '../../components/delete-group-dialog/delete-group-dialog';
 import { GroupRow, GroupTable } from '../../components/group-table/group-table';
-import { TableState } from '../../../../shared/presentation/components/table-state/table-state';
 import { describeGroupFailure, GroupFailureMessage, isGroupConflict } from '../group-failures';
 
 /** The API page size covers the backend's complete active-group limit. */
@@ -43,7 +42,6 @@ const MAX_SEARCH_LENGTH = 120;
     MatInputModule,
     MatProgressBarModule,
     MatSnackBarModule,
-    TableState,
   ],
   selector: 'app-groups-page',
   styleUrl: './groups.page.scss',

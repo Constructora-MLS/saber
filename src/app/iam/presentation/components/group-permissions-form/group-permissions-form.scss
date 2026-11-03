@@ -20,111 +20,36 @@
   width: 100%;
 }
 
-/* The legend carries the name of the section and the count of the
-   capabilities that the role grants. */
+.permission-section {
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+/* The legend names the section of the permissions of the role. */
 .permission-legend {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  width: 100%;
   padding: 0;
   font-size: 1rem;
   font-weight: 700;
 }
 
-.permission-counter {
-  padding: 0.2rem 0.6rem;
-  border-radius: 2rem;
-  background: var(--mat-sys-surface-container-high);
-  color: var(--app-text-muted);
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  white-space: nowrap;
-}
-
-/* The access to every resource is apart from the capabilities: it is not
-   a seventh capability, it is the permission that makes them
-   unnecessary. */
-.permission-full {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 0.85rem;
-  padding: 0.9rem 1rem;
-  border: 1px solid var(--app-outline);
-  border-radius: 1rem;
-  background: var(--mat-sys-surface-container-low);
-  transition:
-    background-color var(--app-motion-duration-short) var(--app-motion-easing-emphasized),
-    border-color var(--app-motion-duration-short) var(--app-motion-easing-emphasized);
-}
-
-.permission-full.is-active {
-  border-color: color-mix(in srgb, var(--mat-sys-primary) 45%, transparent);
-  background: var(--mat-sys-primary-container);
-  color: var(--mat-sys-on-primary-container);
-}
-
-.permission-group {
-  display: grid;
-  gap: 0.5rem;
-}
-
-.permission-group-title {
-  margin: 0;
-  color: var(--app-text-muted);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
+/* The permissions are a plain list: every permission of the role is read
+   the same way, from the capabilities to the access to every resource. */
 .permission-list {
   display: grid;
-  border: 1px solid var(--app-outline);
-  border-radius: 1rem;
-  overflow: hidden;
 }
 
 .permission-option {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.85rem;
-  padding: 0.8rem 1rem;
-  background: var(--app-surface);
+  padding: 0.8rem 0.25rem;
 }
 
 .permission-option + .permission-option {
   border-top: 1px solid var(--rrhh-divider);
-}
-
-.permission-icon {
-  display: grid;
-  width: 2.25rem;
-  height: 2.25rem;
-  place-items: center;
-  border-radius: 0.75rem;
-  background: var(--mat-sys-surface-container-high);
-  color: var(--mat-sys-on-surface-variant);
-}
-
-.permission-full .permission-icon {
-  background: var(--mat-sys-surface);
-  color: var(--mat-sys-primary);
-}
-
-.permission-full.is-active .permission-icon {
-  background: color-mix(in srgb, var(--mat-sys-primary) 18%, transparent);
-  color: var(--mat-sys-on-primary-container);
-}
-
-.permission-icon mat-icon {
-  font-size: 1.2rem;
-  width: 1.2rem;
-  height: 1.2rem;
 }
 
 .permission-copy {
@@ -142,10 +67,6 @@
   color: var(--app-text-muted);
   font-size: 0.8rem;
   line-height: 1.4;
-}
-
-.permission-full.is-active .permission-description {
-  color: color-mix(in srgb, var(--mat-sys-on-primary-container) 78%, transparent);
 }
 
 /* The note explains why the capabilities are not editable while the role

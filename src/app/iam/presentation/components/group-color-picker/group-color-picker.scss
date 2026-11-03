@@ -8,6 +8,11 @@
 .color-picker {
   display: grid;
   gap: 0.6rem;
+  /* The ring of the selected tone and the scale of the hover are drawn
+     outside the swatch, so the palette reserves the room that they need.
+     Without it, the container that scrolls the dialog cuts them and shows a
+     scrollbar that the worker never asked for. */
+  padding-bottom: 0.4rem;
 }
 
 .color-label {

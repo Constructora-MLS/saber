@@ -30,46 +30,21 @@
   </section>
 
   <fieldset class="permission-section">
-    <legend class="permission-legend">
-      <span>Permisos</span>
-      <span class="permission-counter">
-        {{ activeCapabilities() }} de {{ capabilityOptions.length }} capacidades
-      </span>
-    </legend>
+    <legend class="permission-legend">Permisos</legend>
 
-    <div class="permission-full" [class.is-active]="fullAccess()">
-      <span class="permission-icon" aria-hidden="true">
-        <mat-icon>{{ fullAccessOption.icon }}</mat-icon>
-      </span>
-      <div class="permission-copy">
-        <span class="permission-label">{{ fullAccessOption.label }}</span>
-        <span class="permission-description">{{ fullAccessOption.description }}</span>
-      </div>
-      <mat-slide-toggle
-        formControlName="administrator"
-        [attr.aria-label]="fullAccessOption.label"
-      />
-    </div>
-
-    <div class="permission-group">
-      <p class="permission-group-title">Capacidades</p>
-      <div class="permission-list">
-        @for (permission of capabilityOptions; track permission.key) {
-          <div class="permission-option">
-            <span class="permission-icon" aria-hidden="true">
-              <mat-icon>{{ permission.icon }}</mat-icon>
-            </span>
-            <div class="permission-copy">
-              <span class="permission-label">{{ permission.label }}</span>
-              <span class="permission-description">{{ permission.description }}</span>
-            </div>
-            <mat-slide-toggle
-              [formControlName]="permission.key"
-              [attr.aria-label]="permission.label"
-            />
+    <div class="permission-list">
+      @for (permission of permissionOptions; track permission.key) {
+        <div class="permission-option">
+          <div class="permission-copy">
+            <span class="permission-label">{{ permission.label }}</span>
+            <span class="permission-description">{{ permission.description }}</span>
           </div>
-        }
-      </div>
+          <mat-slide-toggle
+            [formControlName]="permission.key"
+            [attr.aria-label]="permission.label"
+          />
+        </div>
+      }
     </div>
 
     @if (fullAccess()) {
