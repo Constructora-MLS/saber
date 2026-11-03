@@ -1,5 +1,5 @@
 <div class="table-scroll">
-  <table class="catalog-table">
+  <table class="platform-table catalog-table">
     <caption class="sr-only">
       {{
         caption()
@@ -54,9 +54,10 @@
           <tr>
             @for (column of columns(); track column.header) {
               @if (column.kind === 'name') {
-                <th scope="row" class="cell-name">{{ row.name }}</th>
+                <th scope="row" class="cell-name cell-title">{{ row.name }}</th>
               } @else {
                 <td>
+                  <span class="cell-label" aria-hidden="true">{{ column.header }}</span>
                   @switch (column.kind) {
                     @case ('code') {
                       <span class="cell-code">{{ row.code ?? '—' }}</span>

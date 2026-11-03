@@ -1,5 +1,5 @@
 <div class="table-scroll">
-  <table class="user-table">
+  <table class="platform-table user-table">
     <caption class="sr-only">
       {{
         caption()
@@ -52,7 +52,7 @@
       } @else {
         @for (row of rows(); track row.id) {
           <tr>
-            <th scope="row" class="cell-name">
+            <th scope="row" class="cell-name cell-title">
               <span class="cell-label" aria-hidden="true">Usuario</span>
               @if (row.name) {
                 <span class="cell-person">{{ row.name }}</span>

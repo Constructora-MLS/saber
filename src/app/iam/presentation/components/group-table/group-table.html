@@ -1,5 +1,5 @@
 <div class="table-scroll">
-  <table class="group-table">
+  <table class="platform-table group-table">
     <caption class="sr-only">
       {{ caption() }}
     </caption>
@@ -57,7 +57,7 @@
             <ng-template cdkDragPreview>
               <div class="drag-preview">{{ row.name }}</div>
             </ng-template>
-            <th scope="row" class="cell-name">
+            <th scope="row" class="cell-name cell-title">
               <span class="cell-label" aria-hidden="true">Nombre</span>
               <span class="drag-handle" cdkDragHandle aria-hidden="true">
                 <mat-icon>drag_indicator</mat-icon>
