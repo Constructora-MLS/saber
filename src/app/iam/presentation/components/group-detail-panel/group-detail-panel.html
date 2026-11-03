@@ -1,0 +1,58 @@
+<aside class="panel" aria-labelledby="group-detail-title">
+  <header class="panel-header">
+    <div class="panel-heading">
+      <p class="eyebrow">Configuración</p>
+      <h2 id="group-detail-title">{{ group().name }}</h2>
+    </div>
+    <button
+      matIconButton
+      type="button"
+      aria-label="Cerrar el panel del rol"
+      [disabled]="busy()"
+      (click)="closeRequested.emit()"
+    >
+      <mat-icon aria-hidden="true">close</mat-icon>
+    </button>
+  </header>
+
+  <nav class="views" aria-label="Vistas del rol">
+    @for (view of views; track view.id) {
+      <button
+        type="button"
+        class="view"
+        [class.is-active]="activeView() === view.id"
+        [attr.aria-current]="activeView() === view.id ? 'page' : null"
+        (click)="activateView(view.id)"
+      >
+        <mat-icon aria-hidden="true">{{ view.icon }}</mat-icon>
+        <span>{{ view.label }}</span>
+      </button>
+    }
+  </nav>
+
+  <div class="panel-body">
+    <app-group-role-form
+      [group]="group()"
+      [view]="activeView()"
+      [saveFailure]="saveFailure()"
+      [busy]="busy()"
+      (saveRequested)="saveRequested.emit($event)"
+      (pendingChangesChange)="pendingChangesChange.emit($event)"
+    />
+
+    @if (activeView() === 'miembros') {
+      <app-group-members
+        [members]="members()"
+        [loading]="membersLoading()"
+        [failure]="membersFailure()"
+        [page]="membersPage()"
+        [totalPages]="membersTotalPages()"
+        [busy]="busy()"
+        (removeRequested)="memberRemoveRequested.emit($event)"
+        (addRequested)="memberAddRequested.emit()"
+        (pageRequested)="membersPageRequested.emit($event)"
+        (retryRequested)="membersRetryRequested.emit()"
+      />
+    }
+  </div>
+</aside>

@@ -76,3 +76,42 @@ export function describeGroupFailure(
     message: messages[error.code] ?? 'No se pudo completar la operación. Inténtalo nuevamente.',
   };
 }
+
+/**
+ * describeMembershipFailure maps the failures of the memberships to safe
+ * Spanish copy.
+ *
+ * The memberships of a role have their own reasons: the platform protects
+ * the owner of the platform and the groups of the account of the
+ * administrator, so the copy names those cases instead of the ones of the
+ * role itself.
+ */
+export function describeMembershipFailure(error: unknown): string {
+  if (!isGroupApiFailure(error)) {
+    return 'Ocurrió un problema inesperado. Inténtalo nuevamente.';
+  }
+  if (error.status === 0) {
+    return 'El servicio de grupos no respondió. Inténtalo nuevamente.';
+  }
+  if (
+    error.code === 'database_unavailable' ||
+    error.code === 'identity_store_unavailable' ||
+    error.status >= 500
+  ) {
+    return 'El servidor no está disponible. Inténtalo nuevamente en unos instantes.';
+  }
+
+  const messages: Readonly<Record<string, string>> = {
+    forbidden:
+      'La plataforma rechazó esta operación por los permisos o la jerarquía vigentes.',
+    owner_protected: 'El propietario de la plataforma no se puede quitar del rol.',
+    group_conflict: 'No se pueden cambiar los roles de tu propia cuenta.',
+    capability_conflict:
+      'La plataforma rechazó el cambio porque quitaría tu capacidad para administrar los grupos.',
+    user_not_found: 'La cuenta ya no está disponible.',
+    group_not_found: 'El rol ya no está disponible.',
+    user_not_active: 'La cuenta todavía no está activa.',
+    invalid_credentials: 'Tu sesión ya no es válida. Vuelve a iniciar sesión.',
+  };
+  return messages[error.code] ?? 'No se pudo completar la operación. Inténtalo nuevamente.';
+}

@@ -1,7 +1,9 @@
 import { inject, Injectable } from '@angular/core';
 import {
+  AssignGroupMemberCommand,
   CreateGroupCommand,
   DeleteGroupCommand,
+  RemoveGroupMemberCommand,
   ReorderGroupsCommand,
   UpdateGroupCommand,
   UpdateGroupValues,
@@ -12,6 +14,7 @@ import { GroupGateway } from '../../infrastructure/gateways/group.gateway';
 import { GroupColor } from '../../domain/model/value-objects/group-color';
 import { GroupId } from '../../domain/model/value-objects/group-id';
 import { GroupName } from '../../domain/model/value-objects/group-name';
+import { UserId } from '../../domain/model/value-objects/user-id';
 
 /** CreateGroupCommandService validates and registers a group. */
 @Injectable({ providedIn: 'root' })
@@ -77,5 +80,31 @@ export class ReorderGroupsCommandService {
 
   async execute(command: ReorderGroupsCommand): Promise<void> {
     await this.gateway.reorderGroups(command.groupIds.map((id) => GroupId.create(id)));
+  }
+}
+
+/** AssignGroupMemberCommandService adds an account to a role. */
+@Injectable({ providedIn: 'root' })
+export class AssignGroupMemberCommandService {
+  private readonly gateway = inject(GroupGateway);
+
+  async execute(command: AssignGroupMemberCommand): Promise<void> {
+    await this.gateway.assignGroupMember(
+      UserId.create(command.userId),
+      GroupId.create(command.groupId),
+    );
+  }
+}
+
+/** RemoveGroupMemberCommandService takes an account out of a role. */
+@Injectable({ providedIn: 'root' })
+export class RemoveGroupMemberCommandService {
+  private readonly gateway = inject(GroupGateway);
+
+  async execute(command: RemoveGroupMemberCommand): Promise<void> {
+    await this.gateway.removeGroupMember(
+      UserId.create(command.userId),
+      GroupId.create(command.groupId),
+    );
   }
 }

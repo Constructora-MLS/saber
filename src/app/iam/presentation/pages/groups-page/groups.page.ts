@@ -7,21 +7,42 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { Router } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import {
+  AssignGroupMemberCommandService,
   DeleteGroupCommandService,
+  RemoveGroupMemberCommandService,
   ReorderGroupsCommandService,
+  UpdateGroupCommandService,
 } from '../../../application/command-services/group-command-services';
-import { ListGroupsQueryService } from '../../../application/query-services/group-query-services';
+import { UpdateGroupCommand } from '../../../application/commands/group-commands';
+import {
+  GetGroupQueryService,
+  ListGroupMembersQueryService,
+  ListGroupsQueryService,
+} from '../../../application/query-services/group-query-services';
 import { Group } from '../../../domain/model/aggregates/group';
+import { GroupMember } from '../../../domain/model/value-objects/group-member';
 import { GroupPriority } from '../../../domain/model/value-objects/group-priority';
+import {
+  AddGroupMemberData,
+  AddGroupMemberDialog,
+} from '../../components/add-group-member-dialog/add-group-member-dialog';
 import { CreateGroupDialog } from '../../components/create-group-dialog/create-group-dialog';
 import {
   DeletableGroup,
   DeleteGroupDialog,
 } from '../../components/delete-group-dialog/delete-group-dialog';
+import { DiscardGroupChangesDialog } from '../../components/discard-group-changes-dialog/discard-group-changes-dialog';
+import { GroupDetailPanel } from '../../components/group-detail-panel/group-detail-panel';
+import { GroupMemberRow } from '../../components/group-members/group-members';
 import { GroupRow, GroupTable } from '../../components/group-table/group-table';
-import { describeGroupFailure, GroupFailureMessage, isGroupConflict } from '../group-failures';
+import {
+  describeGroupFailure,
+  describeMembershipFailure,
+  GroupFailureMessage,
+  isGroupConflict,
+} from '../group-failures';
 
 /** The API page size covers the backend's complete active-group limit. */
 const GROUP_LIST_LIMIT = 100;
@@ -30,11 +51,14 @@ const MAX_ACTIVE_GROUPS = 50;
 /** The groups endpoint accepts search terms between two and 120 code points. */
 const MIN_SEARCH_LENGTH = 2;
 const MAX_SEARCH_LENGTH = 120;
+/** The size of the page of the members of a role. */
+const MEMBER_LIST_LIMIT = 20;
 
 /** GroupsPage orchestrates the read and the management of the group hierarchy. */
 @Component({
   imports: [
     FormsModule,
+    GroupDetailPanel,
     GroupTable,
     MatButtonModule,
     MatFormFieldModule,
@@ -50,9 +74,13 @@ const MAX_SEARCH_LENGTH = 120;
 export class GroupsPage implements OnInit {
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
-  private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly listGroups = inject(ListGroupsQueryService);
+  private readonly getGroup = inject(GetGroupQueryService);
+  private readonly listMembers = inject(ListGroupMembersQueryService);
+  private readonly updateGroup = inject(UpdateGroupCommandService);
+  private readonly assignMemberCommand = inject(AssignGroupMemberCommandService);
+  private readonly removeMemberCommand = inject(RemoveGroupMemberCommandService);
   private readonly deleteGroupCommand = inject(DeleteGroupCommandService);
   private readonly reorderGroups = inject(ReorderGroupsCommandService);
 
@@ -69,6 +97,18 @@ export class GroupsPage implements OnInit {
   protected readonly actionFailure = signal<GroupFailureMessage | null>(null);
   protected readonly reordering = signal(false);
   protected readonly deletingId = signal<string | null>(null);
+
+  /** The role that the panel is configuring. */
+  protected readonly selectedGroupId = signal<string | null>(null);
+  protected readonly selectedGroup = signal<Group | null>(null);
+  protected readonly members = signal<readonly GroupMemberRow[]>([]);
+  protected readonly membersFailure = signal<string | null>(null);
+  protected readonly membersPage = signal(1);
+  protected readonly membersTotalPages = signal(0);
+  protected readonly saving = signal(false);
+  protected readonly saveFailure = signal<string | null>(null);
+  protected readonly pendingChanges = signal(false);
+  private membersRequest = 0;
 
   /** The roles of the hierarchy, ready to be shown in the table. */
   protected readonly rows = computed<readonly GroupRow[]>(() =>
@@ -190,12 +230,128 @@ export class GroupsPage implements OnInit {
     this.actionFailure.set(null);
   }
 
-  /** openPermissions takes the administrator to the permissions of a role. */
-  protected openPermissions(row: GroupRow): void {
+  /** openRole opens the panel of a role with its three views. */
+  protected async openRole(row: GroupRow): Promise<void> {
     if (this.isMutationInProgress()) {
       return;
     }
-    void this.router.navigate(['/permissions', row.id]);
+    if (this.pendingChanges() && !(await this.confirmDiscardChanges())) {
+      return;
+    }
+
+    this.selectedGroupId.set(row.id);
+    this.selectedGroup.set(null);
+    this.members.set([]);
+    this.membersFailure.set(null);
+    this.membersPage.set(1);
+    this.membersTotalPages.set(0);
+    this.saveFailure.set(null);
+    this.pendingChanges.set(false);
+
+    await this.loadRole(row.id);
+    await this.loadMembers(row.id, 1);
+  }
+
+  /** requestClosePanel closes the panel, protecting the changes that were not saved. */
+  protected async requestClosePanel(): Promise<void> {
+    if (this.saving()) {
+      return;
+    }
+    if (this.pendingChanges() && !(await this.confirmDiscardChanges())) {
+      return;
+    }
+    this.closePanel();
+  }
+
+  /** saveRole writes the change of the role and refreshes the listing. */
+  protected async saveRole(command: UpdateGroupCommand): Promise<void> {
+    if (this.saving()) {
+      return;
+    }
+    this.saving.set(true);
+    this.saveFailure.set(null);
+    try {
+      const updated = await this.updateGroup.execute(command);
+      this.selectedGroup.set(updated);
+      this.groups.update((groups) =>
+        groups
+          .map((group) => (group.id === updated.id ? updated : group))
+          .sort((left, right) => left.priority - right.priority),
+      );
+      this.pendingChanges.set(false);
+      this.notify('Rol actualizado.');
+    } catch (error) {
+      this.saveFailure.set(describeGroupFailure(error, 'No se pudo guardar el rol').message);
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  /** addMember opens the dialog that adds an account to the role. */
+  protected addMember(): void {
+    const group = this.selectedGroup();
+    if (!group || this.saving()) {
+      return;
+    }
+
+    const data: AddGroupMemberData = {
+      groupId: group.id,
+      groupName: group.name,
+      memberIds: this.members().map((member) => member.id),
+    };
+    this.dialog
+      .open(AddGroupMemberDialog, { data, width: '34rem', maxWidth: '94vw' })
+      .afterClosed()
+      .subscribe((added) => {
+        if (added) {
+          this.notify('Miembros agregados al rol.');
+        }
+        void this.loadMembers(group.id, 1);
+      });
+  }
+
+  /** removeMember takes an account out of the role. */
+  protected async removeMember(member: GroupMemberRow): Promise<void> {
+    const group = this.selectedGroup();
+    if (!group || this.saving()) {
+      return;
+    }
+    if (member.owner) {
+      this.notify('El propietario de la plataforma no se puede quitar del rol.');
+      return;
+    }
+
+    this.saving.set(true);
+    try {
+      await this.removeMemberCommand.execute({ userId: member.id, groupId: group.id });
+      this.notify('Miembro quitado del rol.');
+      await this.loadMembers(group.id, this.membersPage());
+    } catch (error) {
+      this.membersFailure.set(describeMembershipFailure(error));
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  /** requestMemberPage asks for another page of the members of the role. */
+  protected requestMemberPage(page: number): void {
+    const group = this.selectedGroup();
+    if (group) {
+      void this.loadMembers(group.id, page);
+    }
+  }
+
+  /** retryMembers reads the members of the role again. */
+  protected retryMembers(): void {
+    const group = this.selectedGroup();
+    if (group) {
+      void this.loadMembers(group.id, this.membersPage());
+    }
+  }
+
+  /** onPendingChangesChanged tracks the changes of the form of the role. */
+  protected onPendingChangesChanged(pending: boolean): void {
+    this.pendingChanges.set(pending);
   }
 
   /** requestDeleteGroup asks for confirmation before logical deletion. */
@@ -230,6 +386,72 @@ export class GroupsPage implements OnInit {
       return;
     }
     await this.persistOrder(next);
+  }
+
+  private async loadRole(uuid: string): Promise<void> {
+    try {
+      const group = await this.getGroup.execute({ uuid });
+      this.selectedGroup.set(group);
+    } catch (error) {
+      this.selectedGroup.set(null);
+      this.actionFailure.set(
+        describeGroupFailure(error, 'No se pudo abrir el rol'),
+      );
+    }
+  }
+
+  private async loadMembers(uuid: string, page: number): Promise<void> {
+    const request = ++this.membersRequest;
+    this.membersFailure.set(null);
+    try {
+      const result = await this.listMembers.execute({
+        uuid,
+        limit: MEMBER_LIST_LIMIT,
+        page,
+      });
+      if (request !== this.membersRequest) {
+        return;
+      }
+      this.members.set(result.items.map((member) => this.toMemberRow(member)));
+      this.membersPage.set(result.page);
+      this.membersTotalPages.set(result.totalPages);
+    } catch (error) {
+      if (request === this.membersRequest) {
+        this.members.set([]);
+        this.membersFailure.set(describeMembershipFailure(error));
+      }
+    }
+  }
+
+  private toMemberRow(member: GroupMember): GroupMemberRow {
+    return {
+      id: member.id.value,
+      name: member.fullName,
+      email: member.email,
+      owner: member.userType === 'owner',
+    };
+  }
+
+  private closePanel(): void {
+    this.membersRequest += 1;
+    this.selectedGroupId.set(null);
+    this.selectedGroup.set(null);
+    this.members.set([]);
+    this.membersFailure.set(null);
+    this.membersPage.set(1);
+    this.membersTotalPages.set(0);
+    this.saveFailure.set(null);
+    this.pendingChanges.set(false);
+  }
+
+  private async confirmDiscardChanges(): Promise<boolean> {
+    return (
+      (await firstValueFrom(
+        this.dialog
+          .open(DiscardGroupChangesDialog, { width: '30rem', maxWidth: '94vw' })
+          .afterClosed(),
+      )) === true
+    );
   }
 
   private async loadGroups(): Promise<void> {

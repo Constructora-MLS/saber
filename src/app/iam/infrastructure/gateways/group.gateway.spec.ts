@@ -7,6 +7,7 @@ import { API_BASE_URL } from '../../../api.config';
 import { GroupColor } from '../../domain/model/value-objects/group-color';
 import { GroupId } from '../../domain/model/value-objects/group-id';
 import { GroupName } from '../../domain/model/value-objects/group-name';
+import { UserId } from '../../domain/model/value-objects/user-id';
 import { GroupGateway } from './group.gateway';
 
 const groupId = '2f4b1c66-9b4a-4f2f-9c1e-6a1f2b3c4d5e';
@@ -211,5 +212,84 @@ describe('GroupGateway', () => {
     await expect(
       gateway.updateGroup(GroupId.restore(groupId), { permissions: { manageUsers: true } }),
     ).rejects.toMatchObject({ name: 'GroupApiError', status: 403, code: 'forbidden' });
+  });
+
+  it('reads the members of a group from the users of the group', async () => {
+    const get = vi.fn((_url: string, _options?: { params?: HttpParams }) =>
+      of({
+        items: [
+          {
+            uuid: '7a1b1c66-9b4a-4f2f-9c1e-6a1f2b3c4d5e',
+            email: 'ana@akame.local',
+            firstName: 'Ana',
+            lastName: 'Quispe',
+            userType: 'member' as const,
+          },
+        ],
+        page: 1,
+        totalPages: 1,
+        total: 1,
+      }),
+    );
+    const gateway = gatewayFor({ get });
+
+    const page = await gateway.listGroupMembers(GroupId.restore(groupId), { limit: 20, page: 1 });
+
+    const [url, options] = get.mock.calls[0];
+    expect(url).toBe(`/api/v1/groups/${groupId}/users`);
+    expect(options?.params?.get('limit')).toBe('20');
+    expect(options?.params?.get('page')).toBe('1');
+    expect(page.items[0]?.fullName).toBe('Ana Quispe');
+    expect(page.items[0]?.userType).toBe('member');
+    expect(page.total).toBe(1);
+  });
+
+  it('assigns an account to a group with the membership of the user', async () => {
+    const put = vi.fn((_url: string, _body: unknown) => of(null));
+    const gateway = gatewayFor({ put });
+
+    await gateway.assignGroupMember(
+      UserId.restore('7a1b1c66-9b4a-4f2f-9c1e-6a1f2b3c4d5e'),
+      GroupId.restore(groupId),
+    );
+
+    expect(put).toHaveBeenCalledWith(
+      `/api/v1/users/7a1b1c66-9b4a-4f2f-9c1e-6a1f2b3c4d5e/groups/${groupId}`,
+      null,
+    );
+  });
+
+  it('takes an account out of a group with the membership of the user', async () => {
+    const remove = vi.fn((_url: string) => of(null));
+    const gateway = gatewayFor({ delete: remove });
+
+    await gateway.removeGroupMember(
+      UserId.restore('7a1b1c66-9b4a-4f2f-9c1e-6a1f2b3c4d5e'),
+      GroupId.restore(groupId),
+    );
+
+    expect(remove).toHaveBeenCalledWith(
+      `/api/v1/users/7a1b1c66-9b4a-4f2f-9c1e-6a1f2b3c4d5e/groups/${groupId}`,
+    );
+  });
+
+  it('translates the refusal of the platform when a membership is refused', async () => {
+    const gateway = gatewayFor({
+      put: () =>
+        throwError(
+          () =>
+            new HttpErrorResponse({
+              status: 409,
+              error: { code: 'group_conflict', detail: 'English backend detail.' },
+            }),
+        ),
+    });
+
+    await expect(
+      gateway.assignGroupMember(
+        UserId.restore('7a1b1c66-9b4a-4f2f-9c1e-6a1f2b3c4d5e'),
+        GroupId.restore(groupId),
+      ),
+    ).rejects.toMatchObject({ name: 'GroupApiError', status: 409, code: 'group_conflict' });
   });
 });

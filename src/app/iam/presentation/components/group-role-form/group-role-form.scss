@@ -3,7 +3,7 @@
   min-width: 0;
 }
 
-.permissions-form,
+.role-form,
 .field-section,
 .permission-section {
   display: grid;
@@ -103,11 +103,4 @@
   gap: 0.5rem;
   padding-top: 1rem;
   border-top: 1px solid var(--rrhh-divider);
-}
-
-@media (max-width: 34rem) {
-  .form-actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-  }
 }

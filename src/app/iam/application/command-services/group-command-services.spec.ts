@@ -4,14 +4,18 @@ import { describe, expect, it, vi } from 'vitest';
 import { GroupGateway } from '../../infrastructure/gateways/group.gateway';
 import { GroupApiError } from '../../infrastructure/errors/group-api.error';
 import { GroupId } from '../../domain/model/value-objects/group-id';
+import { UserId } from '../../domain/model/value-objects/user-id';
 import {
+  AssignGroupMemberCommandService,
   CreateGroupCommandService,
+  RemoveGroupMemberCommandService,
   ReorderGroupsCommandService,
   UpdateGroupCommandService,
 } from './group-command-services';
 
 const groupId = '2f4b1c66-9b4a-4f2f-9c1e-6a1f2b3c4d5e';
 const secondGroupId = '3f4b1c66-9b4a-4f2f-9c1e-6a1f2b3c4d5e';
+const userId = '7a1b1c66-9b4a-4f2f-9c1e-6a1f2b3c4d5e';
 
 function servicesFor(gateway: Record<string, unknown>) {
   const injector = Injector.create({
@@ -21,6 +25,8 @@ function servicesFor(gateway: Record<string, unknown>) {
     create: runInInjectionContext(injector, () => new CreateGroupCommandService()),
     update: runInInjectionContext(injector, () => new UpdateGroupCommandService()),
     reorder: runInInjectionContext(injector, () => new ReorderGroupsCommandService()),
+    assignMember: runInInjectionContext(injector, () => new AssignGroupMemberCommandService()),
+    removeMember: runInInjectionContext(injector, () => new RemoveGroupMemberCommandService()),
   };
 }
 
@@ -113,5 +119,36 @@ describe('group command services', () => {
       GroupId.restore(groupId),
       GroupId.restore(secondGroupId),
     ]);
+  });
+
+  it('adds an account to a role with the membership of the user', async () => {
+    const assignGroupMember = vi.fn().mockResolvedValue(undefined);
+    const { assignMember } = servicesFor({ assignGroupMember });
+
+    await assignMember.execute({ userId: userId, groupId });
+
+    expect(assignGroupMember).toHaveBeenCalledWith(UserId.restore(userId), GroupId.restore(groupId));
+  });
+
+  it('takes an account out of a role with the membership of the user', async () => {
+    const removeGroupMember = vi.fn().mockResolvedValue(undefined);
+    const { removeMember } = servicesFor({ removeGroupMember });
+
+    await removeMember.execute({ userId: userId, groupId });
+
+    expect(removeGroupMember).toHaveBeenCalledWith(
+      UserId.restore(userId),
+      GroupId.restore(groupId),
+    );
+  });
+
+  it('refuses a membership whose account is not the identifier of a record', async () => {
+    const assignGroupMember = vi.fn();
+    const { assignMember } = servicesFor({ assignGroupMember });
+
+    await expect(assignMember.execute({ userId: 'not-a-uuid', groupId })).rejects.toMatchObject({
+      name: 'AuthValidationError',
+    });
+    expect(assignGroupMember).not.toHaveBeenCalled();
   });
 });

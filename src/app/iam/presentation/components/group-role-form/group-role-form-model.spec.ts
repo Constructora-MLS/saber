@@ -5,7 +5,7 @@ import { GroupId } from '../../../domain/model/value-objects/group-id';
 import { GroupName } from '../../../domain/model/value-objects/group-name';
 import { GroupPriority } from '../../../domain/model/value-objects/group-priority';
 import { restoreGroupStatus } from '../../../domain/model/value-objects/group-status';
-import { createGroupUpdateCommand, hasPendingGroupChanges } from './group-permissions-form-model';
+import { createGroupUpdateCommand, hasPendingGroupChanges } from './group-role-form-model';
 
 const group = Group.restore({
   id: GroupId.restore('2f4b1c66-9b4a-4f2f-9c1e-6a1f2b3c4d5e'),
@@ -32,7 +32,7 @@ const originalValues = {
   ...group.permissions,
 };
 
-describe('group permissions form model', () => {
+describe('group role form model', () => {
   it('emits false for a permission switched off and omits unchanged fields', () => {
     const values = { ...originalValues, manageUsers: false };
 

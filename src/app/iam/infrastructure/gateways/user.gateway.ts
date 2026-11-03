@@ -11,6 +11,7 @@ import { PlatformUser } from '../../domain/model/aggregates/platform-user';
 import { Email, restoreEmail } from '../../domain/model/value-objects/email';
 import { UserId } from '../../domain/model/value-objects/user-id';
 import { UserStatus } from '../../domain/model/value-objects/user-status';
+import { UserType } from '../../domain/model/value-objects/user-type';
 import {
   AcceptInvitationRequestResource,
   InvitationCreatedResource,
@@ -21,6 +22,7 @@ import {
   UserListItemResource,
   UserPageResource,
   UserStatusResource,
+  UserTypeResource,
 } from '../contracts/user.contract';
 import { toUserApiError } from '../errors/user-api.error';
 
@@ -121,6 +123,7 @@ export class UserGateway {
       resource.firstName,
       resource.lastName,
       this.status(resource.status),
+      this.userType(resource.userType),
     );
   }
 
@@ -143,6 +146,7 @@ export class UserGateway {
       resource.firstName,
       resource.lastName,
       this.status(resource.status),
+      this.userType(resource.userType),
     );
   }
 
@@ -170,11 +174,16 @@ export class UserGateway {
       resource.firstName,
       resource.lastName,
       this.status(resource.status),
+      this.userType(resource.userType),
     );
   }
 
   private status(raw: UserStatusResource): UserStatus {
     return raw === 'active' ? 'active' : 'pending';
+  }
+
+  private userType(raw: UserTypeResource): UserType {
+    return raw === 'owner' ? 'owner' : 'member';
   }
 
   private toFailure(error: HttpErrorResponse) {

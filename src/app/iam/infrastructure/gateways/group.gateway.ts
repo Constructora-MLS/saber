@@ -8,10 +8,19 @@ import { GroupId } from '../../domain/model/value-objects/group-id';
 import { GroupColor } from '../../domain/model/value-objects/group-color';
 import { GroupName } from '../../domain/model/value-objects/group-name';
 import { GroupPriority } from '../../domain/model/value-objects/group-priority';
+import { GroupMember } from '../../domain/model/value-objects/group-member';
 import { restoreGroupStatus } from '../../domain/model/value-objects/group-status';
-import { GroupCriteria, GroupPage } from '../../application/queries/group-queries';
+import { restoreEmail } from '../../domain/model/value-objects/email';
+import { UserId } from '../../domain/model/value-objects/user-id';
+import {
+  GroupCriteria,
+  GroupMemberPage,
+  GroupPage,
+} from '../../application/queries/group-queries';
 import {
   CreateGroupRequestResource,
+  GroupMemberPageResource,
+  GroupMemberResource,
   GroupOrderRequestResource,
   GroupPageResource,
   GroupPermissionsResource,
@@ -100,6 +109,45 @@ export class GroupGateway {
     );
   }
 
+  /** listGroupMembers reads one page of the accounts that belong to a role. */
+  async listGroupMembers(
+    id: GroupId,
+    criteria: { readonly limit?: number; readonly page?: number },
+  ): Promise<GroupMemberPage> {
+    let params = new HttpParams()
+      .set('limit', criteria.limit ?? 50)
+      .set('page', criteria.page ?? 1);
+    const page = await firstValueFrom(
+      this.http
+        .get<GroupMemberPageResource>(`${this.baseUrl}/groups/${id}/users`, { params })
+        .pipe(catchError((error: HttpErrorResponse) => this.toFailure(error))),
+    );
+    return {
+      items: page.items.map((item) => this.toMember(item)),
+      page: page.page,
+      totalPages: page.totalPages,
+      total: page.total,
+    };
+  }
+
+  /** assignGroupMember adds an account to a role. */
+  async assignGroupMember(userId: UserId, groupId: GroupId): Promise<void> {
+    await firstValueFrom(
+      this.http
+        .put<void>(`${this.baseUrl}/users/${userId.value}/groups/${groupId}`, null)
+        .pipe(catchError((error: HttpErrorResponse) => this.toFailure(error))),
+    );
+  }
+
+  /** removeGroupMember takes an account out of a role. */
+  async removeGroupMember(userId: UserId, groupId: GroupId): Promise<void> {
+    await firstValueFrom(
+      this.http
+        .delete<void>(`${this.baseUrl}/users/${userId.value}/groups/${groupId}`)
+        .pipe(catchError((error: HttpErrorResponse) => this.toFailure(error))),
+    );
+  }
+
   private params(criteria: GroupCriteria): HttpParams {
     let params = new HttpParams()
       .set('limit', criteria.limit ?? 100)
@@ -139,8 +187,7 @@ export class GroupGateway {
     };
   }
 
-  private toGroup(resource: GroupResource): Group {
-    return Group.restore({
+  private toGroup(resource: GroupResource): Group {    return Group.restore({
       id: GroupId.restore(resource.uuid),
       name: GroupName.restore(resource.name),
       color: GroupColor.restore(resource.color),
@@ -149,6 +196,16 @@ export class GroupGateway {
       status: restoreGroupStatus(resource.status),
       createdAt: resource.createdAt,
       updatedAt: resource.updatedAt,
+    });
+  }
+
+  private toMember(resource: GroupMemberResource): GroupMember {
+    return GroupMember.restore({
+      id: UserId.restore(resource.uuid),
+      email: restoreEmail(resource.email),
+      firstName: resource.firstName,
+      lastName: resource.lastName,
+      userType: resource.userType,
     });
   }
 

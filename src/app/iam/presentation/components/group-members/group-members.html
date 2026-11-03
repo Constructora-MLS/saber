@@ -1,0 +1,124 @@
+<div class="members">
+  <header class="members-header">
+    <div>
+      <h3 id="group-members-heading">Miembros del rol</h3>
+      <p class="members-hint">Las personas que reciben los permisos de este rol.</p>
+    </div>
+    <button
+      matButton="tonal"
+      type="button"
+      [disabled]="busy()"
+      (click)="addRequested.emit()"
+    >
+      <mat-icon aria-hidden="true">person_add</mat-icon>
+      Agregar miembro
+    </button>
+  </header>
+
+  <mat-form-field appearance="outline" subscriptSizing="dynamic" class="search-field">
+    <mat-label>Buscar miembros</mat-label>
+    <input
+      matInput
+      type="search"
+      autocomplete="off"
+      placeholder="Nombre o correo…"
+      [ngModel]="searchTerm()"
+      (ngModelChange)="onSearchChanged($event)"
+      name="search"
+    />
+    @if (searchTerm()) {
+      <button
+        matIconButton
+        matSuffix
+        type="button"
+        aria-label="Limpiar la búsqueda"
+        (click)="onSearchChanged('')"
+      >
+        <mat-icon aria-hidden="true">close</mat-icon>
+      </button>
+    }
+  </mat-form-field>
+
+  @if (loading() && members().length === 0) {
+    <div class="members-state" role="status">
+      <mat-spinner diameter="28" aria-hidden="true" />
+      <span>Cargando miembros…</span>
+    </div>
+  } @else if (members().length === 0 && failure() !== null) {
+    <app-table-state
+      kind="error"
+      title="No se pudieron cargar los miembros"
+      [message]="failure()"
+      actionLabel="Reintentar"
+      actionIcon="refresh"
+      (actionRequested)="retryRequested.emit()"
+    />
+  } @else if (members().length === 0) {
+    <app-table-state
+      kind="empty"
+      icon="group_off"
+      title="El rol todavía no tiene miembros"
+      message="Agrega a las personas que deben recibir los permisos de este rol."
+      actionLabel="Agregar miembro"
+      actionIcon="person_add"
+      (actionRequested)="addRequested.emit()"
+    />
+  } @else if (visibleMembers().length === 0 && members().length > 0) {
+    <app-table-state
+      kind="empty"
+      icon="person_search"
+      title="Ningún miembro coincide con la búsqueda"
+      message="Prueba con otro nombre o con otro correo."
+    />
+  } @else {
+    <div class="table-scroll">
+      <table class="platform-table members-table">
+        <caption class="sr-only">Miembros del rol</caption>
+        <thead>
+          <tr>
+            <th scope="col">Nombre</th>
+            <th scope="col" class="cell-actions">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (member of visibleMembers(); track member.id) {
+            <tr>
+              <th scope="row" class="cell-name cell-title">
+                <span class="cell-label" aria-hidden="true">Nombre</span>
+                <span class="cell-person">{{ member.name }}</span>
+                <span class="cell-email">{{ member.email }}</span>
+                @if (member.owner) {
+                  <span class="owner-badge">Propietario</span>
+                }
+              </th>
+              <td class="cell-actions">
+                <span class="cell-label" aria-hidden="true">Acciones</span>
+                <button
+                  matIconButton
+                  type="button"
+                  [disabled]="busy()"
+                  [matMenuTriggerFor]="rowMenu"
+                  [attr.aria-label]="'Acciones de ' + member.name"
+                >
+                  <mat-icon aria-hidden="true">more_vert</mat-icon>
+                </button>
+                <mat-menu #rowMenu="matMenu" xPosition="before">
+                  <button mat-menu-item type="button" (click)="removeRequested.emit(member)">
+                    <mat-icon aria-hidden="true">person_remove</mat-icon>
+                    <span>Quitar del rol</span>
+                  </button>
+                </mat-menu>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (totalPages() > 1) {
+      <div class="members-footer">
+        <app-paginator [page]="page()" [totalPages]="totalPages()" (pageRequested)="pageRequested.emit($event)" />
+      </div>
+    }
+  }
+</div>

@@ -106,11 +106,32 @@
       [emptyActionLabel]="emptyActionLabel()"
       [canReorder]="canReorder()"
       [busy]="reordering() || deletingId() !== null"
-      (editRequested)="openPermissions($event)"
+      (editRequested)="openRole($event)"
       (deleteRequested)="requestDeleteGroup($event)"
       (reorderRequested)="onReorder($event)"
       (retryRequested)="retry()"
       (createRequested)="openCreateGroup()"
     />
   </section>
+
+  @if (selectedGroup(); as role) {
+    <app-group-detail-panel
+      class="role-panel"
+      [group]="role"
+      [members]="members()"
+      [membersLoading]="false"
+      [membersFailure]="membersFailure()"
+      [membersPage]="membersPage()"
+      [membersTotalPages]="membersTotalPages()"
+      [saveFailure]="saveFailure()"
+      [busy]="saving()"
+      (saveRequested)="saveRole($event)"
+      (closeRequested)="requestClosePanel()"
+      (pendingChangesChange)="onPendingChangesChanged($event)"
+      (memberRemoveRequested)="removeMember($event)"
+      (memberAddRequested)="addMember()"
+      (membersPageRequested)="requestMemberPage($event)"
+      (membersRetryRequested)="retryMembers()"
+    />
+  }
 </section>

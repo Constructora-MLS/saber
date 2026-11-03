@@ -6,17 +6,27 @@ import { Router } from '@angular/router';
 import { of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import {
+  AssignGroupMemberCommandService,
   DeleteGroupCommandService,
+  RemoveGroupMemberCommandService,
   ReorderGroupsCommandService,
+  UpdateGroupCommandService,
 } from '../../../application/command-services/group-command-services';
-import { ListGroupsQueryService } from '../../../application/query-services/group-query-services';
+import {
+  GetGroupQueryService,
+  ListGroupMembersQueryService,
+  ListGroupsQueryService,
+} from '../../../application/query-services/group-query-services';
 import { Group } from '../../../domain/model/aggregates/group';
 import { GroupApiError } from '../../../infrastructure/errors/group-api.error';
 import { GroupId } from '../../../domain/model/value-objects/group-id';
 import { GroupName } from '../../../domain/model/value-objects/group-name';
 import { GroupColor } from '../../../domain/model/value-objects/group-color';
+import { GroupMember } from '../../../domain/model/value-objects/group-member';
 import { GroupPriority } from '../../../domain/model/value-objects/group-priority';
 import { restoreGroupStatus } from '../../../domain/model/value-objects/group-status';
+import { restoreEmail } from '../../../domain/model/value-objects/email';
+import { UserId } from '../../../domain/model/value-objects/user-id';
 import { CreateGroupDialog } from '../../components/create-group-dialog/create-group-dialog';
 import { GroupRow } from '../../components/group-table/group-table';
 import { GroupsPage } from './groups.page';
@@ -62,6 +72,16 @@ function row(id: string, name: string): GroupRow {
   return { id, name, color: '#13579B' };
 }
 
+function member(id: string, name: string, owner = false): GroupMember {
+  return GroupMember.restore({
+    id: UserId.restore(id),
+    email: restoreEmail('persona@empresa.pe'),
+    firstName: name,
+    lastName: '',
+    userType: owner ? 'owner' : 'member',
+  });
+}
+
 function pageWith(
   options: {
     readonly list?: (query: {
@@ -70,16 +90,36 @@ function pageWith(
       page?: number;
     }) => Promise<ReturnType<typeof listing>>;
     readonly get?: (query: { uuid: string }) => Promise<Group>;
-    readonly remove?: (command: unknown) => Promise<void>;
+    readonly listMembers?: (query: {
+      uuid: string;
+      limit?: number;
+      page?: number;
+    }) => Promise<{
+      items: readonly GroupMember[];
+      page: number;
+      totalPages: number;
+      total: number;
+    }>;
+    readonly update?: (command: unknown) => Promise<Group>;
+    readonly assign?: (command: { userId: string; groupId: string }) => Promise<void>;
+    readonly remove?: (command: { userId: string; groupId: string }) => Promise<void>;
+    readonly delete?: (command: unknown) => Promise<void>;
     readonly reorder?: (command: { groupIds: readonly string[] }) => Promise<void>;
     readonly discardConfirmation?: boolean;
     readonly createdGroup?: Group;
   } = {},
 ) {
   const listGroups = vi.fn(options.list ?? (async () => listing([])));
-  const deleteGroup = vi.fn(options.remove ?? (async () => undefined));
+  const getGroup = vi.fn(options.get ?? (async () => first));
+  const listMembers = vi.fn(
+    options.listMembers ??
+      (async () => ({ items: [], page: 1, totalPages: 0, total: 0 })),
+  );
+  const updateGroup = vi.fn(options.update ?? (async () => first));
+  const assignMember = vi.fn(options.assign ?? (async () => undefined));
+  const removeMember = vi.fn(options.remove ?? (async () => undefined));
+  const deleteGroup = vi.fn(options.delete ?? (async () => undefined));
   const reorderGroups = vi.fn(options.reorder ?? (async () => undefined));
-  const navigate = vi.fn().mockResolvedValue(true);
   const open = vi.fn((component: unknown) => ({
     afterClosed: () =>
       of(
@@ -91,11 +131,15 @@ function pageWith(
   const injector = Injector.create({
     providers: [
       { provide: ListGroupsQueryService, useValue: { execute: listGroups } },
+      { provide: GetGroupQueryService, useValue: { execute: getGroup } },
+      { provide: ListGroupMembersQueryService, useValue: { execute: listMembers } },
+      { provide: UpdateGroupCommandService, useValue: { execute: updateGroup } },
+      { provide: AssignGroupMemberCommandService, useValue: { execute: assignMember } },
+      { provide: RemoveGroupMemberCommandService, useValue: { execute: removeMember } },
       { provide: DeleteGroupCommandService, useValue: { execute: deleteGroup } },
       { provide: ReorderGroupsCommandService, useValue: { execute: reorderGroups } },
       { provide: MatDialog, useValue: { open } },
       { provide: MatSnackBar, useValue: { open: vi.fn() } },
-      { provide: Router, useValue: { navigate } },
       { provide: DestroyRef, useValue: { onDestroy: () => undefined } },
     ],
   });
@@ -105,7 +149,10 @@ function pageWith(
     clearSearch(): void;
     openCreateGroup(): void;
     onReorder(ids: readonly string[]): Promise<void>;
-    openPermissions(row: GroupRow): void;
+    openRole(row: GroupRow): Promise<void>;
+    requestClosePanel(): Promise<void>;
+    saveRole(command: unknown): Promise<void>;
+    removeMember(member: GroupRow & { owner: boolean }): Promise<void>;
     groups(): readonly Group[];
     rows(): readonly GroupRow[];
     loading(): boolean;
@@ -115,8 +162,14 @@ function pageWith(
     requestDeleteGroup(row: GroupRow): Promise<void>;
     deleteGroup(group: Group): Promise<void>;
     deletingId(): string | null;
+    selectedGroup(): Group | null;
+    members(): readonly { id: string; name: string; email: string; owner: boolean }[];
+    membersFailure(): string | null;
+    saveFailure(): string | null;
+    saving(): boolean;
+    onPendingChangesChanged(pending: boolean): void;
   };
-  return { page, listGroups, reorderGroups, deleteGroup, open, navigate };
+  return { page, listGroups, reorderGroups, deleteGroup, open, listMembers, removeMember };
 }
 
 const first = group('2f4b1c66-9b4a-4f2f-9c1e-6a1f2b3c4d5e', 'Administración', 1);
@@ -289,13 +342,78 @@ describe('GroupsPage', () => {
     expect(listGroups).toHaveBeenCalledTimes(1);
   });
 
-  it('takes the administrator to the permissions of a role', async () => {
-    const { page, navigate } = pageWith();
+  it('opens the panel of a role with its members', async () => {
+    const { page, listMembers } = pageWith({
+      list: async () => listing([first]),
+      listMembers: async () => ({
+        items: [member('7a1b1c66-9b4a-4f2f-9c1e-6a1f2b3c4d5e', 'Ana')],
+        page: 1,
+        totalPages: 1,
+        total: 1,
+      }),
+    });
 
     await page.loadGroups();
-    page.openPermissions(row(first.id, first.name));
+    await page.openRole(row(first.id, first.name));
 
-    expect(navigate).toHaveBeenCalledWith(['/permissions', first.id]);
+    expect(listMembers).toHaveBeenCalledWith({ uuid: first.id, limit: 20, page: 1 });
+    expect(page.selectedGroup()?.name).toBe('Administración');
+    expect(page.members()).toEqual([
+      { id: '7a1b1c66-9b4a-4f2f-9c1e-6a1f2b3c4d5e', name: 'Ana', email: 'persona@empresa.pe', owner: false },
+    ]);
+  });
+
+  it('removes a member of the role and reads the members again', async () => {
+    const { page, removeMember, listMembers } = pageWith({
+      list: async () => listing([first]),
+      listMembers: async () => ({
+        items: [member('7a1b1c66-9b4a-4f2f-9c1e-6a1f2b3c4d5e', 'Ana')],
+        page: 1,
+        totalPages: 1,
+        total: 1,
+      }),
+    });
+
+    await page.loadGroups();
+    await page.openRole(row(first.id, first.name));
+    await page.removeMember({
+      id: '7a1b1c66-9b4a-4f2f-9c1e-6a1f2b3c4d5e',
+      name: 'Ana',
+      email: 'persona@empresa.pe',
+      owner: false,
+    });
+
+    expect(removeMember).toHaveBeenCalledWith({
+      userId: '7a1b1c66-9b4a-4f2f-9c1e-6a1f2b3c4d5e',
+      groupId: first.id,
+    });
+    expect(listMembers).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not remove the owner of the platform from the role', async () => {
+    const { page, removeMember } = pageWith({ list: async () => listing([first]) });
+
+    await page.loadGroups();
+    await page.openRole(row(first.id, first.name));
+    await page.removeMember({
+      id: '7a1b1c66-9b4a-4f2f-9c1e-6a1f2b3c4d5e',
+      name: 'Propietario',
+      email: 'dueno@empresa.pe',
+      owner: true,
+    });
+
+    expect(removeMember).not.toHaveBeenCalled();
+  });
+
+  it('keeps the panel open when the changes are not discarded', async () => {
+    const { page } = pageWith({ list: async () => listing([first]), discardConfirmation: false });
+
+    await page.loadGroups();
+    await page.openRole(row(first.id, first.name));
+    page.onPendingChangesChanged(true);
+    await page.requestClosePanel();
+
+    expect(page.selectedGroup()).not.toBeNull();
   });
 
   it('shows the roles of the hierarchy in the table', async () => {
@@ -376,7 +494,7 @@ describe('GroupsPage', () => {
     });
     const { page, reorderGroups } = pageWith({
       list: async () => listing([first, second]),
-      remove: () => removal,
+      delete: () => removal,
     });
 
     await page.loadGroups();
@@ -397,7 +515,7 @@ describe('GroupsPage', () => {
       failDelete = reject;
     });
     const list = vi.fn(async () => listing([first, second]));
-    const { page } = pageWith({ list, remove: () => removal });
+    const { page } = pageWith({ list, delete: () => removal });
 
     await page.loadGroups();
     const deletion = page.deleteGroup(first);
@@ -425,7 +543,7 @@ describe('GroupsPage', () => {
       .fn()
       .mockResolvedValueOnce(listing([first, second]))
       .mockReturnValueOnce(reload);
-    const { page } = pageWith({ list, remove: () => removal });
+    const { page } = pageWith({ list, delete: () => removal });
     const focus = vi.fn();
     Object.defineProperty(page, 'groupsHeading', {
       value: () => ({ nativeElement: { focus } }),
@@ -463,7 +581,7 @@ describe('GroupsPage', () => {
       .mockResolvedValueOnce(listing([first, second]))
       .mockReturnValueOnce(staleLoad)
       .mockReturnValueOnce(reload);
-    const { page } = pageWith({ list, remove: () => removal });
+    const { page } = pageWith({ list, delete: () => removal });
 
     await page.loadGroups();
     const staleRequest = page.loadGroups();

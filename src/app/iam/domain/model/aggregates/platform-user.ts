@@ -4,6 +4,7 @@
 import { Email } from '../value-objects/email';
 import { UserId } from '../value-objects/user-id';
 import { UserStatus } from '../value-objects/user-status';
+import { UserType } from '../value-objects/user-type';
 
 /**
  * PlatformUser is an account of the platform.
@@ -19,6 +20,7 @@ export class PlatformUser {
     readonly firstName: string,
     readonly lastName: string,
     readonly status: UserStatus,
+    readonly userType: UserType,
   ) {}
 
   /**
@@ -30,8 +32,9 @@ export class PlatformUser {
     firstName: string,
     lastName: string,
     status: UserStatus,
+    userType: UserType = 'member',
   ): PlatformUser {
-    return new PlatformUser(id, email, firstName, lastName, status);
+    return new PlatformUser(id, email, firstName, lastName, status, userType);
   }
 
   /**

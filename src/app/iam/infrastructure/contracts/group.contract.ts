@@ -55,3 +55,23 @@ export interface UpdateGroupRequestResource {
 export interface GroupOrderRequestResource {
   readonly groupIds: readonly string[];
 }
+
+/** The kind of account that belongs to a role. */
+export type GroupMemberTypeResource = 'owner' | 'member';
+
+/** The representation of an account that belongs to a role. */
+export interface GroupMemberResource {
+  readonly uuid: string;
+  readonly email: string;
+  readonly firstName: string;
+  readonly lastName: string;
+  readonly userType: GroupMemberTypeResource;
+}
+
+/** A page of the accounts that belong to a role. */
+export interface GroupMemberPageResource {
+  readonly items: readonly GroupMemberResource[];
+  readonly page: number;
+  readonly totalPages: number;
+  readonly total: number;
+}

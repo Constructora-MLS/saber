@@ -46,6 +46,22 @@ export interface DeleteGroupCommand {
   readonly uuid: string;
 }
 
+/** AssignGroupMemberCommand asks to add an account to a role. */
+export interface AssignGroupMemberCommand {
+  /** The identifier of the account that joins the role. */
+  readonly userId: string;
+  /** The identifier of the role that receives the account. */
+  readonly groupId: string;
+}
+
+/** RemoveGroupMemberCommand asks to take an account out of a role. */
+export interface RemoveGroupMemberCommand {
+  /** The identifier of the account that leaves the role. */
+  readonly userId: string;
+  /** The identifier of the role that loses the account. */
+  readonly groupId: string;
+}
+
 /** ReorderGroupsCommand asks to rewrite the entire hierarchy. */
 export interface ReorderGroupsCommand {
   /** Every active group identifier, from highest to lowest priority. */

@@ -20,7 +20,7 @@ import { Group } from '../../../domain/model/aggregates/group';
 import {
   createGroupUpdateCommand,
   hasPendingGroupChanges,
-} from './group-permissions-form-model';
+} from './group-role-form-model';
 import {
   GROUP_NAME_MAX_LENGTH,
   GROUP_NAME_MIN_LENGTH,
@@ -32,9 +32,19 @@ import {
   GroupPermissionOption,
 } from '../group-form/group-permission-options';
 import { groupNameLengthValidator } from '../group-form/group-name-validator';
+import { FieldCounter } from '../../../../shared/presentation/components/field-counter/field-counter';
 
 /**
- * GroupPermissionsForm configures the data and the permissions of a role.
+ * GroupRoleView is the part of the role that the form shows.
+ *
+ * The form keeps the values of every part of the role, so the administrator
+ * moves between the views without losing what he wrote. The view of the
+ * members does not edit the role: the form only keeps its values alive.
+ */
+export type GroupRoleView = 'datos' | 'permisos' | 'miembros';
+
+/**
+ * GroupRoleForm configures the data and the permissions of a role.
  *
  * The form is presentational: it renders the role that the platform
  * published and it announces the changes of the administrator. It never
@@ -42,6 +52,7 @@ import { groupNameLengthValidator } from '../group-form/group-name-validator';
  */
 @Component({
   imports: [
+    FieldCounter,
     GroupColorPicker,
     MatButtonModule,
     MatFormFieldModule,
@@ -49,15 +60,17 @@ import { groupNameLengthValidator } from '../group-form/group-name-validator';
     MatSlideToggleModule,
     ReactiveFormsModule,
   ],
-  selector: 'app-group-permissions-form',
-  styleUrl: './group-permissions-form.scss',
-  templateUrl: './group-permissions-form.html',
+  selector: 'app-group-role-form',
+  styleUrl: './group-role-form.scss',
+  templateUrl: './group-role-form.html',
 })
-export class GroupPermissionsForm {
+export class GroupRoleForm {
   private readonly formBuilder = inject(FormBuilder);
 
   /** The role that is being configured. */
   readonly group = input.required<Group>();
+  /** The part of the role that the form shows. */
+  readonly view = input.required<GroupRoleView>();
   /** A localized failure while saving the role. */
   readonly saveFailure = input<string | null>(null);
   /** Whether an update request is in progress. */
@@ -65,8 +78,6 @@ export class GroupPermissionsForm {
 
   /** The partial edit was requested. */
   readonly saveRequested = output<UpdateGroupCommand>();
-  /** Leaving the form was requested. */
-  readonly cancelRequested = output<void>();
   /** The form has a net change from the role that the platform published. */
   readonly pendingChangesChange = output<boolean>();
 

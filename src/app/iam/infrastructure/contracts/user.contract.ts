@@ -14,6 +14,14 @@
 export type UserStatusResource = 'active' | 'pending';
 
 /**
+ * The kind of account that the platform publishes.
+ *
+ * The Owner of the platform is the account that is not a member: it holds
+ * every permission and the platform protects it.
+ */
+export type UserTypeResource = 'owner' | 'member';
+
+/**
  * The representation of an account of the platform.
  */
 export interface UserListItemResource {
@@ -27,6 +35,8 @@ export interface UserListItemResource {
   readonly lastName: string;
   /** The state of the account. */
   readonly status: UserStatusResource;
+  /** The kind of account. */
+  readonly userType: UserTypeResource;
 }
 
 /**
@@ -113,4 +123,6 @@ export interface ManagedUserResource {
   readonly lastName: string;
   /** The state of the account. */
   readonly status: UserStatusResource;
+  /** The kind of account. */
+  readonly userType: UserTypeResource;
 }
