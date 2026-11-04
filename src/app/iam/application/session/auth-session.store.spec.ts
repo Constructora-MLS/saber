@@ -31,14 +31,23 @@ const permissions: EffectivePermissions = {
 };
 
 describe('AuthSessionStore', () => {
-  function setup(refresh: () => Promise<{ accessToken: string; identity: AuthIdentity }>) {
+  function setup(
+    refresh: () => Promise<{ accessToken: string; identity: AuthIdentity }>,
+    verifyImplementation?: () => Promise<{
+      identity: AuthIdentity;
+      permissions: EffectivePermissions;
+    }>,
+  ) {
     const signIn = vi
       .fn()
       .mockResolvedValue({ accessToken: 'the-access-token', identity, permissions });
-    const verify = vi.fn().mockResolvedValue({
-      identity: { ...identity, firstName: 'Administrador' },
-      permissions,
-    });
+    const verify = vi.fn(
+      verifyImplementation ??
+        (async () => ({
+          identity: { ...identity, firstName: 'Administrador' },
+          permissions,
+        })),
+    );
     const logout = vi.fn().mockResolvedValue(undefined);
     const injector = Injector.create({
       providers: [
@@ -48,6 +57,33 @@ describe('AuthSessionStore', () => {
     });
     const store = runInInjectionContext(injector, () => new AuthSessionStore());
     return { store, signIn, verify, logout };
+  }
+
+  /**
+   * setupWith builds the store with the gateway that the test controls.
+   *
+   * The helper exists for the concurrency tests: they need to answer the
+   * renewal and the verification by hand, in the order that they travel.
+   */
+  function setupWith(
+    verify: () => Promise<{ identity: AuthIdentity; permissions: EffectivePermissions }>,
+    refresh: () => Promise<{ accessToken: string; identity: AuthIdentity }>,
+  ) {
+    const injector = Injector.create({
+      providers: [
+        { provide: AuthGateway, useValue: { refresh, verify, logout: vi.fn() } },
+        {
+          provide: SignInCommandService,
+          useValue: {
+            execute: vi
+              .fn()
+              .mockResolvedValue({ accessToken: 'the-access-token', identity, permissions }),
+          },
+        },
+      ],
+    });
+    const store = runInInjectionContext(injector, () => new AuthSessionStore());
+    return { store };
   }
 
   it('guarda la sesión del sign in', async () => {
@@ -299,5 +335,270 @@ describe('AuthSessionStore', () => {
     await expect(store.restore()).rejects.toThrow();
     expect(store.authenticated()).toBe(false);
     expect(store.accessToken()).toBeNull();
+  });
+
+  it('lee los permisos una sola vez cuando dos refrescos llegan a la vez', async () => {
+    const { store, verify } = setup(async () => ({ accessToken: 'the-access-token', identity }));
+    await store.signIn({ email: 'admin@akame.local', password: 'the-password' });
+    verify.mockClear();
+
+    await Promise.all([store.refreshPermissions(), store.refreshPermissions()]);
+
+    expect(verify).toHaveBeenCalledTimes(1);
+  });
+
+  it('renueva la sesión una sola vez cuando el token de acceso expiró', async () => {
+    // El token de acceso venció y la cookie de la sesión sigue viva: la
+    // lectura de los permisos merece una renovación en vez de un rechazo.
+    const refresh = vi.fn().mockResolvedValue({ accessToken: 'the-renewed-token', identity });
+    let reads = 0;
+    const { store } = setup(
+      refresh,
+      async () => {
+        reads += 1;
+        if (reads === 2) {
+          throw new AuthApiError(401, 'unauthorized', 'The access token expired.');
+        }
+        return { identity, permissions };
+      },
+    );
+
+    await store.signIn({ email: 'admin@akame.local', password: 'the-password' });
+    await store.refreshPermissions();
+
+    expect(refresh).toHaveBeenCalledTimes(1);
+    expect(store.accessToken()).toBe('the-renewed-token');
+    expect(store.permissions().manageEmployees).toBe(true);
+  });
+
+  it('olvida la sesión cuando la renovación de la lectura es rechazada', async () => {
+    // La cookie de la sesión también está muerta: la credencial es muerta
+    // y la sesión se abandona, como la frontera lo hace.
+    const refresh = vi.fn().mockRejectedValue(
+      new AuthApiError(401, 'invalid_refresh_token', 'The refresh token is not valid.'),
+    );
+    const { store } = setup(refresh, async () => {
+      throw new AuthApiError(401, 'unauthorized', 'The access token expired.');
+    });
+
+    await store.signIn({ email: 'admin@akame.local', password: 'the-password' });
+
+    await expect(store.refreshPermissions()).rejects.toBeInstanceOf(AuthApiError);
+
+    expect(refresh).toHaveBeenCalledTimes(1);
+    expect(store.authenticated()).toBe(false);
+    expect(store.credentialRejected()).toBe(true);
+  });
+
+  it('conserva la sesión cuando la plataforma no está disponible', async () => {
+    // La plataforma no contesta: la sesión sobrevive y la lectura falla,
+    // pero la credencial no está muerta.
+    const refresh = vi.fn().mockRejectedValue(
+      new AuthApiError(503, 'identity_store_unavailable', 'The store of the sessions is down.'),
+    );
+    const { store } = setup(refresh, async () => {
+      throw new AuthApiError(503, 'identity_store_unavailable', 'The store of the sessions is down.');
+    });
+
+    await store.signIn({ email: 'admin@akame.local', password: 'the-password' });
+
+    await expect(store.refreshPermissions()).rejects.toBeInstanceOf(AuthApiError);
+
+    expect(store.authenticated()).toBe(true);
+    expect(store.credentialRejected()).toBe(false);
+  });
+
+  it('no renueva la sesión cuando la lectura no fue rechazada por la credencial', async () => {
+    const refresh = vi.fn().mockResolvedValue({ accessToken: 'the-renewed-token', identity });
+    const { store } = setup(refresh, async () => {
+      throw new AuthApiError(500, 'unexpected_error', 'The platform failed.');
+    });
+
+    await store.signIn({ email: 'admin@akame.local', password: 'the-password' });
+
+    await expect(store.refreshPermissions()).rejects.toBeInstanceOf(AuthApiError);
+
+    expect(refresh).not.toHaveBeenCalled();
+    expect(store.authenticated()).toBe(true);
+  });
+
+  it('no deja que la verificación de una sesión reemplace la sesión que la desplazó', async () => {
+    // La primera cuenta inicia sesión y su verificación viaja: la lectura
+    // de los permisos que sigue es la de la plataforma.
+    const first: AuthIdentity = { ...identity, uuid: 'the-first-user', email: 'first@akame.local' };
+    const second: AuthIdentity = { ...identity, uuid: 'the-second-user', email: 'second@akame.local' };
+    const secondPermissions: EffectivePermissions = {
+      ...permissions,
+      manageEmployees: false,
+      manageCatalog: true,
+    };
+
+    let answer: (account: { identity: AuthIdentity; permissions: EffectivePermissions }) => void =
+      () => {};
+    const pending = new Promise<{ identity: AuthIdentity; permissions: EffectivePermissions }>(
+      (resolve) => {
+        answer = resolve;
+      },
+    );
+
+    const verify = vi
+      .fn()
+      .mockResolvedValue({ identity: second, permissions: secondPermissions })
+      .mockResolvedValueOnce({ identity: first, permissions })
+      .mockImplementationOnce(() => pending);
+
+    const injector = Injector.create({
+      providers: [
+        {
+          provide: AuthGateway,
+          useValue: {
+            refresh: async () => ({ accessToken: 'the-access-token', identity }),
+            verify,
+            logout: vi.fn(),
+          },
+        },
+        {
+          provide: SignInCommandService,
+          useValue: {
+            execute: vi
+              .fn()
+              .mockResolvedValue({ accessToken: 'the-access-token', identity, permissions }),
+          },
+        },
+      ],
+    });
+    const store = runInInjectionContext(injector, () => new AuthSessionStore());
+
+    await store.signIn({ email: 'first@akame.local', password: 'the-password' });
+
+    // La lectura de los permisos de la primera cuenta viaja y no ha
+    // terminado todavía.
+    const refreshing = store.refreshPermissions();
+
+    // Otra cuenta inicia sesión mientras la lectura viaja: la sesión que
+    // aparece es la del usuario y la lectura atrasada no puede tocarla.
+    await store.signIn({ email: 'second@akame.local', password: 'the-password' });
+
+    answer({ identity: first, permissions });
+    await refreshing;
+
+    expect(store.identity()?.uuid).toBe('the-second-user');
+    expect(store.identity()?.email).toBe('second@akame.local');
+    expect(store.permissions().manageCatalog).toBe(true);
+    expect(store.permissions().manageEmployees).toBe(false);
+  });
+
+  it('no abandona la sesión que desplazó a la que hacía la lectura', async () => {
+    // La lectura de los permisos de la primera cuenta viaja y la segunda
+    // cuenta inicia sesión antes de que la lectura conteste.
+    const first: AuthIdentity = { ...identity, uuid: 'the-first-user', email: 'first@akame.local' };
+    const second: AuthIdentity = { ...identity, uuid: 'the-second-user', email: 'second@akame.local' };
+    const secondPermissions: EffectivePermissions = {
+      ...permissions,
+      manageEmployees: false,
+      manageCatalog: true,
+    };
+
+    let failRead: (error: unknown) => void = () => {};
+    const pendingRead = new Promise<{ identity: AuthIdentity; permissions: EffectivePermissions }>(
+      (_, reject) => {
+        failRead = reject;
+      },
+    );
+
+    const verify = vi
+      .fn()
+      .mockResolvedValue({ identity: second, permissions: secondPermissions })
+      .mockResolvedValueOnce({ identity: first, permissions })
+      .mockImplementationOnce(() => pendingRead);
+
+    const { store } = setupWith(verify, async () => ({
+      accessToken: 'the-access-token',
+      identity,
+    }));
+
+    await store.signIn({ email: 'first@akame.local', password: 'the-password' });
+
+    const refreshing = store.refreshPermissions();
+    await vi.waitFor(() => expect(verify).toHaveBeenCalledTimes(2));
+
+    await store.signIn({ email: 'second@akame.local', password: 'the-password' });
+
+    // La lectura de la primera cuenta es rechazada por la credencial: la
+    // sesión que la desplazó no puede ser abandonada.
+    failRead(new AuthApiError(401, 'unauthorized', 'The access token expired.'));
+    await refreshing;
+
+    expect(store.authenticated()).toBe(true);
+    expect(store.identity()?.uuid).toBe('the-second-user');
+    expect(store.permissions().manageCatalog).toBe(true);
+    expect(store.credentialRejected()).toBe(false);
+  });
+
+  it('no atribuye a la sesión que espera una renovación rechazada de otra sesión', async () => {
+    // La primera cuenta renueva su sesión porque su token venció, y la
+    // renovación viaja cuando la segunda cuenta inicia sesión.
+    const first: AuthIdentity = { ...identity, uuid: 'the-first-user', email: 'first@akame.local' };
+    const second: AuthIdentity = { ...identity, uuid: 'the-second-user', email: 'second@akame.local' };
+    const secondPermissions: EffectivePermissions = {
+      ...permissions,
+      manageEmployees: false,
+      manageCatalog: true,
+    };
+
+    let failRenewal: (error: unknown) => void = () => {};
+    const pendingRenewal = new Promise<{ accessToken: string; identity: AuthIdentity }>(
+      (_, reject) => {
+        failRenewal = reject;
+      },
+    );
+    let answerRead: (account: { identity: AuthIdentity; permissions: EffectivePermissions }) => void =
+      () => {};
+    const pendingRead = new Promise<{ identity: AuthIdentity; permissions: EffectivePermissions }>(
+      (resolve) => {
+        answerRead = resolve;
+      },
+    );
+
+    const verify = vi
+      .fn()
+      .mockResolvedValue({ identity: second, permissions: secondPermissions })
+      .mockResolvedValueOnce({ identity: first, permissions })
+      .mockRejectedValueOnce(new AuthApiError(401, 'unauthorized', 'The access token expired.'))
+      .mockImplementationOnce(() => pendingRead);
+
+    const refresh = vi.fn(() => pendingRenewal);
+    const { store } = setupWith(verify, refresh);
+
+    await store.signIn({ email: 'first@akame.local', password: 'the-password' });
+
+    // La lectura de la primera cuenta es rechazada por la credencial, así
+    // que su sesión se renueva.
+    const refreshing = store.refreshPermissions();
+    await vi.waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
+
+    // La segunda cuenta inicia sesión mientras la renovación viaja y su
+    // propia lectura de los permisos también sigue en el camino.
+    const signing = store.signIn({ email: 'second@akame.local', password: 'the-password' });
+    await vi.waitFor(() => expect(verify).toHaveBeenCalledTimes(3));
+
+    // La renovación de la primera cuenta es rechazada: la sesión que la
+    // desplazó no puede ser abandonada por ella.
+    failRenewal(new AuthApiError(401, 'invalid_refresh_token', 'The refresh token is not valid.'));
+    await expect(refreshing).rejects.toBeInstanceOf(AuthApiError);
+
+    expect(store.authenticated()).toBe(true);
+    expect(store.credentialRejected()).toBe(false);
+
+    // La lectura de la segunda cuenta contesta y no se une a la renovación
+    // rechazada de la primera.
+    answerRead({ identity: second, permissions: secondPermissions });
+    await signing;
+
+    expect(store.authenticated()).toBe(true);
+    expect(store.identity()?.uuid).toBe('the-second-user');
+    expect(store.permissions().manageCatalog).toBe(true);
+    expect(store.permissions().manageEmployees).toBe(false);
+    expect(store.credentialRejected()).toBe(false);
   });
 });

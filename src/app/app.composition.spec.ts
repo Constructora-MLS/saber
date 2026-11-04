@@ -211,4 +211,30 @@ describe('the chain of a dead credential', () => {
     expect(navigate).toHaveBeenCalledWith(['/sign-in']);
     platform.verify();
   });
+
+  it('lee los permisos una sola vez cuando la plataforma rechaza la lectura', async () => {
+    const { http, platform, store } = setup();
+
+    await signIn(store, platform);
+
+    const request = firstValueFrom(http.get('/api/v1/users'));
+    platform.expectOne('/api/v1/users').flush('Forbidden', { status: 403, statusText: 'Forbidden' });
+
+    // La plataforma rechaza la operación, así que el navegador lee los
+    // permisos del miembro otra vez.
+    await vi.waitFor(() => {
+      const [verification] = platform.match('/api/v1/auth/verify');
+      if (!verification) {
+        throw new Error('the verification has not travelled yet');
+      }
+      verification.flush('Forbidden', { status: 403, statusText: 'Forbidden' });
+    });
+
+    await expect(request).rejects.toMatchObject({ status: 403 });
+
+    // El rechazo de la lectura no pide los permisos otra vez: la cadena
+    // termina aquí y no se repite sola.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    platform.verify();
+  });
 });

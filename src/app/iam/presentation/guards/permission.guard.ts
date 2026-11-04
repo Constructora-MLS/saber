@@ -51,7 +51,23 @@ export const permissionGuard: CanMatchFn = async (route) => {
     return true;
   }
 
+  // The permissions that the browser holds may be older than the ones that
+  // the platform grants: the member may have received a permission in
+  // another session, and the session of the browser still holds the
+  // permissions of before. The platform is asked once for the permissions
+  // that it grants right now, and the route is opened when it grants them.
+  //
+  // The read is not a poll: it happens only when a route was refused, and
+  // it is read once. A read that fails leaves the session alive: the
+  // refusal stands and the member reaches the page that explains it.
+  await session.refreshPermissions().catch(() => undefined);
+
+  const refreshed = session.permissions();
+  if (holdsAnyPermission(refreshed, required)) {
+    return true;
+  }
+
   return router.createUrlTree([
-    hasAnyAccess(permissions) ? '/forbidden' : '/no-permissions',
+    hasAnyAccess(refreshed) ? '/forbidden' : '/no-permissions',
   ]);
 };

@@ -23,6 +23,19 @@ export interface DeleteUserCommand {
 }
 
 /**
+ * CancelInvitationCommand asks for the cancellation of the invitation of a
+ * pending account.
+ *
+ * The cancellation is not the deletion of the account: it closes the
+ * onboarding of a person that never accepted the invitation, and the pending
+ * account survives it.
+ */
+export interface CancelInvitationCommand {
+  /** The identifier of the pending account. */
+  readonly id: string;
+}
+
+/**
  * AcceptInvitationCommand asks for the activation of an invited account.
  *
  * The address is not part of the command: the invitation already carries it

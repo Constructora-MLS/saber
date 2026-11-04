@@ -69,6 +69,16 @@
   line-height: 1.4;
 }
 
+/* The note explains why a switch is closed for the member that edits the
+   role: the platform only lets a member change the permissions that it
+   holds itself. */
+.permission-locked {
+  color: var(--app-text-muted);
+  font-size: 0.76rem;
+  font-style: italic;
+  line-height: 1.4;
+}
+
 /* The note explains why the capabilities are not editable while the role
    grants the access to every resource. */
 .permission-note {

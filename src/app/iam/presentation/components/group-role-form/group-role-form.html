@@ -40,6 +40,11 @@
             <div class="permission-copy">
               <span class="permission-label">{{ permission.label }}</span>
               <span class="permission-description">{{ permission.description }}</span>
+              @if (!mayChange(permission)) {
+                <span class="permission-locked">
+                  No tienes este permiso, así que no puedes cambiarlo.
+                </span>
+              }
             </div>
             <mat-slide-toggle
               [formControlName]="permission.key"

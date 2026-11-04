@@ -1,4 +1,4 @@
-import { GroupPermissions } from './group-permissions';
+import { GroupPermissions, GroupPermissionKey } from './group-permissions';
 
 /**
  * FunctionalPermission is one of the six permissions that a group grants.
@@ -77,4 +77,28 @@ export function holdsAnyPermission(
     return true;
   }
   return required.some((permission) => holdsPermission(permissions, permission));
+}
+
+/**
+ * mayEditPermission reports whether the member may enable or disable the
+ * given permission of a group.
+ *
+ * A member may only enable or disable the permissions that they hold
+ * themselves, so the permissions that they do not hold stay locked, whether
+ * the group grants them or not.
+ *
+ * The Administrator permission is not a functional permission: the Owner and
+ * the members that hold it are the only ones that may turn it on or off.
+ */
+export function mayEditPermission(
+  permissions: EffectivePermissions,
+  permission: GroupPermissionKey,
+): boolean {
+  if (permissions.owner) {
+    return true;
+  }
+  if (permission === 'administrator') {
+    return permissions.administrator;
+  }
+  return holdsPermission(permissions, permission);
 }

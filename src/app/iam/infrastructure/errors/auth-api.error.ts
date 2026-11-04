@@ -125,3 +125,19 @@ export function isResetNotFound(error: unknown): boolean {
 export function isUnauthorized(error: unknown): boolean {
   return statusOf(error) === UNAUTHORIZED_STATUS;
 }
+
+/**
+ * FORBIDDEN_STATUS is the status of an operation that the platform refuses.
+ */
+export const FORBIDDEN_STATUS = 403;
+
+/**
+ * isForbidden tells whether the platform refused the operation.
+ *
+ * The refusal does not prove that a permission was revoked: the platform
+ * also refuses the operations that break the hierarchy of the groups, so
+ * the predicate only reports the refusal and never names its cause.
+ */
+export function isForbidden(error: unknown): boolean {
+  return statusOf(error) === FORBIDDEN_STATUS;
+}

@@ -86,6 +86,22 @@ export class UserGateway {
   }
 
   /**
+   * cancelInvitation closes the invitation of a pending account.
+   *
+   * The cancellation is not the deletion of the account: the pending account
+   * survives it and only the credential of the invitation is removed, so the
+   * person that never accepted the invitation cannot complete the
+   * onboarding.
+   */
+  async cancelInvitation(id: UserId): Promise<void> {
+    await firstValueFrom(
+      this.http
+        .delete<void>(`${this.baseUrl}/users/${id.value}/invitation`)
+        .pipe(catchError((error: HttpErrorResponse) => this.toFailure(error))),
+    );
+  }
+
+  /**
    * getInvitation reads the address that an invitation bound.
    *
    * The invitation is not consumed: the invited member can still accept it

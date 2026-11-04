@@ -1,10 +1,15 @@
 import '@angular/compiler';
-import { DestroyRef, Injector, runInInjectionContext } from '@angular/core';
+import { DestroyRef, Injector, runInInjectionContext, signal } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { describe, expect, it } from 'vitest';
 import { ListUsersQueryService } from '../../../application/query-services/user-query-services';
+import { AuthSessionStore } from '../../../application/session/auth-session.store';
 import { PlatformUser } from '../../../domain/model/aggregates/platform-user';
+import {
+  EFFECTIVE_PERMISSIONS,
+  EffectivePermissions,
+} from '../../../domain/model/value-objects/effective-permissions';
 import { Email, restoreEmail } from '../../../domain/model/value-objects/email';
 import { UserId } from '../../../domain/model/value-objects/user-id';
 import { UsersPage } from './users.page';
@@ -25,13 +30,20 @@ const account = PlatformUser.restore(
   'active',
 );
 
-function pageWith(listUsers: ListUsersQueryService) {
+function pageWith(
+  listUsers: ListUsersQueryService,
+  permissions: EffectivePermissions = EFFECTIVE_PERMISSIONS,
+) {
   const injector = Injector.create({
     providers: [
       { provide: MatDialog, useValue: {} },
       { provide: MatSnackBar, useValue: {} },
       { provide: DestroyRef, useValue: { onDestroy: () => undefined } },
       { provide: ListUsersQueryService, useValue: listUsers },
+      {
+        provide: AuthSessionStore,
+        useValue: { permissions: signal(permissions).asReadonly() },
+      },
     ],
   });
 
@@ -41,6 +53,7 @@ function pageWith(listUsers: ListUsersQueryService) {
     rows(): readonly { id: string; name: string; email: string; status: string }[];
     page(): number;
     totalPages(): number;
+    canManageUsers(): boolean;
   };
 }
 
@@ -94,5 +107,45 @@ describe('UsersPage', () => {
 
     expect(page.loading()).toBe(false);
     expect(page.rows()).toEqual([]);
+  });
+
+  it('offers the administration of the accounts to the members that hold it', () => {
+    const page = pageWith(
+      {
+        execute: async () => ({ items: [], page: 1, totalPages: 0, total: 0 }),
+      } as unknown as ListUsersQueryService,
+      { ...EFFECTIVE_PERMISSIONS, manageUsers: true },
+    );
+
+    expect(page.canManageUsers()).toBe(true);
+  });
+
+  it('does not offer the administration of the accounts to the members that only read them', () => {
+    const page = pageWith(
+      {
+        execute: async () => ({ items: [], page: 1, totalPages: 0, total: 0 }),
+      } as unknown as ListUsersQueryService,
+      { ...EFFECTIVE_PERMISSIONS, managePermissionsGroups: true },
+    );
+
+    expect(page.canManageUsers()).toBe(false);
+  });
+
+  it('offers the administration of the accounts to the owner and to the administrator', () => {
+    const owner = pageWith(
+      {
+        execute: async () => ({ items: [], page: 1, totalPages: 0, total: 0 }),
+      } as unknown as ListUsersQueryService,
+      { ...EFFECTIVE_PERMISSIONS, owner: true },
+    );
+    const administrator = pageWith(
+      {
+        execute: async () => ({ items: [], page: 1, totalPages: 0, total: 0 }),
+      } as unknown as ListUsersQueryService,
+      { ...EFFECTIVE_PERMISSIONS, administrator: true },
+    );
+
+    expect(owner.canManageUsers()).toBe(true);
+    expect(administrator.canManageUsers()).toBe(true);
   });
 });

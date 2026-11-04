@@ -35,6 +35,6 @@
     (click)="confirm()"
   >
     <mat-icon aria-hidden="true">delete</mat-icon>
-    {{ deleting() ? 'Borrando…' : action() }}
+    {{ deleting() ? runningAction() : action() }}
   </button>
 </mat-dialog-actions>

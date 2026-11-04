@@ -92,6 +92,15 @@ describe('UserGateway', () => {
     expect(remove).toHaveBeenCalledWith(`/api/v1/users/${account.uuid}`);
   });
 
+  it('cancels the invitation of a pending account without deleting the account', async () => {
+    const remove = vi.fn(() => of(null));
+    const gateway = gatewayFor({ delete: remove });
+
+    await gateway.cancelInvitation(UserId.restore(account.uuid));
+
+    expect(remove).toHaveBeenCalledWith(`/api/v1/users/${account.uuid}/invitation`);
+  });
+
   it('reads the address that an invitation bound without consuming it', async () => {
     const get = vi.fn(() => of({ email: 'member@example.test' }));
     const gateway = gatewayFor({ get });

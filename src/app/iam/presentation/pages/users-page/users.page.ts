@@ -10,7 +10,9 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ListUsersQueryService } from '../../../application/query-services/user-query-services';
 import { UserPage } from '../../../application/queries/user-queries';
+import { AuthSessionStore } from '../../../application/session/auth-session.store';
 import { PlatformUser } from '../../../domain/model/aggregates/platform-user';
+import { holdsPermission } from '../../../domain/model/value-objects/effective-permissions';
 import { FilterableUserStatus } from '../../../domain/model/value-objects/user-status';
 import { Paginator } from '../../../../shared/presentation/components/paginator/paginator';
 import {
@@ -55,6 +57,7 @@ export class UsersPage implements OnInit {
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly listUsers = inject(ListUsersQueryService);
+  private readonly session = inject(AuthSessionStore);
   private readonly destroyRef = inject(DestroyRef);
 
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
@@ -70,6 +73,19 @@ export class UsersPage implements OnInit {
   protected readonly totalPages = signal(0);
   protected readonly loading = signal(true);
   protected readonly loadFailure = signal<UserFailureMessage | null>(null);
+
+  /**
+   * Whether the member may administer the accounts of the platform.
+   *
+   * The listing of the accounts is a reference read of the administration of
+   * the groups, so a member that administers the groups reads the accounts
+   * without inviting them and without removing them. The Owner and the
+   * members with the Administrator permission hold every permission of the
+   * platform, so they are included.
+   */
+  protected readonly canManageUsers = computed(() =>
+    holdsPermission(this.session.permissions(), 'manageUsers'),
+  );
 
   /**
    * The headline of the state shown when the listing has no accounts.
@@ -187,8 +203,15 @@ export class UsersPage implements OnInit {
 
   /**
    * openInviteDialog opens the dialog that invites a member.
+   *
+   * The dialog is only offered to the members that may administer the
+   * accounts: the platform refuses the invitation of anybody else.
    */
   protected openInviteDialog(): void {
+    if (!this.canManageUsers()) {
+      return;
+    }
+
     this.dialog
       .open(InviteUserDialog, { width: '32rem', maxWidth: '94vw' })
       .afterClosed()
@@ -204,6 +227,10 @@ export class UsersPage implements OnInit {
    * openDeleteDialog opens the dialog that removes the access of an account.
    */
   protected openDeleteDialog(row: UserRow): void {
+    if (!this.canManageUsers()) {
+      return;
+    }
+
     const account: DeletableUser = {
       id: row.id,
       name: row.name,
@@ -216,7 +243,11 @@ export class UsersPage implements OnInit {
       .afterClosed()
       .subscribe((deleted) => {
         if (deleted) {
-          this.notify('Cuenta borrada.');
+          this.notify(
+            row.status === 'pending'
+              ? 'Invitación cancelada. La cuenta pendiente se conserva.'
+              : 'Cuenta borrada.',
+          );
           void this.reload();
         }
       });
