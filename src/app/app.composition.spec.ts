@@ -33,7 +33,6 @@ const userResource = {
   lastName: 'Akame',
   permissions: {
     manageEmployees: false,
-    manageAssignments: false,
     manageCatalog: false,
     manageCertificates: false,
     manageUsers: false,
@@ -60,7 +59,6 @@ const account = {
   },
   permissions: {
     manageEmployees: false,
-    manageAssignments: false,
     manageCatalog: false,
     manageCertificates: false,
     manageUsers: false,

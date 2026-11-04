@@ -43,7 +43,6 @@ function deferred<T>() {
 
 const permissions = {
   manageEmployees: false,
-  manageAssignments: false,
   manageCatalog: false,
   manageCertificates: false,
   manageUsers: false,

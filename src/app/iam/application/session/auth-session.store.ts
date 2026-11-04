@@ -36,6 +36,7 @@ export class AuthSessionStore {
    * for it.
    */
   private pendingRenewalSessionId: number | null = null;
+  private pendingRenewalGeneration: number | null = null;
   /**
    * The verification of the permissions that is already running.
    *
@@ -57,6 +58,8 @@ export class AuthSessionStore {
    * the very same token, and the token cannot tell them apart.
    */
   private readonly currentSessionId = signal(0);
+  /** A login generation survives token renewal, but not a new sign-in or closure. */
+  private readonly currentSessionGeneration = signal(0);
   /**
    * The number of times that the platform rejected the credential of the
    * browser.
@@ -92,6 +95,8 @@ export class AuthSessionStore {
    * that the platform signs.
    */
   readonly sessionId = this.currentSessionId.asReadonly();
+  /** Identifies the login that owns a request across access-token renewals. */
+  readonly sessionGeneration = this.currentSessionGeneration.asReadonly();
   /**
    * rejectionCount is the number of deaths of the credential that the
    * browser has seen.
@@ -120,6 +125,7 @@ export class AuthSessionStore {
     const session = await this.signInCommand.execute(command);
     // The session is open before the permissions are read: the
     // verification travels with the access token of the answer.
+    this.currentSessionGeneration.update((generation) => generation + 1);
     this.open(session);
     // A new session dismisses the rejection of the previous one: the
     // credential that died is not the credential of this session, so the
@@ -148,13 +154,24 @@ export class AuthSessionStore {
   restore(): Promise<boolean> {
     if (this.pending === null) {
       this.pendingRenewalSessionId = this.currentSessionId();
+      this.pendingRenewalGeneration = this.currentSessionGeneration();
       this.pending = this.renew().finally(() => {
         this.pending = null;
         this.pendingRenewalSessionId = null;
+        this.pendingRenewalGeneration = null;
       });
     }
 
     return this.pending;
+  }
+
+  /** A request must not share a renewal belonging to a different login. */
+  canRestoreFor(generation: number): boolean {
+    return (
+      this.authenticated() &&
+      this.currentSessionGeneration() === generation &&
+      (this.pendingRenewalGeneration === null || this.pendingRenewalGeneration === generation)
+    );
   }
 
   /**
@@ -236,7 +253,7 @@ export class AuthSessionStore {
       return pending.promise;
     }
 
-    const promise = this.readPermissionsOf(sessionId);
+    const promise = this.readPermissionsOf(sessionId, this.currentSessionGeneration());
     this.pendingVerification = { sessionId, promise };
     void promise
       .catch(() => undefined)
@@ -264,7 +281,7 @@ export class AuthSessionStore {
    * that read never renews the session again: the renewal would wait for
    * itself.
    */
-  private async readPermissionsOf(sessionId: number): Promise<void> {
+  private async readPermissionsOf(sessionId: number, generation: number): Promise<void> {
     try {
       await this.verify();
       return;
@@ -302,6 +319,11 @@ export class AuthSessionStore {
         this.forget(sessionId);
       }
       throw error;
+    }
+
+    // Do not read the permissions of a login that replaced this one.
+    if (this.currentSessionGeneration() !== generation) {
+      return;
     }
 
     // The renewal did not read the permissions: the read travels again with
@@ -386,6 +408,8 @@ export class AuthSessionStore {
    */
   clear(): void {
     this.session.set(null);
+    this.currentSessionId.update((id) => id + 1);
+    this.currentSessionGeneration.update((generation) => generation + 1);
     this.rejections.set(0);
   }
 
@@ -422,6 +446,8 @@ export class AuthSessionStore {
     }
 
     this.session.set(null);
+    this.currentSessionId.update((id) => id + 1);
+    this.currentSessionGeneration.update((generation) => generation + 1);
     this.rejections.update((deaths) => deaths + 1);
 
     return true;

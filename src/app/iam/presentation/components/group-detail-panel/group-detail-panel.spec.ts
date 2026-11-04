@@ -16,7 +16,6 @@ const role = Group.restore({
   priority: GroupPriority.restore(1),
   permissions: {
     manageEmployees: true,
-    manageAssignments: false,
     manageCatalog: false,
     manageCertificates: false,
     manageUsers: false,

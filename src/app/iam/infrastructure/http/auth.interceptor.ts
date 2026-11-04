@@ -81,6 +81,7 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
   // The request carries the identifier of the session that it uses, so the
   // reaction abandons exactly that session when the credential dies.
   const sessionId = session.sessionId();
+  const generation = session.sessionGeneration();
 
   return next(withAccessToken(request, accessToken)).pipe(
     catchError((error: unknown) => {
@@ -89,7 +90,7 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
       // the session ends with a verification, so a renewal that the
       // verification provoked would wait for itself, and a refusal that the
       // verification provoked would ask for the permissions forever.
-      if (request.url.includes(VERIFICATION_ROUTE)) {
+      if (request.url.includes(VERIFICATION_ROUTE) || session.sessionGeneration() !== generation) {
         return throwError(() => error);
       }
 
@@ -103,11 +104,11 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
       // The store of the session owns the policy of the credential: the
       // interceptor does not read the status of the failure, it asks the
       // session, so the boundary and the presentation share one rule.
-      if (!session.platformRejectedTheCredential(error)) {
+      if (!session.platformRejectedTheCredential(error) || !session.canRestoreFor(generation)) {
         return throwError(() => error);
       }
 
-      return renewAndRetry(request, next, session, accessToken, sessionId);
+      return renewAndRetry(request, next, session, accessToken, sessionId, generation, error);
     }),
   );
 };
@@ -165,6 +166,8 @@ function renewAndRetry(
   session: AuthSessionStore,
   accessToken: string,
   sessionId: number,
+  generation: number,
+  originalError: unknown,
 ): Observable<HttpEvent<unknown>> {
   return from(session.restore()).pipe(
     catchError((error: unknown) => {
@@ -173,6 +176,11 @@ function renewAndRetry(
       return throwError(() => error);
     }),
     switchMap(() => {
+      // Never replay a request under a different login, even if the old
+      // renewal succeeded after the new login appeared.
+      if (session.sessionGeneration() !== generation || !session.authenticated()) {
+        return throwError(() => originalError);
+      }
       const renewedToken = session.accessToken() ?? accessToken;
       // The renewal opened a session of its own: the retry carries the
       // identifier of that session, and not the one of the request that

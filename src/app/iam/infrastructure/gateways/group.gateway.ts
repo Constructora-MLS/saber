@@ -168,9 +168,6 @@ export class GroupGateway {
       ...(permissions.manageEmployees === undefined
         ? {}
         : { manageEmployees: permissions.manageEmployees }),
-      ...(permissions.manageAssignments === undefined
-        ? {}
-        : { manageAssignments: permissions.manageAssignments }),
       ...(permissions.manageCatalog === undefined
         ? {}
         : { manageCatalog: permissions.manageCatalog }),
@@ -209,10 +206,17 @@ export class GroupGateway {
     });
   }
 
+  /**
+   * permissions reads the permissions that the group grants.
+   *
+   * The deprecated alias of the permission of the employees is not read:
+   * it always carries the value of the canonical name, so the browser
+   * reads the one permission that administers the employees and their
+   * assignments.
+   */
   private permissions(resource: GroupPermissionsResource) {
     return {
       manageEmployees: resource.manageEmployees,
-      manageAssignments: resource.manageAssignments,
       manageCatalog: resource.manageCatalog,
       manageCertificates: resource.manageCertificates,
       manageUsers: resource.manageUsers,

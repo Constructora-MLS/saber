@@ -21,7 +21,6 @@ const identity: AuthIdentity = {
 /** The permissions that the platform publishes with the identity. */
 const permissions: EffectivePermissions = {
   manageEmployees: true,
-  manageAssignments: false,
   manageCatalog: false,
   manageCertificates: false,
   manageUsers: true,
@@ -325,6 +324,23 @@ describe('AuthSessionStore', () => {
 
     expect(store.accessToken()).toBe('the-access-token');
     expect(store.sessionId()).toBe(signedInSessionId);
+  });
+
+  it('does not reopen a session after it was cleared while renewal was pending', async () => {
+    let resolveRenewal: (session: { accessToken: string; identity: AuthIdentity }) => void = () => {};
+    const pending = new Promise<{ accessToken: string; identity: AuthIdentity }>((resolve) => {
+      resolveRenewal = resolve;
+    });
+    const { store } = setup(() => pending);
+    await store.signIn({ email: 'admin@akame.local', password: 'the-password' });
+
+    const restoring = store.restore();
+    store.clear();
+    resolveRenewal({ accessToken: 'the-renewed-token', identity });
+    await restoring;
+
+    expect(store.authenticated()).toBe(false);
+    expect(store.accessToken()).toBeNull();
   });
 
   it('no deja una sesión cuando la renovación falla', async () => {

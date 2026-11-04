@@ -73,6 +73,42 @@ describe('GroupGateway', () => {
     expect(options?.params?.get('page')).toBe('1');
   });
 
+  it('reads the personnel permission from its canonical name', async () => {
+    const get = vi.fn(() => of(resource));
+    const gateway = gatewayFor({ get });
+
+    const group = await gateway.getGroup(GroupId.restore(groupId));
+
+    // The platform publishes the deprecated alias of the permission of the
+    // personnel, but the alias is never an independent value: the browser
+    // reads the canonical name.
+    expect(group.permissions.manageEmployees).toBe(true);
+    expect(Object.keys(group.permissions)).not.toContain('manageAssignments');
+  });
+
+  it('never sends the deprecated alias of the personnel permission', async () => {
+    const patch = vi.fn((_url: string, _body?: unknown) => of(resource));
+    const gateway = gatewayFor({ patch });
+
+    await gateway.updateGroup(GroupId.restore(groupId), {
+      permissions: { manageEmployees: false },
+    });
+
+    expect(patch).toHaveBeenCalledWith(`/api/v1/groups/${groupId}`, { manageEmployees: false });
+    expect(patch.mock.calls[0]?.[1]).not.toHaveProperty('manageAssignments');
+  });
+
+  it('drops the deprecated alias even when a caller sends it', async () => {
+    const patch = vi.fn(() => of(resource));
+    const gateway = gatewayFor({ patch });
+
+    await gateway.updateGroup(GroupId.restore(groupId), {
+      permissions: { manageEmployees: true, manageAssignments: false } as never,
+    });
+
+    expect(patch).toHaveBeenCalledWith(`/api/v1/groups/${groupId}`, { manageEmployees: true });
+  });
+
   it('creates a group with only its name and color using POST /groups', async () => {
     const post = vi.fn((_url: string, _body: unknown) => of(resource));
     const gateway = gatewayFor({ post });
@@ -142,7 +178,6 @@ describe('GroupGateway', () => {
 
   it.each([
     'manageEmployees',
-    'manageAssignments',
     'manageCatalog',
     'manageCertificates',
     'manageUsers',

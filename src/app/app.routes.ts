@@ -210,7 +210,7 @@ export const routes: Routes = [
       {
         path: 'employees/:employeeId/assignments',
         title: 'Asignaciones',
-        data: { permission: ['manageEmployees', 'manageAssignments'] },
+        data: { permission: ['manageEmployees'] },
         canMatch: [permissionGuard],
         loadComponent: () =>
           import('./employees/presentation/pages/employee-assignments-page/employee-assignments.page').then(

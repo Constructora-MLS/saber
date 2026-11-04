@@ -1,7 +1,7 @@
 import '@angular/compiler';
 import { HttpErrorResponse, HttpRequest, HttpResponse } from '@angular/common/http';
 import { Injector, runInInjectionContext } from '@angular/core';
-import { firstValueFrom, of, throwError } from 'rxjs';
+import { firstValueFrom, of, Subject, throwError } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { SignInCommandService } from '../../application/command-services/auth-command-services';
 import { AuthIdentity } from '../../domain/model/value-objects/auth-identity';
@@ -20,7 +20,7 @@ const identity: AuthIdentity = {
 
 /** sessionOf is the session that the platform publishes. */
 function sessionOf(accessToken: string): AuthSession {
-  return { accessToken, identity };
+  return { accessToken, identity, permissions: account.permissions };
 }
 
 /** theCredentialIsDead is the failure of a renewal with a revoked cookie. */
@@ -44,7 +44,6 @@ const account = {
   },
   permissions: {
     manageEmployees: false,
-    manageAssignments: false,
     manageCatalog: false,
     manageCertificates: false,
     manageUsers: false,
@@ -300,6 +299,86 @@ describe('authInterceptor', () => {
     expect(store.authenticated()).toBe(true);
     expect(store.accessToken()).toBe('the-access-token');
     expect(store.credentialRejected()).toBe(false);
+  });
+
+  it('does not renew a request rejected after a different login', async () => {
+    const { run, next, store, refresh } = await setup();
+    const response = new Subject<HttpResponse<unknown>>();
+    next.mockImplementationOnce(() => response);
+    const oldRequest = firstValueFrom(run('/api/v1/users'));
+    const requestFailure = expect(oldRequest).rejects.toBeInstanceOf(HttpErrorResponse);
+
+    await store.signIn({ email: 'admin@akame.local', password: 'the-password' });
+    response.error(new HttpErrorResponse({ status: 401 }));
+    await requestFailure;
+
+    expect(refresh).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(store.authenticated()).toBe(true);
+  });
+
+  it('does not attribute an older session renewal failure to a new session', async () => {
+    let rejectRenewal: (error: unknown) => void = () => {};
+    const pending = new Promise<AuthSession>((_, reject) => {
+      rejectRenewal = reject;
+    });
+    const { run, next, store, refresh } = await setup({ refresh: () => pending });
+    const oldRenewal = store.restore();
+    const oldRenewalFailure = expect(oldRenewal).rejects.toBeInstanceOf(AuthApiError);
+
+    await store.signIn({ email: 'admin@akame.local', password: 'the-password' });
+    next.mockImplementation(() => throwError(() => new HttpErrorResponse({ status: 401 })));
+    const newRequest = firstValueFrom(run('/api/v1/users'));
+    const requestFailure = expect(newRequest).rejects.toBeDefined();
+
+    rejectRenewal(theCredentialIsDead());
+    await Promise.all([oldRenewalFailure, requestFailure]);
+
+    expect(refresh).toHaveBeenCalledTimes(1);
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(store.authenticated()).toBe(true);
+    expect(store.credentialRejected()).toBe(false);
+  });
+
+  it('does not retry an old request using a new session after renewal succeeds', async () => {
+    let resolveRenewal: (session: AuthSession) => void = () => {};
+    const pending = new Promise<AuthSession>((resolve) => {
+      resolveRenewal = resolve;
+    });
+    const { run, next, store } = await setup({ refresh: () => pending });
+    next.mockImplementationOnce(() => throwError(() => new HttpErrorResponse({ status: 401 })));
+    const oldRequest = firstValueFrom(run('/api/v1/users'));
+    const requestFailure = expect(oldRequest).rejects.toBeInstanceOf(HttpErrorResponse);
+
+    await store.signIn({ email: 'admin@akame.local', password: 'the-password' });
+    resolveRenewal(sessionOf('the-renewed-token'));
+    await requestFailure;
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(store.authenticated()).toBe(true);
+    expect(store.accessToken()).toBe('the-access-token');
+    expect(store.credentialRejected()).toBe(false);
+  });
+
+  it('does not retry an old request if a new login arrives during renewal verification', async () => {
+    let resolveVerification: (value: typeof account) => void = () => {};
+    const pending = new Promise<typeof account>((resolve) => {
+      resolveVerification = resolve;
+    });
+    const { run, next, store, verify } = await setup();
+    verify.mockImplementationOnce(() => pending);
+    next.mockImplementationOnce(() => throwError(() => new HttpErrorResponse({ status: 401 })));
+    const oldRequest = firstValueFrom(run('/api/v1/users'));
+    const requestFailure = expect(oldRequest).rejects.toBeInstanceOf(HttpErrorResponse);
+    await vi.waitFor(() => expect(verify).toHaveBeenCalledTimes(1));
+
+    await store.signIn({ email: 'admin@akame.local', password: 'the-password' });
+    resolveVerification(account);
+    await requestFailure;
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(store.authenticated()).toBe(true);
+    expect(store.accessToken()).toBe('the-access-token');
   });
 
   it('lee los permisos del miembro otra vez cuando la plataforma rechaza la operación', async () => {

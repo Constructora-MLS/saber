@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   EFFECTIVE_PERMISSIONS,
+  holdsAnyPermission,
   restoreEffectivePermissions,
 } from '../../../iam/domain/model/value-objects/effective-permissions';
+import { APPLICATION_CATALOG } from '../components/app-switcher/application-catalog';
 import { firstAccessibleRoute, hasAnyAccess } from './first-accessible-route';
 
 describe('the first accessible route', () => {
@@ -40,6 +42,22 @@ describe('the first accessible route', () => {
     });
 
     expect(firstAccessibleRoute(permissions)).toBe('/employees');
+  });
+
+  it('opens only the personnel for a member that administers the personal', () => {
+    const permissions = restoreEffectivePermissions({
+      ...EFFECTIVE_PERMISSIONS,
+      manageEmployees: true,
+    });
+    const sections = APPLICATION_CATALOG.filter((application) => application.status === 'active').flatMap(
+      (application) => application.sections,
+    );
+
+    const open = sections
+      .filter((section) => holdsAnyPermission(permissions, section.permissions))
+      .map((section) => section.path);
+
+    expect(open).toEqual(['/employees']);
   });
 
   it('has no route for a member that the platform grants nothing', () => {

@@ -29,7 +29,6 @@ const user = {
 /** The permissions that the platform publishes with the identity. */
 const permissions = {
   manageEmployees: true,
-  manageAssignments: false,
   manageCatalog: false,
   manageCertificates: false,
   manageUsers: true,
@@ -70,7 +69,6 @@ describe('AuthGateway', () => {
       },
       permissions: {
         manageEmployees: false,
-        manageAssignments: false,
         manageCatalog: false,
         manageCertificates: false,
         manageUsers: false,
@@ -99,7 +97,6 @@ describe('AuthGateway', () => {
       },
       permissions: {
         manageEmployees: false,
-        manageAssignments: false,
         manageCatalog: false,
         manageCertificates: false,
         manageUsers: false,
@@ -122,6 +119,31 @@ describe('AuthGateway', () => {
       },
       permissions,
     });
+  });
+
+  it('lee el permiso del personal por su nombre canónico e ignora el alias obsoleto', async () => {
+    const gateway = gatewayFor({
+      ...user,
+      permissions: { ...user.permissions, manageAssignments: false },
+    });
+
+    const account = await gateway.verify();
+
+    // El alias publicado siempre lleva el valor del nombre canónico: el
+    // navegador lee el nombre canónico y no guarda el alias.
+    expect(account.permissions.manageEmployees).toBe(true);
+    expect(Object.keys(account.permissions)).not.toContain('manageAssignments');
+  });
+
+  it('no toma el alias obsoleto como un permiso propio del personal', async () => {
+    const gateway = gatewayFor({
+      ...user,
+      permissions: { ...user.permissions, manageEmployees: false, manageAssignments: true },
+    });
+
+    const account = await gateway.verify();
+
+    expect(account.permissions.manageEmployees).toBe(false);
   });
 
   it('cierra la sesión con el endpoint de logout', async () => {

@@ -21,7 +21,6 @@ function group(name: string, color: string): Group {
     priority: GroupPriority.restore(1),
     permissions: {
       manageEmployees: false,
-      manageAssignments: false,
       manageCatalog: false,
       manageCertificates: false,
       manageUsers: false,

@@ -1,10 +1,17 @@
 /** The lifecycle state of a group as published by the backend. */
 export type GroupStatusResource = 'active' | 'deleted';
 
-/** The seven permission flags stored on a group. */
+/** The permission flags published for a group. */
 export interface GroupPermissionsResource {
   readonly manageEmployees: boolean;
-  readonly manageAssignments: boolean;
+  /**
+   * The deprecated alias of the permission that administers the employees.
+   *
+   * The alias always carries the value of `manageEmployees`: the two names
+   * are one permission, so the browser reads the canonical name and
+   * ignores the alias.
+   */
+  readonly manageAssignments?: boolean;
   readonly manageCatalog: boolean;
   readonly manageCertificates: boolean;
   readonly manageUsers: boolean;
@@ -43,7 +50,6 @@ export interface UpdateGroupRequestResource {
   readonly name?: string;
   readonly color?: string;
   readonly manageEmployees?: boolean;
-  readonly manageAssignments?: boolean;
   readonly manageCatalog?: boolean;
   readonly manageCertificates?: boolean;
   readonly manageUsers?: boolean;

@@ -1,7 +1,10 @@
 import { GroupPermissions, GroupPermissionKey } from './group-permissions';
 
 /**
- * FunctionalPermission is one of the six permissions that a group grants.
+ * FunctionalPermission is one of the five permissions that a group grants.
+ *
+ * The permission that administers the employees administers their
+ * assignments as well: it is one permission, not two.
  *
  * The Administrator permission is not one of them: it is the permission that
  * grants every functional permission of the platform.
@@ -24,7 +27,6 @@ export interface EffectivePermissions extends GroupPermissions {
 /** EFFECTIVE_PERMISSIONS are the permissions of a member that holds nothing. */
 export const EFFECTIVE_PERMISSIONS: EffectivePermissions = {
   manageEmployees: false,
-  manageAssignments: false,
   manageCatalog: false,
   manageCertificates: false,
   manageUsers: false,
