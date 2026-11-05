@@ -52,7 +52,7 @@
     </div>
 
     <nav class="sidebar-nav" [attr.aria-label]="moduleLabel()">
-      @for (item of navigation(); track item.label) {
+      @for (item of visibleNavigation(); track item.label) {
         @if (item.path; as path) {
           <a
             class="nav-item"

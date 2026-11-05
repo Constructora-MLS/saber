@@ -5,12 +5,17 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { catchError, firstValueFrom, throwError } from 'rxjs';
 import { API_BASE_URL } from '../../../api.config';
-import { AuthSession } from '../../application/session/auth-session';
+import { AuthSession, AuthenticatedAccount } from '../../application/session/auth-session';
 import { AuthIdentity, restoreAuthIdentity } from '../../domain/model/value-objects/auth-identity';
+import {
+  EffectivePermissions,
+  restoreEffectivePermissions,
+} from '../../domain/model/value-objects/effective-permissions';
 import { Email } from '../../domain/model/value-objects/email';
 import { Password } from '../../domain/model/value-objects/password';
 import { RecoveryToken } from '../../domain/model/value-objects/recovery-token';
 import {
+  EffectivePermissionsResource,
   ForgotPasswordRequestResource,
   ForgotPasswordResponseResource,
   ResetPasswordRequestResource,
@@ -52,20 +57,30 @@ export class AuthGateway {
     return this.toSession(resource);
   }
 
-  /** verify answers the identity of the user of the access token. */
-  async verify(): Promise<AuthIdentity> {
+  /**
+   * verify answers the identity and the authority of the user of the access
+   * token.
+   *
+   * The platform publishes the effective permissions of the member with the
+   * identity, so the browser learns what it may do without asking for it on
+   * every page.
+   */
+  async verify(): Promise<AuthenticatedAccount> {
     const resource = await firstValueFrom(
       this.http
         .get<UserResource>(`${this.baseUrl}/auth/verify`)
         .pipe(catchError((error: HttpErrorResponse) => this.toFailure(error))),
     );
 
-    return restoreAuthIdentity(
-      resource.uuid,
-      resource.email,
-      resource.firstName,
-      resource.lastName,
-    );
+    return {
+      identity: restoreAuthIdentity(
+        resource.uuid,
+        resource.email,
+        resource.firstName,
+        resource.lastName,
+      ),
+      permissions: this.toPermissions(resource.permissions),
+    };
   }
 
   /**
@@ -125,7 +140,38 @@ export class AuthGateway {
         resource.user.firstName,
         resource.user.lastName,
       ),
+      permissions: restoreEffectivePermissions({
+        manageEmployees: false,
+        manageAssignments: false,
+        manageCatalog: false,
+        manageCertificates: false,
+        manageUsers: false,
+        managePermissionsGroups: false,
+        administrator: false,
+        owner: false,
+      }),
     };
+  }
+
+  /**
+   * toPermissions reads the effective permissions of the member.
+   *
+   * The platform publishes the permissions with the identity. A platform
+   * that does not publish them grants nothing to the member, so the
+   * browser reads them as absent instead of failing: the session opens and
+   * the member reaches the page that tells him that he has no access.
+   */
+  private toPermissions(resource: EffectivePermissionsResource | undefined): EffectivePermissions {
+    return restoreEffectivePermissions({
+      manageEmployees: resource?.manageEmployees ?? false,
+      manageAssignments: resource?.manageAssignments ?? false,
+      manageCatalog: resource?.manageCatalog ?? false,
+      manageCertificates: resource?.manageCertificates ?? false,
+      manageUsers: resource?.manageUsers ?? false,
+      managePermissionsGroups: resource?.managePermissionsGroups ?? false,
+      administrator: resource?.administrator ?? false,
+      owner: resource?.owner ?? false,
+    });
   }
 
   private toFailure(error: HttpErrorResponse) {

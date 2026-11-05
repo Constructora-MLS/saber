@@ -1,0 +1,88 @@
+<form class="role-form" [formGroup]="form" (ngSubmit)="save()">
+  @if (view() === 'datos') {
+    <section class="field-section" aria-labelledby="group-details-heading">
+      <h3 id="group-details-heading">Datos del rol</h3>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label>Nombre</mat-label>
+        <input
+          #nameInput
+          matInput
+          formControlName="name"
+          type="text"
+          autocomplete="off"
+          [maxLength]="nameMaxLength"
+          required
+        />
+        @if (form.controls.name.hasError('required') && form.controls.name.touched) {
+          <mat-error>El nombre es obligatorio.</mat-error>
+        }
+        @if (form.controls.name.hasError('minlength') && form.controls.name.touched) {
+          <mat-error>El nombre debe tener al menos {{ nameMinLength }} caracteres.</mat-error>
+        }
+        @if (form.controls.name.hasError('maxlength') && form.controls.name.touched) {
+          <mat-error>El nombre no puede superar {{ nameMaxLength }} caracteres.</mat-error>
+        }
+        @if (form.controls.name.hasError('controlCharacters') && form.controls.name.touched) {
+          <mat-error>El nombre contiene caracteres no permitidos.</mat-error>
+        }
+        <mat-hint align="end" appFieldCounter [control]="form.controls.name" [max]="nameMaxLength" />
+      </mat-form-field>
+
+      <app-group-color-picker [color]="color()" (colorChange)="selectColor($event)" />
+    </section>
+  } @else if (view() === 'permisos') {
+    <fieldset class="permission-section">
+      <legend class="permission-legend">Permisos</legend>
+
+      <div class="permission-list">
+        @for (permission of permissionOptions; track permission.key) {
+          <div class="permission-option">
+            <div class="permission-copy">
+              <span class="permission-label">{{ permission.label }}</span>
+              <span class="permission-description">{{ permission.description }}</span>
+              @if (!mayChange(permission)) {
+                <span class="permission-locked">
+                  No tienes este permiso, así que no puedes cambiarlo.
+                </span>
+              }
+            </div>
+            <mat-slide-toggle
+              [formControlName]="permission.key"
+              [attr.aria-label]="permission.label"
+            />
+          </div>
+        }
+      </div>
+
+      @if (fullAccess()) {
+        <p class="permission-note">
+          El acceso total ya incluye todas las capacidades, así que no se editan por separado.
+        </p>
+      }
+    </fieldset>
+  }
+
+  @if (view() !== 'miembros') {
+    @if (saveFailure(); as failure) {
+      <p class="form-error" role="alert">{{ failure }}</p>
+    }
+
+    @if (hasPendingChanges()) {
+      <p class="pending-note" role="status">Hay cambios sin guardar.</p>
+    }
+
+    <footer class="form-actions">
+      <button
+        matButton="filled"
+        type="submit"
+        [disabled]="busy() || form.invalid || !hasPendingChanges()"
+      >
+        @if (busy()) {
+          Guardando…
+        } @else {
+          Guardar cambios
+        }
+      </button>
+    </footer>
+  }
+</form>

@@ -11,6 +11,7 @@ import { PlatformUser } from '../../domain/model/aggregates/platform-user';
 import { Email, restoreEmail } from '../../domain/model/value-objects/email';
 import { UserId } from '../../domain/model/value-objects/user-id';
 import { UserStatus } from '../../domain/model/value-objects/user-status';
+import { UserType } from '../../domain/model/value-objects/user-type';
 import {
   AcceptInvitationRequestResource,
   InvitationCreatedResource,
@@ -21,6 +22,7 @@ import {
   UserListItemResource,
   UserPageResource,
   UserStatusResource,
+  UserTypeResource,
 } from '../contracts/user.contract';
 import { toUserApiError } from '../errors/user-api.error';
 
@@ -84,6 +86,22 @@ export class UserGateway {
   }
 
   /**
+   * cancelInvitation closes the invitation of a pending account.
+   *
+   * The cancellation is not the deletion of the account: the pending account
+   * survives it and only the credential of the invitation is removed, so the
+   * person that never accepted the invitation cannot complete the
+   * onboarding.
+   */
+  async cancelInvitation(id: UserId): Promise<void> {
+    await firstValueFrom(
+      this.http
+        .delete<void>(`${this.baseUrl}/users/${id.value}/invitation`)
+        .pipe(catchError((error: HttpErrorResponse) => this.toFailure(error))),
+    );
+  }
+
+  /**
    * getInvitation reads the address that an invitation bound.
    *
    * The invitation is not consumed: the invited member can still accept it
@@ -121,6 +139,7 @@ export class UserGateway {
       resource.firstName,
       resource.lastName,
       this.status(resource.status),
+      this.userType(resource.userType),
     );
   }
 
@@ -143,6 +162,7 @@ export class UserGateway {
       resource.firstName,
       resource.lastName,
       this.status(resource.status),
+      this.userType(resource.userType),
     );
   }
 
@@ -170,11 +190,16 @@ export class UserGateway {
       resource.firstName,
       resource.lastName,
       this.status(resource.status),
+      this.userType(resource.userType),
     );
   }
 
   private status(raw: UserStatusResource): UserStatus {
     return raw === 'active' ? 'active' : 'pending';
+  }
+
+  private userType(raw: UserTypeResource): UserType {
+    return raw === 'owner' ? 'owner' : 'member';
   }
 
   private toFailure(error: HttpErrorResponse) {

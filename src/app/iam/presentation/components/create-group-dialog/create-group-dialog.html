@@ -1,0 +1,52 @@
+<h2 mat-dialog-title>Crear grupo</h2>
+
+<mat-dialog-content>
+  <p class="dialog-description">
+    Agrupa a las personas que comparten los mismos permisos.
+  </p>
+
+  @if (errorMessage(); as message) {
+    <p class="dialog-error" role="alert">{{ message }}</p>
+  }
+
+  <form class="dialog-form" id="create-group-form" [formGroup]="form" (ngSubmit)="submit()">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label>Nombre del grupo</mat-label>
+      <input
+        matInput
+        formControlName="name"
+        type="text"
+        autocomplete="off"
+        placeholder="Supervisión de obra"
+        required
+      />
+      @if (form.controls.name.hasError('required')) {
+        <mat-error>El nombre es obligatorio.</mat-error>
+      }
+      @if (form.controls.name.hasError('minlength')) {
+        <mat-error>El nombre debe tener al menos {{ nameMinLength }} caracteres.</mat-error>
+      }
+      @if (form.controls.name.hasError('maxlength')) {
+        <mat-error>El nombre no puede superar los {{ nameMaxLength }} caracteres.</mat-error>
+      }
+      @if (form.controls.name.hasError('controlCharacters')) {
+        <mat-error>El nombre contiene caracteres no permitidos.</mat-error>
+      }
+      <mat-hint align="end" appFieldCounter [control]="form.controls.name" [max]="nameMaxLength" />
+    </mat-form-field>
+
+    <app-group-color-picker [color]="color()" (colorChange)="selectColor($event)" />
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="dialog-actions">
+  <button matButton type="button" (click)="cancel()">Cancelar</button>
+  <button
+    matButton="filled"
+    type="submit"
+    form="create-group-form"
+    [disabled]="submitting() || form.invalid"
+  >
+    {{ submitting() ? 'Creando…' : 'Crear grupo' }}
+  </button>
+</mat-dialog-actions>

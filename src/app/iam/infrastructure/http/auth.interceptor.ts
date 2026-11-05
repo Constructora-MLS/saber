@@ -30,6 +30,16 @@ const PUBLIC_ROUTES = [
 ];
 
 /**
+ * VERIFICATION_ROUTE is the route that reads the permissions of the member.
+ *
+ * The route never renews the session and never asks for the permissions
+ * again: the renewal of the session ends with a verification, so a renewal
+ * that the verification provoked would wait for itself, and a refusal that
+ * the verification provoked would ask for the permissions forever.
+ */
+const VERIFICATION_ROUTE = '/auth/verify';
+
+/**
  * authInterceptor adds the access token to the private requests.
  *
  * The token travels in the Authorization header, never in a cookie, so the
@@ -74,6 +84,22 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
 
   return next(withAccessToken(request, accessToken)).pipe(
     catchError((error: unknown) => {
+      // The read of the permissions stands alone: it never renews the
+      // session and it never asks for the permissions again. The renewal of
+      // the session ends with a verification, so a renewal that the
+      // verification provoked would wait for itself, and a refusal that the
+      // verification provoked would ask for the permissions forever.
+      if (request.url.includes(VERIFICATION_ROUTE)) {
+        return throwError(() => error);
+      }
+
+      // The platform refused the operation: the authority of the member
+      // may have changed, so the session reads it again and the interface
+      // offers what the platform grants at this moment. The operation is
+      // never repeated: the platform refused it for a reason, and that
+      // reason may be the hierarchy of the groups and not the permissions.
+      refreshTheAuthority(error, session);
+
       // The store of the session owns the policy of the credential: the
       // interceptor does not read the status of the failure, it asks the
       // session, so the boundary and the presentation share one rule.
@@ -85,6 +111,30 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
     }),
   );
 };
+
+/**
+ * refreshTheAuthority reads the permissions of the member again when the
+ * platform refused the operation.
+ *
+ * The refusal does not prove that a permission was revoked: the platform
+ * also refuses an operation that breaks the hierarchy of the groups. The
+ * session is read again so the interface offers the permissions that the
+ * platform grants at this moment, and the copy of the refusal never names a
+ * revocation.
+ *
+ * The read is shared: two refusals that arrive at the same time read the
+ * permissions once. The read is not awaited: the failure of the request
+ * reaches the caller at once, and the permissions are read in the
+ * background. The browser never polls the platform: the read happens only
+ * when the platform refused something.
+ */
+function refreshTheAuthority(error: unknown, session: AuthSessionStore): void {
+  if (!session.platformRefusedTheOperation(error)) {
+    return;
+  }
+
+  void session.refreshPermissions().catch(() => undefined);
+}
 
 /**
  * renewAndRetry renews the session and retries the request once.

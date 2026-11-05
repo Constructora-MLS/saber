@@ -33,21 +33,49 @@ function thePlatformIsDown(): AuthApiError {
   return new AuthApiError(503, 'identity_store_unavailable', 'The store of the sessions is down.');
 }
 
+
+/** The account that the platform publishes with the identity. */
+const account = {
+  identity: {
+    uuid: 'the-user',
+    email: 'admin@akame.local',
+    firstName: 'Admin',
+    lastName: 'Akame',
+  },
+  permissions: {
+    manageEmployees: false,
+    manageAssignments: false,
+    manageCatalog: false,
+    manageCertificates: false,
+    manageUsers: false,
+    managePermissionsGroups: false,
+    administrator: false,
+    owner: false,
+  },
+};
+
 describe('authInterceptor', () => {
-  async function setup(options: { refresh?: () => Promise<AuthSession>; signedIn?: boolean } = {}) {
+  async function setup(
+    options: {
+      refresh?: () => Promise<AuthSession>;
+      signedIn?: boolean;
+      account?: typeof account;
+    } = {},
+  ) {
     const refresh = vi.fn(options.refresh ?? (async () => sessionOf('the-renewed-token')));
     // The platform signs a deterministic access token, so every sign in
     // publishes the very same token: a session that appears while a request
     // is in flight can only be told apart from the session that the
     // request carried by the identifier that the store gave to it.
     const signIn = vi.fn().mockResolvedValue(sessionOf('the-access-token'));
+    const verify = vi.fn(async () => options.account ?? account);
     // The store of the session is the real one: the interceptor asks it the
     // single rule of the policy and never reads the status of the failure.
     const injector = Injector.create({
       providers: [
         {
           provide: AuthGateway,
-          useValue: { refresh, verify: vi.fn(), logout: vi.fn(), signIn: vi.fn() },
+          useValue: { refresh, verify, logout: vi.fn(), signIn: vi.fn() },
         },
         { provide: SignInCommandService, useValue: { execute: signIn } },
         { provide: AuthSessionStore, useFactory: () => new AuthSessionStore(), deps: [] },
@@ -58,6 +86,9 @@ describe('authInterceptor', () => {
     if (options.signedIn !== false) {
       await store.signIn({ email: 'admin@akame.local', password: 'the-password' });
     }
+    // The sign in reads the permissions of the member once: the calls that
+    // the tests observe are the ones that the requests provoke.
+    verify.mockClear();
 
     // The mock is typed with its parameter, so the recorded calls keep the
     // type of the request that the interceptor sent.
@@ -65,7 +96,7 @@ describe('authInterceptor', () => {
     const run = (url: string) =>
       runInInjectionContext(injector, () => authInterceptor(new HttpRequest('GET', url), next));
 
-    return { run, next, store, refresh };
+    return { run, next, store, refresh, verify };
   }
 
   it('no adjunta el access token a las rutas que no lo necesitan', async () => {
@@ -269,5 +300,49 @@ describe('authInterceptor', () => {
     expect(store.authenticated()).toBe(true);
     expect(store.accessToken()).toBe('the-access-token');
     expect(store.credentialRejected()).toBe(false);
+  });
+
+  it('lee los permisos del miembro otra vez cuando la plataforma rechaza la operación', async () => {
+    const { run, next, store, verify } = await setup({
+      account: { ...account, permissions: { ...account.permissions, manageUsers: true } },
+    });
+    next.mockImplementation(() => throwError(() => new HttpErrorResponse({ status: 403 })));
+
+    await expect(firstValueFrom(run('/api/v1/users'))).rejects.toBeInstanceOf(HttpErrorResponse);
+
+    await vi.waitFor(() => expect(verify).toHaveBeenCalled());
+    await vi.waitFor(() => expect(store.permissions().manageUsers).toBe(true));
+  });
+
+  it('no repite la operación que la plataforma rechazó', async () => {
+    const { run, next } = await setup();
+    next.mockImplementation(() => throwError(() => new HttpErrorResponse({ status: 403 })));
+
+    await expect(firstValueFrom(run('/api/v1/users'))).rejects.toBeInstanceOf(HttpErrorResponse);
+
+    expect(next).toHaveBeenCalledTimes(1);
+  });
+
+  it('no lee los permisos otra vez cuando la plataforma no rechaza la operación', async () => {
+    const { run, next, verify } = await setup();
+    next.mockImplementation(() => throwError(() => new HttpErrorResponse({ status: 409 })));
+
+    await expect(firstValueFrom(run('/api/v1/users'))).rejects.toBeInstanceOf(HttpErrorResponse);
+
+    expect(verify).not.toHaveBeenCalled();
+  });
+
+  it('no lee los permisos otra vez cuando la lectura de los permisos es rechazada', async () => {
+    // La lectura de los permisos nunca pide los permisos: la renovación de
+    // la sesión termina con una lectura, así que la cadena se esperaría a
+    // sí misma y se repetiría sola.
+    const { run, next, verify } = await setup();
+    next.mockImplementation(() => throwError(() => new HttpErrorResponse({ status: 403 })));
+
+    await expect(firstValueFrom(run('/api/v1/auth/verify'))).rejects.toBeInstanceOf(
+      HttpErrorResponse,
+    );
+
+    expect(verify).not.toHaveBeenCalled();
   });
 });

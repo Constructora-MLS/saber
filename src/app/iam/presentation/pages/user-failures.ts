@@ -64,6 +64,8 @@ export function describeUserFailure(error: unknown): UserFailureMessage {
     invitation_not_found: 'La invitación no es válida, venció o ya fue usada.',
     user_not_found: 'El usuario ya no está disponible.',
     user_not_pending: 'El usuario no está pendiente de activación.',
+    forbidden:
+      'La plataforma rechazó esta operación por los permisos o la jerarquía vigentes.',
     invalid_credentials: 'Tu sesión no es válida. Vuelve a iniciar sesión.',
     invalid_request: 'Revisa los datos ingresados e inténtalo nuevamente.',
     invalid_limit: 'La cantidad de registros por página no es válida.',

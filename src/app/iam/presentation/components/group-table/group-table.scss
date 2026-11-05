@@ -1,0 +1,86 @@
+@use '../../../../shared/presentation/components/platform-table';
+
+:host {
+  display: block;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.cell-name {
+  font-weight: 650;
+  text-align: left;
+}
+
+/* The name of the role carries the handle that moves it and the color that
+   identifies it, so the row reads as one identity. */
+.cell-group-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.drag-handle {
+  display: inline-grid;
+  width: 1.5rem;
+  height: 1.75rem;
+  place-items: center;
+  margin-inline-end: 0.35rem;
+  color: var(--app-text-muted);
+  cursor: grab;
+  touch-action: none;
+  vertical-align: middle;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.drag-handle mat-icon {
+  font-size: 1.15rem;
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.color-swatch {
+  display: inline-block;
+  width: 0.85rem;
+  height: 0.85rem;
+  margin-inline-end: 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--mat-sys-on-surface) 24%, transparent);
+  border-radius: 50%;
+  vertical-align: middle;
+}
+
+.cell-actions button {
+  flex: none;
+}
+
+/* The preview of the drag is a card with the name of the role: a row of a
+   table cannot be drawn outside of the table. */
+.drag-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1rem;
+  border: 1px solid var(--app-outline);
+  border-radius: 0.75rem;
+  background: var(--app-surface);
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--mat-sys-on-surface) 16%, transparent);
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.cdk-drag-placeholder {
+  background: var(--mat-sys-primary-container);
+  opacity: 0.55;
+}
+
+.cdk-drag-animating {
+  transition: transform var(--app-motion-duration-short) var(--app-motion-easing-emphasized);
+}
+
+.platform-table.cdk-drop-list-dragging tr:not(.cdk-drag-placeholder) {
+  transition: transform var(--app-motion-duration-short) var(--app-motion-easing-emphasized);
+}

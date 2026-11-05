@@ -4,6 +4,7 @@
 import { inject, Injectable } from '@angular/core';
 import {
   AcceptInvitationCommand,
+  CancelInvitationCommand,
   DeleteUserCommand,
   InvitationCreated,
   InviteUserCommand,
@@ -47,6 +48,24 @@ export class DeleteUserCommandService {
     const id = UserId.create(command.id);
 
     await this.gateway.deleteUser(id);
+  }
+}
+
+/**
+ * CancelInvitationCommandService closes the onboarding of a pending account.
+ *
+ * The cancellation is not the deletion of the account: the pending account
+ * survives it and the invitation that opened it is the credential that is
+ * removed.
+ */
+@Injectable({ providedIn: 'root' })
+export class CancelInvitationCommandService {
+  private readonly gateway = inject(UserGateway);
+
+  async execute(command: CancelInvitationCommand): Promise<void> {
+    const id = UserId.create(command.id);
+
+    await this.gateway.cancelInvitation(id);
   }
 }
 

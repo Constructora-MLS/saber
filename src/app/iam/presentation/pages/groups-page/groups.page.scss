@@ -4,11 +4,42 @@
 
 .page {
   display: grid;
-  gap: 1.5rem;
+  grid-template-areas:
+    'header'
+    'listing';
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 1.4rem;
   padding: var(--app-page-gutter);
 }
 
+/* The panel of the role opens to the right of the hierarchy with the same
+   width as the hierarchy: the role has as much content to show as the
+   list of roles. */
+.page:has(.role-panel) {
+  grid-template-areas:
+    'header header'
+    'listing panel';
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.group-panel {
+  grid-area: listing;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--app-outline);
+  border-radius: 1.25rem;
+  background: var(--app-surface);
+  box-shadow: 0 3px 12px color-mix(in srgb, var(--mat-sys-on-surface) 6%, transparent);
+}
+
+.role-panel {
+  grid-area: panel;
+  min-width: 0;
+}
+
 .page-header {
+  grid-area: header;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
@@ -36,4 +67,113 @@
   font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 1.15;
+}
+
+.page-subtitle {
+  max-width: 52ch;
+  margin: 0.45rem 0 0;
+  color: var(--app-text-muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.panel {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--app-outline);
+  border-radius: 1.25rem;
+  background: var(--app-surface);
+  box-shadow: 0 3px 12px color-mix(in srgb, var(--mat-sys-on-surface) 6%, transparent);
+}.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.3rem;
+  border-bottom: 1px solid var(--rrhh-divider);
+}
+
+.panel-header h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.panel-hint {
+  margin: 0.3rem 0 0;
+  color: var(--app-text-muted);
+  font-size: 0.84rem;
+}
+
+.filters {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 0.9rem 1.3rem;
+  border-bottom: 1px solid var(--rrhh-divider);
+}
+
+.search-field {
+  flex: 1 1 18rem;
+  max-width: 28rem;
+}
+
+.inline-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.8rem 1.3rem;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+
+.inline-error p {
+  margin: 0.25rem 0 0;
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+/* The notice explains why the hierarchy cannot be reordered right now. */
+.reorder-notice {
+  margin: 0;
+  padding: 0.7rem 1.3rem;
+  border-bottom: 1px solid var(--rrhh-divider);
+  background: var(--mat-sys-surface-container-low);
+  color: var(--app-text-muted);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+@media (max-width: 52rem) {
+  /* On a narrow screen the panel of the role opens under the hierarchy. */
+  .page:has(.role-panel) {
+    grid-template-areas:
+      'header'
+      'listing'
+      'panel';
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 40rem) {
+  .page {
+    gap: 1rem;
+  }
+
+  .panel-header,
+  .filters {
+    padding-inline: 1rem;
+  }
+
+  .filters {
+    align-items: stretch;
+  }
+
+  .search-field {
+    flex-basis: 100%;
+    max-width: none;
+  }
 }

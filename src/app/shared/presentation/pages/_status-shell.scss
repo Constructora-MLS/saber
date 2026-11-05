@@ -1,0 +1,103 @@
+/*
+ * The shell of the pages that answer a navigation that the platform does
+ * not allow.
+ *
+ * The pages share the identity of the platform: the brand on the upper left
+ * and the answer of the platform in the middle of the screen.
+ */
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+.status {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 2rem;
+  align-content: start;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  background: var(--app-background);
+}
+
+.status__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.status__brand-name {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.status__brand-copy {
+  margin: 0;
+  color: var(--app-text-muted);
+  font-size: 0.78rem;
+}
+
+.status__body {
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  width: min(38rem, 100%);
+  margin: 0 auto;
+  padding-block: 2rem;
+}
+
+.status__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 1.25rem;
+  color: var(--mat-sys-primary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.status__eyebrow::before {
+  content: '';
+  width: 1.5rem;
+  height: 1px;
+  background: currentColor;
+}
+
+.status__title {
+  margin: 0;
+  color: var(--mat-sys-on-surface);
+  font-size: clamp(1.75rem, 3.4vw, 2.35rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.status__copy {
+  max-width: 52ch;
+  margin: 0.9rem 0 0;
+  color: var(--app-text-muted);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.status__note {
+  max-width: 52ch;
+  margin: 1.75rem 0 0;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--rrhh-divider);
+  color: var(--app-text-muted);
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+.status__note strong {
+  color: var(--mat-sys-on-surface);
+}
+
+.status__action {
+  margin-top: 1.75rem;
+}

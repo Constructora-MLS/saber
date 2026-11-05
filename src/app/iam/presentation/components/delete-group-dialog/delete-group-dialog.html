@@ -1,0 +1,16 @@
+<h2 mat-dialog-title>Eliminar grupo</h2>
+
+<mat-dialog-content>
+  <p class="dialog-description">
+    Vas a eliminar <strong>{{ data.name }}</strong> de la jerarquía. Las personas que pertenecen al
+    grupo dejarán de recibir los permisos que este otorga.
+  </p>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="dialog-actions">
+  <button matButton type="button" (click)="cancel()">Cancelar</button>
+  <button matButton="filled" type="button" class="danger-action" (click)="confirm()">
+    <mat-icon aria-hidden="true">delete</mat-icon>
+    Eliminar grupo
+  </button>
+</mat-dialog-actions>

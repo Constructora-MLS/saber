@@ -1,0 +1,99 @@
+<div class="table-scroll">
+  <table class="platform-table group-table">
+    <caption class="sr-only">
+      {{ caption() }}
+    </caption>
+    <thead>
+      <tr>
+        <th scope="col">Nombre</th>
+        <th scope="col" class="cell-actions">Acciones</th>
+      </tr>
+    </thead>
+    <tbody
+      cdkDropList
+      [cdkDropListData]="rows()"
+      [cdkDropListDisabled]="!canReorder()"
+      (cdkDropListDropped)="onDrop($event)"
+    >
+      @if (loading() && rows().length === 0) {
+        <tr class="table-message">
+          <td colspan="2">
+            <div class="table-loading" role="status">
+              <mat-spinner diameter="28" aria-hidden="true" />
+              <span>Cargando grupos…</span>
+            </div>
+          </td>
+        </tr>
+      } @else if (rows().length === 0 && errorMessage() !== null) {
+        <tr class="table-state">
+          <td colspan="2">
+            <app-table-state
+              kind="error"
+              [title]="errorTitle()"
+              [message]="errorMessage()"
+              actionLabel="Reintentar"
+              actionIcon="refresh"
+              (actionRequested)="retryRequested.emit()"
+            />
+          </td>
+        </tr>
+      } @else if (rows().length === 0) {
+        <tr class="table-state">
+          <td colspan="2">
+            <app-table-state
+              kind="empty"
+              [icon]="emptyIcon()"
+              [title]="emptyTitle()"
+              [message]="emptyMessage()"
+              [actionLabel]="emptyActionLabel()"
+              actionIcon="add"
+              (actionRequested)="createRequested.emit()"
+            />
+          </td>
+        </tr>
+      } @else {
+        @for (row of rows(); track row.id) {
+          <tr cdkDrag [cdkDragData]="row" [cdkDragDisabled]="!canReorder()">
+            <ng-template cdkDragPreview>
+              <div class="drag-preview">{{ row.name }}</div>
+            </ng-template>
+            <th scope="row" class="cell-name cell-title">
+              <span class="cell-label" aria-hidden="true">Nombre</span>
+              <span class="drag-handle" cdkDragHandle aria-hidden="true">
+                <mat-icon>drag_indicator</mat-icon>
+              </span>
+              <span
+                class="color-swatch"
+                [style.background-color]="row.color"
+                aria-hidden="true"
+              ></span>
+              <span class="cell-group-name">{{ row.name }}</span>
+            </th>
+            <td class="cell-actions">
+              <span class="cell-label" aria-hidden="true">Acciones</span>
+              <button
+                matIconButton
+                type="button"
+                [disabled]="busy()"
+                [matMenuTriggerFor]="rowMenu"
+                [attr.aria-label]="'Acciones de ' + row.name"
+              >
+                <mat-icon aria-hidden="true">more_vert</mat-icon>
+              </button>
+              <mat-menu #rowMenu="matMenu" xPosition="before">
+                <button mat-menu-item type="button" (click)="editRequested.emit(row)">
+                  <mat-icon aria-hidden="true">edit</mat-icon>
+                  <span>Editar</span>
+                </button>
+                <button mat-menu-item type="button" (click)="deleteRequested.emit(row)">
+                  <mat-icon aria-hidden="true">delete</mat-icon>
+                  <span>Borrar</span>
+                </button>
+              </mat-menu>
+            </td>
+          </tr>
+        }
+      }
+    </tbody>
+  </table>
+</div>

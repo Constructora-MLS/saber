@@ -1,0 +1,70 @@
+<h2 mat-dialog-title>Agregar miembros</h2>
+
+<mat-dialog-content>
+  <p class="dialog-description">
+    Elige a las personas que deben recibir los permisos de <strong>{{ data.groupName }}</strong>.
+  </p>
+
+  @if (errorMessage(); as message) {
+    <p class="dialog-error" role="alert">{{ message }}</p>
+  }
+
+  <mat-form-field appearance="outline" subscriptSizing="dynamic" class="search-field">
+    <mat-label>Buscar personas</mat-label>
+    <input
+      matInput
+      type="search"
+      autocomplete="off"
+      placeholder="Nombre o correo de la persona…"
+      [ngModel]="searchTerm()"
+      (ngModelChange)="onSearchChanged($event)"
+      (keyup.enter)="search()"
+      name="search"
+    />
+  </mat-form-field>
+
+  @if (loading()) {
+    <div class="accounts-state" role="status">
+      <mat-spinner diameter="24" aria-hidden="true" />
+      <span>Cargando cuentas…</span>
+    </div>
+  } @else if (accounts().length > 0) {
+    <ul class="accounts">
+      @for (account of accounts(); track account.id.value) {
+        <li class="account" [class.is-member]="isMember(account.id.value)">
+          <mat-checkbox
+            [checked]="isSelected(account.id.value)"
+            [disabled]="isMember(account.id.value) || !canJoin(account)"
+            (change)="toggle(account.id.value)"
+          >
+            <span class="account-name">{{ fullName(account) }}</span>
+            <span class="account-email">{{ account.email }}</span>
+          </mat-checkbox>
+          @if (!isMember(account.id.value) && refusal(account); as reason) {
+            <span class="account-refusal">{{ reason }}</span>
+          }
+        </li>
+      }
+    </ul>
+
+    @if (totalPages() > 1) {
+      <div class="accounts-footer">
+        <app-paginator [page]="page()" [totalPages]="totalPages()" (pageRequested)="requestPage($event)" />
+      </div>
+    }
+  } @else {
+    <p class="accounts-empty">Ninguna cuenta coincide con la búsqueda.</p>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end" class="dialog-actions">
+  <button matButton type="button" (click)="cancel()">Cancelar</button>
+  <button
+    matButton="filled"
+    type="button"
+    [disabled]="submitting() || selected().length === 0"
+    (click)="add()"
+  >
+    {{ submitting() ? 'Agregando…' : 'Agregar' }}
+  </button>
+</mat-dialog-actions>

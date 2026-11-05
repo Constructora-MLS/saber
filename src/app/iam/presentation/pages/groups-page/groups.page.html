@@ -1,8 +1,137 @@
 <section class="page" aria-labelledby="groups-page-title">
   <header class="page-header">
     <div class="page-heading">
-      <p class="eyebrow">Administración</p>
+      <p class="eyebrow">Administración de la organización</p>
       <h1 id="groups-page-title" class="page-title">Grupos</h1>
+      <p class="page-subtitle">
+        Gestiona los grupos y define el acceso a cada área de la plataforma.
+      </p>
     </div>
+
+    <button
+      matButton="filled"
+      type="button"
+      [disabled]="reordering() || deletingId() !== null"
+      (click)="openCreateGroup()"
+    >
+      <mat-icon aria-hidden="true">add</mat-icon>
+      Crear grupo
+    </button>
   </header>
+
+  <section class="panel" aria-labelledby="groups-list-title">
+    <header class="panel-header">
+      <div>
+        <h2 id="groups-list-title" #groupsHeading tabindex="-1">Roles</h2>
+        <p class="panel-hint">Organiza los permisos de acceso mediante grupos.</p>
+      </div>
+    </header>
+
+    <div class="filters">
+      <mat-form-field appearance="outline" class="search-field" subscriptSizing="dynamic">
+        <mat-label>Buscar grupos por nombre</mat-label>
+        <input
+          matInput
+          type="search"
+          autocomplete="off"
+          placeholder="Nombre del grupo…"
+          [ngModel]="searchTerm()"
+          (ngModelChange)="onSearchChanged($event)"
+        />
+        @if (searchTerm()) {
+          <button
+            matIconButton
+            matSuffix
+            type="button"
+            aria-label="Limpiar la búsqueda"
+            (click)="clearSearch()"
+          >
+            <mat-icon aria-hidden="true">close</mat-icon>
+          </button>
+        }
+      </mat-form-field>
+    </div>
+
+    @if (loading()) {
+      <mat-progress-bar mode="indeterminate" aria-label="Cargando grupos" />
+    }
+
+    @if (loadFailure() && groups().length > 0) {
+      <div class="inline-error" role="alert">
+        <div>
+          <strong>{{ loadFailure()?.title }}</strong>
+          <p>{{ loadFailure()?.message }}</p>
+        </div>
+        <button matButton type="button" (click)="retry()">Reintentar</button>
+      </div>
+    }
+
+    @if (actionFailure(); as failure) {
+      <div class="inline-error" role="alert">
+        <div>
+          <strong>{{ failure.title }}</strong>
+          <p>{{ failure.message }}</p>
+        </div>
+        <button
+          matIconButton
+          type="button"
+          aria-label="Cerrar aviso"
+          (click)="dismissActionFailure()"
+        >
+          <mat-icon aria-hidden="true">close</mat-icon>
+        </button>
+      </div>
+    }
+
+    @if (groups().length > 0) {
+      @if (filtered()) {
+        <p class="reorder-notice" role="status">
+          Limpia la búsqueda para cambiar el orden de toda la jerarquía.
+        </p>
+      } @else if (!listComplete() && !loadFailure()) {
+        <p class="reorder-notice" role="status">
+          La respuesta no incluye todos los grupos. Actualiza la lista antes de reordenar.
+        </p>
+      }
+    }
+
+    <app-group-table
+      [rows]="rows()"
+      [loading]="loading()"
+      [errorTitle]="loadFailure()?.title ?? null"
+      [errorMessage]="loadFailure()?.message ?? null"
+      [emptyTitle]="emptyTitle()"
+      [emptyMessage]="emptyMessage()"
+      [emptyIcon]="emptyIcon()"
+      [emptyActionLabel]="emptyActionLabel()"
+      [canReorder]="canReorder()"
+      [busy]="reordering() || deletingId() !== null"
+      (editRequested)="openRole($event)"
+      (deleteRequested)="requestDeleteGroup($event)"
+      (reorderRequested)="onReorder($event)"
+      (retryRequested)="retry()"
+      (createRequested)="openCreateGroup()"
+    />
+  </section>
+
+  @if (selectedGroup(); as role) {
+    <app-group-detail-panel
+      class="role-panel"
+      [group]="role"
+      [members]="members()"
+      [membersLoading]="false"
+      [membersFailure]="membersFailure()"
+      [membersPage]="membersPage()"
+      [membersTotalPages]="membersTotalPages()"
+      [saveFailure]="saveFailure()"
+      [busy]="saving()"
+      (saveRequested)="saveRole($event)"
+      (closeRequested)="requestClosePanel()"
+      (pendingChangesChange)="onPendingChangesChanged($event)"
+      (memberRemoveRequested)="removeMember($event)"
+      (memberAddRequested)="addMember()"
+      (membersPageRequested)="requestMemberPage($event)"
+      (membersRetryRequested)="retryMembers()"
+    />
+  }
 </section>

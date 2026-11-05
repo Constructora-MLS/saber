@@ -52,6 +52,14 @@ export class UserTable {
   readonly emptyIcon = input('group_off');
   /** The label of the action that offers to invite a person. */
   readonly emptyActionLabel = input<string | null>(null);
+  /**
+   * Whether the member may administer the accounts of the platform.
+   *
+   * The listing of the accounts is a reference read of the administration of
+   * the groups, so a member that may only read the accounts does not see
+   * the controls that invite them and remove them.
+   */
+  readonly canManage = input(false);
 
   /** The consultation was requested again. */
   readonly retryRequested = output<void>();

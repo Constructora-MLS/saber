@@ -59,6 +59,9 @@ export class SignInPage {
     if (error instanceof AuthApiError && error.status === 401) {
       return 'Las credenciales no son válidas. Revisa tu correo y tu contraseña.';
     }
+    if (error instanceof AuthApiError && error.status === 0) {
+      return 'No se pudo conectar con el servidor. Revisa que el servicio esté encendido.';
+    }
     return 'No se pudo iniciar sesión. Inténtalo nuevamente.';
   }
 

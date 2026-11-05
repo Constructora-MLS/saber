@@ -1,5 +1,6 @@
 import { CanMatchFn, Routes } from '@angular/router';
 import { authGuard } from './iam/presentation/guards/auth.guard';
+import { permissionGuard } from './iam/presentation/guards/permission.guard';
 
 const isAdministrationRoute: CanMatchFn = (_route, segments) =>
   ['users', 'groups'].includes(segments[0]?.path ?? '');
@@ -88,6 +89,44 @@ export const routes: Routes = [
       ),
   },
   {
+    // The pages that answer a navigation that the platform does not allow.
+    // They are private: the member needs a session to read them, and the
+    // page of the member without permissions is the answer of the platform
+    // to a member that holds nothing.
+    path: 'forbidden',
+    title: 'Acceso denegado',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./shared/presentation/pages/forbidden.page').then((module) => module.ForbiddenPage),
+  },
+  {
+    path: 'no-permissions',
+    title: 'Sin permisos asignados',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./shared/presentation/pages/no-permissions.page').then(
+        (module) => module.NoPermissionsPage,
+      ),
+  },
+  {
+    // The route that does not exist. The page is public: the address may be
+    // wrong even when the browser has no session.
+    path: 'not-found',
+    title: 'Página no encontrada',
+    data: { public: true },
+    loadComponent: () =>
+      import('./shared/presentation/pages/not-found.page').then((module) => module.NotFoundPage),
+  },
+  {
+    // The landing of the private area: it takes the member to the first
+    // application that his permissions open.
+    path: '',
+    pathMatch: 'full',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./shared/presentation/pages/landing.page').then((module) => module.LandingPage),
+  },
+  {
     // The configuration of the account of the user.
     path: 'settings',
     title: 'Configuración',
@@ -129,6 +168,8 @@ export const routes: Routes = [
         path: 'users',
         pathMatch: 'full',
         title: 'Usuarios',
+        data: { permission: ['manageUsers', 'managePermissionsGroups'] },
+        canMatch: [permissionGuard],
         loadComponent: () =>
           import('./iam/presentation/pages/users-page/users.page').then(
             (module) => module.UsersPage,
@@ -138,12 +179,14 @@ export const routes: Routes = [
         path: 'groups',
         pathMatch: 'full',
         title: 'Grupos',
+        data: { permission: ['managePermissionsGroups'] },
+        canMatch: [permissionGuard],
         loadComponent: () =>
           import('./iam/presentation/pages/groups-page/groups.page').then(
             (module) => module.GroupsPage,
           ),
       },
-      { path: '**', redirectTo: '/users' },
+      { path: '**', redirectTo: '/not-found' },
     ],
   },
   {
@@ -154,10 +197,11 @@ export const routes: Routes = [
         (module) => module.RrhhLayout,
       ),
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'employees' },
       {
         path: 'employees',
         title: 'Personal',
+        data: { permission: ['manageEmployees'] },
+        canMatch: [permissionGuard],
         loadComponent: () =>
           import('./employees/presentation/pages/employees-page/employees.page').then(
             (module) => module.EmployeesPage,
@@ -166,6 +210,8 @@ export const routes: Routes = [
       {
         path: 'employees/:employeeId/assignments',
         title: 'Asignaciones',
+        data: { permission: ['manageEmployees', 'manageAssignments'] },
+        canMatch: [permissionGuard],
         loadComponent: () =>
           import('./employees/presentation/pages/employee-assignments-page/employee-assignments.page').then(
             (module) => module.EmployeeAssignmentsPage,
@@ -174,6 +220,8 @@ export const routes: Routes = [
       {
         path: 'certificates',
         title: 'Certificados',
+        data: { permission: ['manageCertificates'] },
+        canMatch: [permissionGuard],
         loadComponent: () =>
           import('./certificates/presentation/pages/certificates-page/certificates.page').then(
             (module) => module.CertificatesPage,
@@ -182,12 +230,14 @@ export const routes: Routes = [
       {
         path: 'catalog',
         title: 'Catálogos',
+        data: { permission: ['manageCatalog'] },
+        canMatch: [permissionGuard],
         loadComponent: () =>
           import('./catalog/presentation/pages/catalog-page/catalog.page').then(
             (module) => module.CatalogPage,
           ),
       },
-      { path: '**', redirectTo: 'employees' },
+      { path: '**', redirectTo: '/not-found' },
     ],
   },
 ];

@@ -8,10 +8,12 @@
       </p>
     </div>
 
-    <button matButton="filled" type="button" class="invite-button" (click)="openInviteDialog()">
-      <mat-icon aria-hidden="true">person_add</mat-icon>
-      Invitar usuario
-    </button>
+    @if (canManageUsers()) {
+      <button matButton="filled" type="button" class="invite-button" (click)="openInviteDialog()">
+        <mat-icon aria-hidden="true">person_add</mat-icon>
+        Invitar usuario
+      </button>
+    }
   </header>
 
   <section class="panel" aria-labelledby="users-panel-title">
@@ -69,7 +71,8 @@
       [emptyTitle]="emptyTitle()"
       [emptyMessage]="emptyMessage()"
       [emptyIcon]="emptyIcon()"
-      [emptyActionLabel]="searchTerm().trim() ? null : 'Invitar usuario'"
+      [emptyActionLabel]="canManageUsers() && !searchTerm().trim() ? 'Invitar usuario' : null"
+      [canManage]="canManageUsers()"
       (retryRequested)="retry()"
       (inviteRequested)="openInviteDialog()"
       (deleteRequested)="openDeleteDialog($event)"

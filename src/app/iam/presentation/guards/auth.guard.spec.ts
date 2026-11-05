@@ -32,6 +32,27 @@ function thePlatformIsDown(): AuthApiError {
   return new AuthApiError(503, 'identity_store_unavailable', 'The store of the sessions is down.');
 }
 
+
+/** The account that the platform publishes with the identity. */
+const account = {
+  identity: {
+    uuid: 'the-user',
+    email: 'admin@akame.local',
+    firstName: 'Admin',
+    lastName: 'Akame',
+  },
+  permissions: {
+    manageEmployees: false,
+    manageAssignments: false,
+    manageCatalog: false,
+    manageCertificates: false,
+    manageUsers: false,
+    managePermissionsGroups: false,
+    administrator: false,
+    owner: false,
+  },
+};
+
 describe('authGuard', () => {
   async function setup(options: { refresh?: () => Promise<AuthSession>; signedIn?: boolean } = {}) {
     const refresh = vi.fn(options.refresh ?? (async () => sessionOf('the-renewed-token')));
@@ -42,7 +63,7 @@ describe('authGuard', () => {
       providers: [
         {
           provide: AuthGateway,
-          useValue: { refresh, verify: vi.fn(), logout: vi.fn(), signIn: vi.fn() },
+          useValue: { refresh, verify: vi.fn(async () => account), logout: vi.fn(), signIn: vi.fn() },
         },
         {
           provide: SignInCommandService,

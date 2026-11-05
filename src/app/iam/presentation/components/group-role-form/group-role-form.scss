@@ -1,0 +1,116 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.role-form,
+.field-section,
+.permission-section {
+  display: grid;
+  gap: 1rem;
+}
+
+.field-section h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.field-section mat-form-field {
+  width: 100%;
+}
+
+.permission-section {
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+/* The legend names the section of the permissions of the role. */
+.permission-legend {
+  padding: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+/* The permissions are a plain list: every permission of the role is read
+   the same way, from the capabilities to the access to every resource. */
+.permission-list {
+  display: grid;
+}
+
+.permission-option {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.8rem 0.25rem;
+}
+
+.permission-option + .permission-option {
+  border-top: 1px solid var(--rrhh-divider);
+}
+
+.permission-copy {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.permission-label {
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.permission-description {
+  color: var(--app-text-muted);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+/* The note explains why a switch is closed for the member that edits the
+   role: the platform only lets a member change the permissions that it
+   holds itself. */
+.permission-locked {
+  color: var(--app-text-muted);
+  font-size: 0.76rem;
+  font-style: italic;
+  line-height: 1.4;
+}
+
+/* The note explains why the capabilities are not editable while the role
+   grants the access to every resource. */
+.permission-note {
+  margin: 0;
+  padding: 0.65rem 0.85rem;
+  border-radius: 0.75rem;
+  background: var(--mat-sys-surface-container);
+  color: var(--app-text-muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.form-error {
+  margin: 0;
+  padding: 0.75rem 0.85rem;
+  border-radius: 0.75rem;
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+  font-size: 0.88rem;
+}
+
+.pending-note {
+  margin: 0;
+  color: var(--app-on-primary-container);
+  font-size: 0.84rem;
+  font-weight: 650;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--rrhh-divider);
+}
