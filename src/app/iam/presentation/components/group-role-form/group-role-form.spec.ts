@@ -6,6 +6,7 @@ import { SIGNAL } from '@angular/core/primitives/signals';
 import { TestBed } from '@angular/core/testing';
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { AuthSessionStore } from '../../../application/session/auth-session.store';
+import { UpdateGroupCommand } from '../../../application/commands/group-commands';
 import { Group } from '../../../domain/model/aggregates/group';
 import {
   EFFECTIVE_PERMISSIONS,
@@ -25,7 +26,6 @@ const group = Group.restore({
   priority: GroupPriority.restore(1),
   permissions: {
     manageEmployees: true,
-    manageAssignments: false,
     manageCatalog: false,
     manageCertificates: false,
     manageUsers: true,
@@ -44,6 +44,13 @@ const administratorOfGroups: EffectivePermissions = {
   manageUsers: true,
 };
 
+/** The permissions of a member que administra el personal y los grupos. */
+const administratorOfPersonnel: EffectivePermissions = {
+  ...EFFECTIVE_PERMISSIONS,
+  manageEmployees: true,
+  managePermissionsGroups: true,
+};
+
 /**
  * publishInput publishes a value in an input signal of the component.
  *
@@ -53,6 +60,25 @@ const administratorOfGroups: EffectivePermissions = {
 function publishInput<T>(signal: unknown, value: T): void {
   const node = (signal as { [SIGNAL]: InputSignalNode<T, T> })[SIGNAL];
   node.applyValueToInputSignal(node, value);
+}
+
+/**
+ * controlsOf returns the controls of the form of the component.
+ *
+ * El formulario es protected: la suite lo lee con la forma que usa para
+ * leer el resto del comportamiento del componente.
+ */
+function controlsOf(fixture: { componentInstance: unknown }) {
+  return (
+    fixture.componentInstance as unknown as {
+      form: {
+        controls: Record<
+          string,
+          { value: unknown; disabled: boolean; setValue(value: unknown): void }
+        >;
+      };
+    }
+  ).form.controls;
 }
 
 describe('GroupRoleForm', () => {
@@ -190,5 +216,38 @@ describe('GroupRoleForm', () => {
     expect(form.fullAccess()).toBe(false);
     expect(form.hasPendingChanges()).toBe(false);
     expect(pending.at(-1)).toBe(false);
+  });
+
+  it('ofrece un solo interruptor para el personal y sus asignaciones', () => {
+    const { fixture, form } = setup(administratorOfPersonnel);
+
+    expect(form.form.controls['manageEmployees']).toBeDefined();
+    expect(form.form.controls['manageAssignments']).toBeUndefined();
+  });
+
+  it('manda un solo cambio para el personal y sus asignaciones', () => {
+    const { fixture } = setup(administratorOfPersonnel);
+    const commands: UpdateGroupCommand[] = [];
+    fixture.componentInstance.saveRequested.subscribe((command) => commands.push(command));
+
+    controlsOf(fixture)['manageEmployees']?.setValue(false);
+    fixture.detectChanges();
+    (fixture.componentInstance as unknown as { save(): void }).save();
+
+    expect(commands).toHaveLength(1);
+    expect(commands[0]?.permissions).toEqual({ manageEmployees: false });
+    expect(Object.keys(commands[0]?.permissions ?? {})).not.toContain('manageAssignments');
+  });
+
+  it('no deja cambiar el catálogo a quien solo administra el personal', () => {
+    const { fixture, form } = setup(administratorOfPersonnel);
+    const controls = controlsOf(fixture);
+
+    expect(controls['manageCatalog']?.disabled).toBe(true);
+
+    controls['manageCatalog']?.setValue(true);
+    fixture.detectChanges();
+
+    expect(form.hasPendingChanges()).toBe(false);
   });
 });

@@ -30,6 +30,32 @@ describe('the routes of the recovery of the password', () => {
   });
 });
 
+describe('the routes of the personnel', () => {
+  /** childRoute finds a route among the children of the application shells. */
+  function childRoute(path: string) {
+    const parent = routes.find((route) => route.children?.some((child) => child.path === path));
+    return parent?.children?.find((child) => child.path === path);
+  }
+
+  it('opens the personnel and its assignments with the same permission', () => {
+    expect(childRoute('employees')?.data?.['permission']).toEqual(['manageEmployees']);
+    expect(childRoute('employees/:employeeId/assignments')?.data?.['permission']).toEqual([
+      'manageEmployees',
+    ]);
+  });
+
+  it('does not ask for a permission that administers the assignments apart', () => {
+    const asked = routes.flatMap((route) => [
+      ...((route.data?.['permission'] as readonly string[] | undefined) ?? []),
+      ...((route.children ?? []).flatMap(
+        (child) => (child.data?.['permission'] as readonly string[] | undefined) ?? [],
+      )),
+    ]);
+
+    expect(asked).not.toContain('manageAssignments');
+  });
+});
+
 describe('public routes', () => {
   it('declares the public flows of the platform', () => {
     expect(PUBLIC_ROUTE_PATHS).toEqual([

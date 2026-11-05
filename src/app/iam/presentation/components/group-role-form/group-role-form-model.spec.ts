@@ -23,7 +23,6 @@ const group = Group.restore({
   priority: GroupPriority.restore(1),
   permissions: {
     manageEmployees: true,
-    manageAssignments: false,
     manageCatalog: false,
     manageCertificates: false,
     manageUsers: true,
@@ -111,7 +110,6 @@ describe('group role form model', () => {
 
     expect(closed).toEqual([
       'manageEmployees',
-      'manageAssignments',
       'manageCatalog',
       'manageCertificates',
       'manageUsers',

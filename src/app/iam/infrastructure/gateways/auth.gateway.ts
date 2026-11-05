@@ -142,7 +142,6 @@ export class AuthGateway {
       ),
       permissions: restoreEffectivePermissions({
         manageEmployees: false,
-        manageAssignments: false,
         manageCatalog: false,
         manageCertificates: false,
         manageUsers: false,
@@ -160,11 +159,15 @@ export class AuthGateway {
    * that does not publish them grants nothing to the member, so the
    * browser reads them as absent instead of failing: the session opens and
    * the member reaches the page that tells him that he has no access.
+   *
+   * The deprecated alias of the permission of the employees is not read:
+   * it always carries the value of the canonical name, so the browser
+   * reads the one permission that administers the employees and their
+   * assignments.
    */
   private toPermissions(resource: EffectivePermissionsResource | undefined): EffectivePermissions {
     return restoreEffectivePermissions({
       manageEmployees: resource?.manageEmployees ?? false,
-      manageAssignments: resource?.manageAssignments ?? false,
       manageCatalog: resource?.manageCatalog ?? false,
       manageCertificates: resource?.manageCertificates ?? false,
       manageUsers: resource?.manageUsers ?? false,

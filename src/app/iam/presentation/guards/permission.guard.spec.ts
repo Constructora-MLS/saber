@@ -75,6 +75,33 @@ describe('permissionGuard', () => {
     ).resolves.toBe(true);
   });
 
+  it('deja pasar a las asignaciones a quien administra el personal', async () => {
+    const { guard, refreshPermissions } = setup({
+      permissions: { ...EFFECTIVE_PERMISSIONS, manageEmployees: true },
+    });
+
+    await expect(guard({ data: { permission: ['manageEmployees'] } })).resolves.toBe(true);
+    expect(refreshPermissions).not.toHaveBeenCalled();
+  });
+
+  it('no deja pasar a las rutas que el permiso del personal no abre', async () => {
+    const { guard, createUrlTree } = setup({
+      permissions: { ...EFFECTIVE_PERMISSIONS, manageEmployees: true },
+    });
+
+    for (const permission of [
+      'manageCatalog',
+      'manageCertificates',
+      'manageUsers',
+      'managePermissionsGroups',
+    ]) {
+      await guard({ data: { permission: [permission] } });
+    }
+
+    expect(createUrlTree).toHaveBeenCalledTimes(4);
+    expect(createUrlTree).toHaveBeenCalledWith(['/forbidden']);
+  });
+
   it('deja pasar a una ruta que no pide ningún permiso', async () => {
     const { guard } = setup();
 

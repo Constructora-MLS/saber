@@ -115,7 +115,6 @@ export class GroupRoleForm {
     name: ['', [groupNameLengthValidator()]],
     color: ['#000000', [Validators.required, Validators.pattern(/^#[0-9A-Fa-f]{6}$/)]],
     manageEmployees: false,
-    manageAssignments: false,
     manageCatalog: false,
     manageCertificates: false,
     manageUsers: false,

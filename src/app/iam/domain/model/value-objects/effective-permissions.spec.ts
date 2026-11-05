@@ -50,6 +50,19 @@ describe('effective permissions', () => {
     expect(holdsAnyPermission(permissions, [])).toBe(true);
   });
 
+  it('grants nothing else to a member that administers the personnel', () => {
+    const permissions = restoreEffectivePermissions({
+      ...EFFECTIVE_PERMISSIONS,
+      manageEmployees: true,
+    });
+
+    expect(holdsPermission(permissions, 'manageEmployees')).toBe(true);
+    expect(holdsPermission(permissions, 'manageCatalog')).toBe(false);
+    expect(holdsPermission(permissions, 'manageCertificates')).toBe(false);
+    expect(holdsPermission(permissions, 'manageUsers')).toBe(false);
+    expect(holdsPermission(permissions, 'managePermissionsGroups')).toBe(false);
+  });
+
   it('lets a member change only the permissions that it holds itself', () => {
     const permissions = restoreEffectivePermissions({
       ...EFFECTIVE_PERMISSIONS,

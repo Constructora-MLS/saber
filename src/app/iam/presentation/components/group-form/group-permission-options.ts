@@ -15,17 +15,15 @@ export interface GroupPermissionOption {
  *
  * The capabilities are independent from each other, so each one is offered
  * with its own consequence.
+ *
+ * The personal and its assignments are one capability: the switch of the
+ * personal administers the two, so there is only one switch for them.
  */
 export const GROUP_CAPABILITY_PERMISSIONS: readonly GroupPermissionOption[] = [
   {
     key: 'manageEmployees',
     label: 'Gestionar personal',
-    description: 'Registra y edita los datos del personal.',
-  },
-  {
-    key: 'manageAssignments',
-    label: 'Asignar personal',
-    description: 'Asigna el personal a las obras y a los proyectos.',
+    description: 'Registra y edita los datos del personal y sus asignaciones.',
   },
   {
     key: 'manageCatalog',
@@ -52,7 +50,7 @@ export const GROUP_CAPABILITY_PERMISSIONS: readonly GroupPermissionOption[] = [
 /**
  * FULL_ACCESS_PERMISSION is the advanced permission of the platform.
  *
- * The administrator is not a seventh capability: it is the permission that
+ * The administrator is not a sixth capability: it is the permission that
  * grants access to every resource and every functionality, so it closes the
  * list of the permissions of the role.
  */

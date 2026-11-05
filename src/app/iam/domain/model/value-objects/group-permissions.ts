@@ -1,7 +1,12 @@
-/** The seven independently stored permissions of a group. */
+/**
+ * The six independently stored permissions of a group.
+ *
+ * The permission that administers the employees administers their
+ * assignments as well: it is one capability, so the group stores one
+ * switch for it.
+ */
 export interface GroupPermissions {
   readonly manageEmployees: boolean;
-  readonly manageAssignments: boolean;
   readonly manageCatalog: boolean;
   readonly manageCertificates: boolean;
   readonly manageUsers: boolean;
@@ -12,7 +17,6 @@ export interface GroupPermissions {
 /** The permission fields in the order used by the group editor. */
 export const GROUP_PERMISSION_KEYS = [
   'manageEmployees',
-  'manageAssignments',
   'manageCatalog',
   'manageCertificates',
   'manageUsers',
@@ -23,11 +27,10 @@ export const GROUP_PERMISSION_KEYS = [
 /** GroupPermissionKey names one of the stored group permissions. */
 export type GroupPermissionKey = (typeof GROUP_PERMISSION_KEYS)[number];
 
-/** restoreGroupPermissions copies the seven flags returned by the backend. */
+/** restoreGroupPermissions copies the six flags returned by the backend. */
 export function restoreGroupPermissions(value: GroupPermissions): GroupPermissions {
   return {
     manageEmployees: value.manageEmployees,
-    manageAssignments: value.manageAssignments,
     manageCatalog: value.manageCatalog,
     manageCertificates: value.manageCertificates,
     manageUsers: value.manageUsers,
